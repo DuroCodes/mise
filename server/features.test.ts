@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { gzipSync, strToU8, zipSync } from "fflate";
 import { formatAmount, parseAmount, scaleIngredient } from "../src/lib/units";
+import { aisleFor } from "../src/shared/aisles";
 import { estimateNutrition, gramsFor, matchFood } from "../src/shared/nutrition";
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
@@ -90,6 +91,41 @@ describe("shopping list merging", () => {
     expect(
       combineQuantities({ amount: "", unit: "" }, { amount: "", unit: "" })
     ).toEqual({ amount: "", unit: "" });
+  });
+});
+
+describe("store aisles", () => {
+  test("sorts the potato soup list sensibly", () => {
+    const expected: Record<string, string> = {
+      "yellow onion": "Produce",
+      "celery stalks": "Produce",
+      garlic: "Produce",
+      bacon: "Meat & seafood",
+      butter: "Dairy & eggs",
+      "all-purpose flour": "Baking",
+      "chicken stock": "Pantry",
+      "whole milk": "Dairy & eggs",
+      "heavy cream": "Dairy & eggs",
+      "russet potatoes": "Produce",
+      "cheddar cheese": "Dairy & eggs",
+      "green onions": "Produce",
+      "salt and black pepper": "Spices & seasonings",
+    };
+    for (const [name, aisle] of Object.entries(expected))
+      expect(`${name}: ${aisleFor(name)}`).toBe(`${name}: ${aisle}`);
+  });
+
+  test("prefers the most specific phrase", () => {
+    expect(aisleFor("garlic powder")).toBe("Spices & seasonings");
+    expect(aisleFor("peanut butter")).toBe("Pantry");
+    expect(aisleFor("coconut milk")).toBe("Pantry");
+    expect(aisleFor("crushed tomatoes")).toBe("Pantry");
+    expect(aisleFor("cherry tomatoes")).toBe("Produce");
+    expect(aisleFor("red pepper flakes")).toBe("Spices & seasonings");
+    expect(aisleFor("olive oil")).toBe("Condiments & sauces");
+    expect(aisleFor("frozen corn")).toBe("Frozen");
+    expect(aisleFor("Panko bread crumbs")).toBe("Pantry");
+    expect(aisleFor("unobtainium")).toBe("Other");
   });
 });
 

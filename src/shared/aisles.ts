@@ -1,0 +1,127 @@
+import { tokens } from "./nutrition";
+
+/** Store sections, in the order most people walk a grocery store. */
+export const aisles = [
+  "Produce",
+  "Bakery",
+  "Meat & seafood",
+  "Dairy & eggs",
+  "Frozen",
+  "Pantry",
+  "Baking",
+  "Spices & seasonings",
+  "Condiments & sauces",
+  "Drinks",
+  "Other",
+] as const;
+
+export type Aisle = (typeof aisles)[number];
+
+const sections: Record<Exclude<Aisle, "Other">, string[]> = {
+  Produce: [
+    "onion", "shallot", "scallion", "green onion", "spring onion", "leek", "garlic",
+    "ginger", "potato", "sweet potato", "yam", "carrot", "celery", "tomato",
+    "cherry tomato", "bell pepper", "pepper", "jalapeno", "chile", "chili",
+    "lettuce", "romaine", "spinach", "kale", "arugula", "cabbage", "broccoli",
+    "cauliflower", "zucchini", "courgette", "squash", "pumpkin", "cucumber",
+    "eggplant", "aubergine", "mushroom", "corn", "green bean", "pea", "snap pea",
+    "asparagus", "avocado", "lemon", "lime", "orange", "apple", "banana", "berry",
+    "blueberry", "strawberry", "raspberry", "grape", "pear", "peach", "mango",
+    "pineapple", "cilantro", "coriander leaves", "parsley", "basil", "mint", "dill",
+    "chive", "thyme", "rosemary", "sage", "tarragon", "fresh herb", "radish",
+    "beet", "turnip", "fennel", "bok choy", "sprout", "lemon juice", "lime juice",
+    "lemon zest", "lime zest",
+  ],
+  Bakery: [
+    "bread", "baguette", "sourdough", "bun", "roll", "tortilla", "pita", "naan",
+    "bagel", "croissant", "english muffin",
+  ],
+  "Meat & seafood": [
+    "chicken", "chicken breast", "chicken thigh", "beef", "ground beef", "steak",
+    "pork", "ground pork", "bacon", "pancetta", "prosciutto", "ham", "sausage",
+    "chorizo", "turkey", "ground turkey", "lamb", "veal", "salmon", "tuna steak",
+    "cod", "halibut", "tilapia", "fish", "shrimp", "prawn", "scallop", "crab",
+    "lobster", "mussel", "clam",
+  ],
+  "Dairy & eggs": [
+    "milk", "whole milk", "buttermilk", "cream", "heavy cream", "whipping cream",
+    "half and half", "sour cream", "creme fraiche", "butter", "cheese", "cheddar",
+    "mozzarella", "parmesan", "parmigiano", "pecorino", "feta", "ricotta",
+    "goat cheese", "cream cheese", "gruyere", "swiss cheese", "monterey jack",
+    "yogurt", "yoghurt", "greek yogurt", "egg", "egg yolk", "egg white", "tofu",
+  ],
+  Frozen: ["frozen", "ice cream", "frozen pea", "frozen corn", "puff pastry", "ice"],
+  Pantry: [
+    "pasta", "spaghetti", "penne", "linguine", "fettuccine", "macaroni", "noodle",
+    "rice", "quinoa", "couscous", "oat", "lentil", "bean", "black bean",
+    "kidney bean", "chickpea", "canned tomato", "crushed tomato", "diced tomato",
+    "tomato paste", "tomato sauce", "passata", "stock", "broth", "chicken stock",
+    "chicken broth", "beef stock", "beef broth", "vegetable stock",
+    "vegetable broth", "bouillon", "dashi", "coconut milk", "peanut butter",
+    "almond", "walnut", "pecan", "nut", "raisin", "breadcrumb", "panko",
+    "cracker", "bread crumb", "tuna", "olive", "caper", "wakame", "seaweed", "nori", "miso",
+    "honey", "maple syrup", "jam", "cereal", "chocolate chip", "chocolate",
+  ],
+  Baking: [
+    "flour", "all-purpose flour", "bread flour", "sugar", "brown sugar",
+    "powdered sugar", "baking powder", "baking soda", "yeast", "cornstarch",
+    "cocoa", "cocoa powder", "vanilla", "vanilla extract", "gelatin",
+  ],
+  "Spices & seasonings": [
+    "salt", "kosher salt", "sea salt", "black pepper", "ground pepper",
+    "white pepper", "peppercorn", "cumin",
+    "paprika", "smoked paprika", "cinnamon", "nutmeg", "turmeric", "chili powder",
+    "chili flake", "red pepper flake", "cayenne", "oregano", "dried oregano",
+    "dried thyme", "dried basil", "bay leaf", "curry powder", "garam masala",
+    "garlic powder", "onion powder", "ground ginger", "ground coriander",
+    "coriander seed", "allspice", "clove", "cardamom", "italian seasoning",
+    "seasoning", "msg",
+  ],
+  "Condiments & sauces": [
+    "oil", "olive oil", "vegetable oil", "canola oil", "sesame oil", "vinegar",
+    "balsamic vinegar", "rice vinegar", "soy sauce", "tamari", "fish sauce",
+    "worcestershire", "hot sauce", "sriracha", "ketchup", "mustard", "dijon",
+    "mayonnaise", "mayo", "salsa", "pesto", "hoisin", "oyster sauce", "bbq sauce",
+  ],
+  Drinks: ["wine", "white wine", "red wine", "beer", "juice", "orange juice", "coffee", "tea", "soda", "sparkling water"],
+};
+
+type Entry = { words: string[]; aisle: Aisle; length: number };
+
+const entries: Entry[] = Object.entries(sections).flatMap(([aisle, names]) =>
+  names.map((name) => ({
+    words: tokens(name),
+    aisle: aisle as Aisle,
+    length: name.length,
+  }))
+);
+
+const contains = (haystack: string[], needle: string[]) => {
+  if (needle.length === 0 || needle.length > haystack.length) return false;
+  for (let start = 0; start + needle.length <= haystack.length; start += 1) {
+    if (needle.every((word, index) => haystack[start + index] === word))
+      return true;
+  }
+  return false;
+};
+
+/**
+ * Picks a store section for an item. The most specific phrase wins, so
+ * "chicken stock" is Pantry rather than Meat and "garlic powder" is Spices
+ * rather than Produce. Anything marked frozen goes to Frozen.
+ */
+export const aisleFor = (name: string): Aisle => {
+  const words = tokens(name);
+  if (words.includes("frozen")) return "Frozen";
+  let best: Entry | null = null;
+  for (const entry of entries) {
+    if (!contains(words, entry.words)) continue;
+    if (
+      !best ||
+      entry.words.length > best.words.length ||
+      (entry.words.length === best.words.length && entry.length > best.length)
+    )
+      best = entry;
+  }
+  return best?.aisle ?? "Other";
+};

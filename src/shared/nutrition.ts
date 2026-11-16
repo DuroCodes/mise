@@ -248,7 +248,7 @@ const singular = (word: string) => {
   return word;
 };
 
-const tokens = (value: string) =>
+export const tokens = (value: string) =>
   value
     .toLowerCase()
     .normalize("NFD")
