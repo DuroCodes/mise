@@ -186,7 +186,7 @@ export const askAboutRecipe = async (
       fallbacks: "default",
       output_config: { effort: "low" },
       system:
-        "You help a home cook with one recipe: ingredient substitutions, swaps for allergies or diets, and what to do when they are missing something. Answer in plain text (no Markdown headings or tables), in a few short sentences or a short list. Say how a swap changes the dish and adjust amounts when that matters. If a swap would not work, say so.",
+        "You help a home cook with one recipe: ingredient substitutions, swaps for allergies or diets, and what to do when they are missing something. Answer in short Markdown: one opening sentence, then a bulleted list where each item starts with the swap in bold, followed by how to use it. Use only bold, italics, and lists (no headings, tables, links, or code). For a simple yes/no question, a sentence or two is enough. Say how a swap changes the dish and adjust amounts when that matters. If a swap would not work, say so.",
       messages: [
         {
           role: "user",
