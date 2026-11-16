@@ -35,6 +35,7 @@ import {
   updateRecipe,
   uploadImage,
 } from "@/lib/api";
+import { receivedKey } from "@/lib/bookmarklet";
 import { sourceHost } from "@/lib/view";
 import { match } from "@/lib/result";
 import { useSession } from "@/lib/session-context";
@@ -66,6 +67,45 @@ const emptyIngredient = (): IngredientDraft => ({
   name: "",
   note: "",
 });
+
+const draftFromInput = (imported: RecipeInput): Draft => ({
+  title: imported.title,
+  description: imported.description,
+  image: imported.image ?? "",
+  sourceUrl: imported.sourceUrl ?? "",
+  prepMinutes: imported.prepMinutes?.toString() ?? "",
+  cookMinutes: imported.cookMinutes?.toString() ?? "",
+  servings: imported.servings?.toString() ?? "",
+  favorite: false,
+  visibility: "private",
+  tags: imported.tags,
+  ingredients: imported.ingredients.length
+    ? imported.ingredients.map((item) => ({
+        key: crypto.randomUUID(),
+        ...item,
+        unit: unitValue(item.unit),
+      }))
+    : [emptyIngredient()],
+  instructions: imported.instructions.length
+    ? imported.instructions.map((item) => ({
+        key: crypto.randomUUID(),
+        text: item.text,
+      }))
+    : [{ key: crypto.randomUUID(), text: "" }],
+});
+
+/** A recipe handed over by "Send to Mise", used once and then cleared. */
+const receivedDraft = (): Draft | null => {
+  if (new URLSearchParams(window.location.search).get("received") !== "1") return null;
+  try {
+    const raw = sessionStorage.getItem(receivedKey);
+    if (!raw) return null;
+    const parsed = recipeInput.safeParse(JSON.parse(raw));
+    return parsed.success ? draftFromInput(parsed.data) : null;
+  } catch {
+    return null;
+  }
+};
 
 const draftFrom = (recipe: Recipe | null): Draft => ({
   title: recipe?.title ?? "",
@@ -151,8 +191,9 @@ function CountField({
 function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(() => draftFrom(recipe));
+  const [draft, setDraft] = useState(() => (recipe ? null : receivedDraft()) ?? draftFrom(recipe));
   const { ai } = useSession();
+  const [params, setParams] = useSearchParams();
   const [tagDraft, setTagDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -163,35 +204,23 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
 
   const fillFrom = (imported: RecipeInput) => {
     setErrors({});
-    setDraft({
-      title: imported.title,
-      description: imported.description,
-      image: imported.image ?? "",
-      sourceUrl: imported.sourceUrl ?? "",
-      prepMinutes: imported.prepMinutes?.toString() ?? "",
-      cookMinutes: imported.cookMinutes?.toString() ?? "",
-      servings: imported.servings?.toString() ?? "",
-      favorite: false,
-      visibility: "private",
-      tags: imported.tags,
-      ingredients: imported.ingredients.length
-        ? imported.ingredients.map((item) => ({
-            key: crypto.randomUUID(),
-            ...item,
-            unit: unitValue(item.unit),
-          }))
-        : [emptyIngredient()],
-      instructions: imported.instructions.length
-        ? imported.instructions.map((item) => ({
-            key: crypto.randomUUID(),
-            text: item.text,
-          }))
-        : [{ key: crypto.randomUUID(), text: "" }],
-    });
+    setDraft(draftFromInput(imported));
   };
 
+  // Arrived from "Send to Mise": the draft was loaded above; tidy the address.
+  useEffect(() => {
+    if (params.get("received") !== "1") return;
+    try {
+      sessionStorage.removeItem(receivedKey);
+    } catch {
+      // Nothing to clean up.
+    }
+    const next = new URLSearchParams(params);
+    next.delete("received");
+    setParams(next, { replace: true });
+  }, [params, setParams]);
+
   // Opened from "Import" on a Claude search result: fill the form from that page.
-  const [params, setParams] = useSearchParams();
   const importUrl = recipe ? null : params.get("import");
   const [importing, setImporting] = useState<string | null>(importUrl);
   // Read inside the import effect without restarting it when it loads.

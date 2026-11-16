@@ -1,5 +1,5 @@
-import { BellIcon, DownloadIcon, KeyRoundIcon, Share2Icon, SquarePlusIcon } from "lucide-react";
-import { useEffect, useState, type ReactNode, type SubmitEvent } from "react";
+import { BellIcon, BookmarkIcon, DownloadIcon, KeyRoundIcon, Share2Icon, SquarePlusIcon } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   updatePushPrefs,
   type PushPrefs,
 } from "@/lib/push";
+import { bookmarkletFor } from "@/lib/bookmarklet";
 import { useTitle } from "@/lib/use-title";
 
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
@@ -106,6 +107,34 @@ function InstallSection() {
           Use your browser's menu and pick Install or Add to Home Screen.
         </p>
       )}
+    </Section>
+  );
+}
+
+function SendToMiseSection() {
+  const link = useRef<HTMLAnchorElement>(null);
+  // React blocks javascript: links in JSX, so the bookmark's address is set directly.
+  useEffect(() => {
+    link.current?.setAttribute("href", bookmarkletFor(window.location.origin));
+  }, []);
+
+  return (
+    <Section icon={<BookmarkIcon className="size-4 text-brand" aria-hidden="true" />} title="Send to Mise button">
+      <p className="text-sm text-muted-foreground">
+        Drag this to your bookmarks bar. On any recipe page, click it to bring the recipe here. Works on
+        sites that block imports.
+      </p>
+      <a
+        ref={link}
+        onClick={(event) => {
+          event.preventDefault();
+          toast("Drag the button to your bookmarks bar instead.");
+        }}
+        className="inline-flex h-9 cursor-grab items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
+      >
+        <BookmarkIcon className="size-4" aria-hidden="true" />
+        Send to Mise
+      </a>
     </Section>
   );
 }
@@ -288,6 +317,7 @@ function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
       <InstallSection />
+      <SendToMiseSection />
       <NotificationsSection />
       <PasswordSection />
     </div>

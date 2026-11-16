@@ -66,6 +66,7 @@ const megabytes = (count: number) => count * 1024 * 1024;
 const bodyCap = (path: string) => {
   if (path === "/api/admin/restore") return megabytes(512);
   if (path === "/api/import/file") return megabytes(101);
+  if (path === "/api/import/page") return megabytes(12);
   if (path === "/api/uploads") return megabytes(9);
   if (path === "/api/ai/recipe" || path === "/api/ai/pantry-photo") return megabytes(6);
   return megabytes(1);

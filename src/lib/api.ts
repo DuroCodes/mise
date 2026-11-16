@@ -765,6 +765,12 @@ export const aiRecipe = (text: string, image: File | null) => {
   });
 };
 
+export const importPage = (url: string, html: string) =>
+  zodFetch(recipeInput, "Could not read a recipe from that page", "/api/import/page", {
+    method: "POST",
+    ...json({ url, html }),
+  });
+
 export const aiRecipeFromUrl = (url: string) =>
   zodFetch(recipeInput, "Claude couldn't read that page", "/api/ai/recipe-from-url", {
     method: "POST",

@@ -11,9 +11,19 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { cn } from "cn";
 import { RecipePlaceholder } from "@/components/recipe-placeholder";
+import { CookTimeline } from "@/components/cook-timeline";
 import { StepText } from "@/components/step-text";
 import { Button } from "@/components/ui/button";
 import { cachedRecipe, getRecipe } from "@/lib/api";
+import {
+  anchorFor,
+  clock,
+  nextFiveMinutes,
+  readPlan,
+  savePlan,
+  type CookPlan,
+} from "@/lib/cook-plan";
+import { buildTimeline } from "@/shared/timeline";
 import { ingredientLine } from "@/lib/format";
 import { easeOut } from "@/lib/motion";
 import { scaleIngredient } from "@/lib/units";
@@ -110,9 +120,30 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
       return 0;
     }
   });
-  const [view, setView] = useState<"steps" | "ingredients">(
+  const [view, setView] = useState<"steps" | "ingredients" | "timing">(
     recipe.instructions.length ? "steps" : "ingredients"
   );
+  const [plan, setPlan] = useState<CookPlan | null>(() => readPlan(recipe.id));
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(tick);
+  }, []);
+
+  const choosePlan = (next: CookPlan) => {
+    setPlan(next);
+    savePlan(recipe.id, next);
+  };
+
+  const openTiming = () => {
+    if (!plan) choosePlan({ mode: "start", time: nextFiveMinutes(new Date(now)), gap: 5 });
+    setView("timing");
+  };
+
+  const plannedAt = plan
+    ? buildTimeline(recipe.instructions, anchorFor(plan, now), plan.mode, plan.gap).steps
+    : null;
   const [direction, setDirection] = useState(1);
   const wake = useWakeLock();
   const touch = useRef<number | null>(null);
@@ -184,6 +215,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
             [
               ["steps", "Steps"],
               ["ingredients", "Ingredients"],
+              ["timing", "Timing"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -191,10 +223,10 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
               type="button"
               role="tab"
               aria-selected={view === id}
-              disabled={id === "steps" && total === 0}
-              onClick={() => setView(id)}
+              disabled={id !== "ingredients" && total === 0}
+              onClick={() => (id === "timing" ? openTiming() : setView(id))}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring disabled:opacity-50",
+                "rounded-md px-2 py-1.5 text-xs font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring disabled:opacity-50 sm:px-3 sm:text-sm",
                 view === id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground"
@@ -202,7 +234,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
             >
               {label}
               {id === "ingredients" && ingredients.length > 0 && (
-                <span className="ml-1 text-xs text-muted-foreground tabular-nums">
+                <span className="ml-1 hidden text-xs text-muted-foreground tabular-nums sm:inline">
                   {checked.size}/{ingredients.length}
                 </span>
               )}
@@ -211,7 +243,21 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
         </div>
       </header>
 
-      {view === "ingredients" ? (
+      {view === "timing" && plan ? (
+        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+          <CookTimeline
+            steps={recipe.instructions}
+            current={step}
+            plan={plan}
+            now={now}
+            onPlan={choosePlan}
+            onJump={(index) => {
+              go(index);
+              setView("steps");
+            }}
+          />
+        </div>
+      ) : view === "ingredients" ? (
         <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
           <ul className="mx-auto max-w-2xl space-y-2">
             {ingredients.map((item, index) => {
@@ -287,12 +333,16 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
                 >
                   <p className="text-sm font-medium text-muted-foreground tabular-nums">
                     Step {step + 1} of {total}
+                    {plannedAt?.[step] && (
+                      <span className="text-brand"> · {clock(plannedAt[step].start)}</span>
+                    )}
                   </p>
                   <p className="text-2xl leading-relaxed text-balance sm:text-3xl sm:leading-relaxed">
                     <StepText
                       text={current.text}
                       step={step + 1}
                       recipe={recipe.title}
+                      measure={system}
                       large
                     />
                   </p>

@@ -1,6 +1,7 @@
-import { CopyIcon, LinkIcon, Share2Icon, TrashIcon } from "lucide-react";
+import { CopyIcon, LinkIcon, QrCodeIcon, Share2Icon, TrashIcon } from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
+import { QrCode } from "@/components/qr-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ function InvitePanel() {
   const [days, setDays] = useState<1 | 7 | 30>(7);
   const [pending, setPending] = useState(false);
   const [fresh, setFresh] = useState<string | null>(null);
+  const [showing, setShowing] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
 
   useEffect(() => {
@@ -151,6 +153,16 @@ function InvitePanel() {
                   )}
                   <Button
                     type="button"
+                    variant={showing === invite.id ? "secondary" : "outline"}
+                    size="icon-sm"
+                    aria-pressed={showing === invite.id}
+                    aria-label={`QR code for the invite${invite.note ? ` for ${invite.note}` : ""}`}
+                    onClick={() => setShowing(showing === invite.id ? null : invite.id)}
+                  >
+                    <QrCodeIcon />
+                  </Button>
+                  <Button
+                    type="button"
                     variant="outline"
                     size="icon-sm"
                     aria-label={`Revoke the invite${invite.note ? ` for ${invite.note}` : ""}`}
@@ -159,6 +171,11 @@ function InvitePanel() {
                     <TrashIcon />
                   </Button>
                 </div>
+                {showing === invite.id && (
+                  <div className="w-full pt-2">
+                    <QrCode value={linkFor(invite.token)} label="Invite QR code" />
+                  </div>
+                )}
               </li>
             ))}
           </ul>

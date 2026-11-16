@@ -25,6 +25,7 @@ import { LibraryPage } from "@/pages/library";
 import { NotFoundPage } from "@/pages/not-found";
 import { PantryPage } from "@/pages/pantry";
 import { PlanPage } from "@/pages/plan";
+import { ReceivePage } from "@/pages/receive";
 import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
 import { SettingsPage } from "@/pages/settings";
@@ -121,6 +122,7 @@ function SignedInApp() {
           <Route path="/pantry" element={<PantryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/share-target" element={<ShareTargetPage />} />
+          <Route path="/receive" element={<ReceivePage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:id" element={<CollectionPage />} />
           <Route path="/import" element={<ImportPage />} />

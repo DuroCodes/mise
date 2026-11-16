@@ -34,6 +34,7 @@ import {
 import { canEdit, createRecipe, db, getRecipe, viewable } from "./db";
 import { recipes } from "./db/schema";
 import { maxImportBytes, maxImportRecipes, readImportFile } from "./import-file";
+import { parseRecipeHtml } from "./recipe-page";
 import { addPlan, listPlan, removePlan, slots, updatePlan } from "./plan";
 import {
   clearItems,
@@ -642,6 +643,17 @@ export const registerRoutes = (api: Api) => {
   );
 
   // Importing files from other apps ---------------------------------------------
+
+  // A page sent from the person's own browser by the "Send to Mise" button.
+  api.post("/import/page", async (c) => {
+    const parsed = z
+      .object({ url: httpUrl, html: z.string().min(1).max(5_000_000) })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "That page couldn't be sent" }, 400);
+    const result = parseRecipeHtml(parsed.data.html);
+    if (!result.ok) return c.json({ error: result.error }, 404);
+    return c.json({ ...result.recipe, sourceUrl: parsed.data.url, visibility: "private" });
+  });
 
   api.post("/import/file", async (c) => {
     const user = c.get("user");

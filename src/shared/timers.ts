@@ -1,7 +1,10 @@
 export type StepTimer = {
   start: number;
   end: number;
+  /** Low end of a range: when to start checking. */
   seconds: number;
+  /** High end of a range (same as seconds otherwise): for planning. */
+  upperSeconds: number;
   label: string;
 };
 
@@ -77,11 +80,17 @@ export const findTimers = (text: string): StepTimer[] => {
     if (extra && unitSeconds(unit) === 3600) seconds += extra * 60;
     seconds = Math.round(seconds);
     if (seconds < 1 || seconds > 24 * 3600) continue;
+    const high = match[2] ? toNumber(match[2]) : null;
+    const upperSeconds =
+      high !== null && high > low
+        ? Math.min(24 * 3600, Math.round(high * unitSeconds(unit) + (seconds - low * unitSeconds(unit))))
+        : seconds;
     const start = match.index ?? 0;
     found.push({
       start,
       end: start + match[0].length,
       seconds,
+      upperSeconds,
       label: match[0],
     });
   }

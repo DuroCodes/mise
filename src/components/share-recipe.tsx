@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { QrCode } from "@/components/qr-code";
 import { Input } from "@/components/ui/input";
 import { createShareLink, removeShareLink } from "@/lib/api";
 
@@ -95,6 +96,7 @@ function ShareRecipe({
                 Copy
               </Button>
             </div>
+            <QrCode value={link} label={`QR code for ${title}`} />
             <DialogFooter className="sm:justify-between">
               <Button
                 type="button"

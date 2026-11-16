@@ -335,6 +335,7 @@ function RecipeView({
                       text={item.text}
                       step={index + 1}
                       recipe={recipe.title}
+                      measure={system}
                     />
                   </span>
                 </li>
