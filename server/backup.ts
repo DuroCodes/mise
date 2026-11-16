@@ -15,8 +15,10 @@ import {
   ratings,
   recipes,
   shoppingItems,
+  stores,
   user,
 } from "./db/schema";
+import { parseLayout, storeLayout } from "../src/shared/stores";
 import { slots } from "./plan";
 
 const uploadName = /^[0-9a-f-]{36}\.(?:jpe?g|png|webp|gif|avif)$/i;
@@ -141,6 +143,18 @@ export const exportData = () => {
         position: row.position,
         createdAt: stamp(row.createdAt),
       })),
+    stores: db
+      .select()
+      .from(stores)
+      .all()
+      .map((row) => ({
+        id: row.id,
+        userEmail: emailOf.get(row.userId) ?? null,
+        name: row.name,
+        layout: parseLayout(row.layout),
+        createdAt: stamp(row.createdAt),
+        updatedAt: stamp(row.updatedAt),
+      })),
   };
 };
 
@@ -254,6 +268,18 @@ const backupSchema = z.object({
       })
     )
     .default([]),
+  stores: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(64),
+        userEmail: email,
+        name: z.string().trim().min(1).max(60),
+        layout: storeLayout,
+        createdAt: when,
+        updatedAt: when,
+      })
+    )
+    .default([]),
 });
 
 export type RestoreSummary = {
@@ -264,6 +290,7 @@ export type RestoreSummary = {
   collections: number;
   mealPlan: number;
   shopping: number;
+  stores: number;
   skipped: number;
 };
 
@@ -332,6 +359,7 @@ export const restoreBackup = (
     collections: 0,
     mealPlan: 0,
     shopping: 0,
+    stores: 0,
     skipped: 0,
   };
 
@@ -458,6 +486,26 @@ export const restoreBackup = (
         .onConflictDoNothing()
         .run();
       summary.shopping += 1;
+    }
+
+    for (const row of backup.stores) {
+      const userId = personFor(row.userEmail);
+      if (!userId) {
+        summary.skipped += 1;
+        continue;
+      }
+      tx.insert(stores)
+        .values({
+          id: row.id,
+          userId,
+          name: row.name,
+          layout: JSON.stringify(row.layout),
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+        })
+        .onConflictDoNothing()
+        .run();
+      summary.stores += 1;
     }
   });
 

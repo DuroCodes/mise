@@ -1,14 +1,16 @@
 import {
   CheckIcon,
+  ChevronDownIcon,
   CopyIcon,
   PlusIcon,
   Share2Icon,
+  StoreIcon,
   TrashIcon,
   XIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type SubmitEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -25,18 +27,43 @@ import {
   addShoppingItem,
   clearShopping,
   listShopping,
+  listStores,
   removeShoppingItem,
   updateShoppingItem,
   type ShoppingItem,
 } from "@/lib/api";
 import { easeOut } from "@/lib/motion";
 import { useTitle } from "@/lib/use-title";
-import { aisleFor, aisles } from "@/shared/aisles";
+import { aisleFor } from "@/shared/aisles";
+import {
+  fullLayout,
+  sectionTitle,
+  type Store,
+  type StoreSection,
+} from "@/shared/stores";
 
 type Grouping = "aisle" | "recipe";
 type Group = { name: string; items: ShoppingItem[] };
 
 const groupingKey = "mise-shopping-group";
+const storeKey = "mise-shopping-store";
+
+const readStoreId = () => {
+  try {
+    return localStorage.getItem(storeKey) ?? "";
+  } catch {
+    return "";
+  }
+};
+
+const saveStoreId = (id: string) => {
+  try {
+    if (id) localStorage.setItem(storeKey, id);
+    else localStorage.removeItem(storeKey);
+  } catch {
+    // The choice still applies until the page reloads.
+  }
+};
 
 const readGrouping = (): Grouping => {
   try {
@@ -69,16 +96,23 @@ const cleanNote = (note: string) =>
 const label = (item: ShoppingItem) =>
   [quantity(item), item.name].filter(Boolean).join(" ");
 
-const groupItems = (items: ShoppingItem[], grouping: Grouping): Group[] => {
+const groupItems = (
+  items: ShoppingItem[],
+  grouping: Grouping,
+  layout: StoreSection[]
+): Group[] => {
   if (grouping === "aisle") {
     const byAisle = new Map<string, ShoppingItem[]>();
     for (const item of items) {
       const aisle = aisleFor(item.name);
       byAisle.set(aisle, [...(byAisle.get(aisle) ?? []), item]);
     }
-    return aisles
-      .filter((aisle) => byAisle.has(aisle))
-      .map((aisle) => ({ name: aisle, items: byAisle.get(aisle) ?? [] }));
+    return fullLayout(layout)
+      .filter((section) => byAisle.has(section.aisle))
+      .map((section) => ({
+        name: sectionTitle(section),
+        items: byAisle.get(section.aisle) ?? [],
+      }));
   }
   const byRecipe = new Map<string, ShoppingItem[]>();
   for (const item of items) {
@@ -201,7 +235,20 @@ function ShoppingPage() {
   const [adding, setAdding] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [grouping, setGrouping] = useState<Grouping>(readGrouping);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [storeId, setStoreId] = useState(readStoreId);
+  const navigate = useNavigate();
   useTitle("Shopping list · Mise");
+
+  useEffect(() => {
+    let active = true;
+    listStores().then((result) => {
+      if (active && result.ok) setStores(result.value);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -301,7 +348,18 @@ function ShoppingPage() {
   const open = (items ?? []).filter((item) => !item.checked);
   const done = (items ?? []).filter((item) => item.checked);
   const total = open.length + done.length;
-  const groups = groupItems(open, grouping);
+  const store = stores.find((entry) => entry.id === storeId) ?? null;
+  const groups = groupItems(open, grouping, store?.layout ?? []);
+
+  const chooseStore = (value: string) => {
+    if (value === "__manage") {
+      navigate("/stores");
+      return;
+    }
+    setStoreId(value);
+    saveStoreId(value);
+    if (value && grouping !== "aisle") chooseGrouping("aisle");
+  };
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   const shareList = async () => {
@@ -432,8 +490,33 @@ function ShoppingPage() {
       )}
 
       {open.length > 0 && (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">Group by</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative">
+            <StoreIcon
+              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <select
+              aria-label="Store"
+              value={store ? store.id : ""}
+              onChange={(event) => chooseStore(event.target.value)}
+              className="h-8 max-w-56 appearance-none truncate rounded-lg border border-input bg-transparent pr-8 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            >
+              <option value="">Usual store order</option>
+              {stores.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name}
+                </option>
+              ))}
+              <option value="__manage">
+                {stores.length ? "Edit my stores…" : "Set up my stores…"}
+              </option>
+            </select>
+            <ChevronDownIcon
+              className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </div>
           <div className="flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Group by">
             {(
               [

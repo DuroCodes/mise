@@ -312,3 +312,18 @@ export const invites = sqliteTable(
   },
   (table) => [uniqueIndex("invites_token_unique").on(table.token)]
 );
+
+export const stores = sqliteTable(
+  "stores",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    layout: text("layout").notNull().default("[]"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [index("stores_user_idx").on(table.userId)]
+);

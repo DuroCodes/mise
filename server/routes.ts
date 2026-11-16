@@ -33,7 +33,9 @@ import {
   removeShare,
   setRating,
 } from "./social";
+import { createStore, deleteStore, listStores, updateStore } from "./stores";
 import { saveUpload } from "./uploads";
+import { storeLayout } from "../src/shared/stores";
 import { eq } from "drizzle-orm";
 
 const measure = z.enum(["original", "metric", "imperial"]).default("original");
@@ -212,6 +214,42 @@ export const registerRoutes = (api: Api) => {
     const userId = c.get("user").id;
     clearItems(userId, parsed.data.which);
     return c.json(listShopping(userId));
+  });
+
+  // Stores ----------------------------------------------------------------------
+
+  const storeName = z.string().trim().min(1).max(60);
+
+  api.get("/stores", (c) => c.json(listStores(c.get("user").id)));
+
+  api.post("/stores", async (c) => {
+    const parsed = z.object({ name: storeName }).safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Name the store" }, 400);
+    const userId = c.get("user").id;
+    if (listStores(userId).length >= 20)
+      return c.json({ error: "You can save up to 20 stores" }, 400);
+    const id = createStore(userId, parsed.data.name);
+    return c.json({ id, stores: listStores(userId) }, 201);
+  });
+
+  api.patch("/stores/:id", async (c) => {
+    const parsed = z
+      .object({ name: storeName, layout: storeLayout })
+      .partial()
+      .strict()
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the store" }, 400);
+    const userId = c.get("user").id;
+    if (!updateStore(userId, c.req.param("id"), parsed.data))
+      return c.json({ error: "Store not found" }, 404);
+    return c.json(listStores(userId));
+  });
+
+  api.delete("/stores/:id", (c) => {
+    const userId = c.get("user").id;
+    if (!deleteStore(userId, c.req.param("id")))
+      return c.json({ error: "Store not found" }, 404);
+    return c.json(listStores(userId));
   });
 
   // Meal plan -----------------------------------------------------------------

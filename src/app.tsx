@@ -27,6 +27,7 @@ import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
 import { SharedPage } from "@/pages/shared";
 import { ShoppingPage } from "@/pages/shopping";
+import { StoresPage } from "@/pages/stores";
 
 const useOnline = () => {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -104,6 +105,7 @@ function SignedInApp() {
           <Route path="/people" element={<Navigate to="/admin" replace />} />
           <Route path="/plan" element={<PlanPage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
+          <Route path="/stores" element={<StoresPage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:id" element={<CollectionPage />} />
           <Route path="/import" element={<ImportPage />} />

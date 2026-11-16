@@ -79,7 +79,7 @@ function BackupPanel() {
             Restored {summary.recipes} recipes, {summary.images} images,{" "}
             {summary.ratings} ratings, {summary.cookLogs} log entries,{" "}
             {summary.collections} collections, {summary.mealPlan} planned meals,
-            and {summary.shopping} shopping items.
+            {summary.shopping} shopping items, and {summary.stores} stores.
             {summary.skipped > 0 &&
               ` Skipped ${summary.skipped} rows for people without an account here.`}
           </p>

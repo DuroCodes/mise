@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodFetch } from "@/lib/zod-fetch";
 import type { Measure } from "@/lib/units";
+import { storeSchema, type StoreSection } from "@/shared/stores";
 import {
   ratingSummary,
   recipeInput,
@@ -502,6 +503,7 @@ const restoreSummarySchema = z.object({
   collections: z.number(),
   mealPlan: z.number(),
   shopping: z.number(),
+  stores: z.number(),
   skipped: z.number(),
 });
 
@@ -517,6 +519,35 @@ export const restoreBackup = (file: File) => {
     { method: "POST", body }
   );
 };
+
+// Stores ------------------------------------------------------------------------
+
+const storeList = z.array(storeSchema);
+
+export const listStores = () =>
+  zodFetch(storeList, "Could not load your stores", "/api/stores");
+
+export const createStore = (name: string) =>
+  zodFetch(
+    z.object({ id: z.string(), stores: storeList }),
+    "Could not add the store",
+    "/api/stores",
+    { method: "POST", ...json({ name }) }
+  );
+
+export const updateStore = (
+  id: string,
+  patch: { name?: string; layout?: StoreSection[] }
+) =>
+  zodFetch(storeList, "Could not save the store", `/api/stores/${id}`, {
+    method: "PATCH",
+    ...json(patch),
+  });
+
+export const deleteStore = (id: string) =>
+  zodFetch(storeList, "Could not delete the store", `/api/stores/${id}`, {
+    method: "DELETE",
+  });
 
 // Invite links ------------------------------------------------------------------
 
