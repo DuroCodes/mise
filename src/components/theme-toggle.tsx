@@ -1,0 +1,22 @@
+import { MoonIcon, SunIcon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-label={dark ? "Use light theme" : "Use dark theme"}
+      onClick={() => setTheme(dark ? "light" : "dark")}
+    >
+      {dark ? <SunIcon /> : <MoonIcon />}
+    </Button>
+  );
+}
+
+export { ThemeToggle };
