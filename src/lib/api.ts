@@ -606,6 +606,25 @@ export const lookupProduct = async (code: string) => {
   return Ok(parsed.data);
 };
 
+const photoItemSchema = z.object({ name: z.string(), amount: z.string(), unit: z.string() });
+export type PhotoItem = z.infer<typeof photoItemSchema>;
+
+export const readPantryPhoto = (image: File, kind: "receipt" | "fridge") => {
+  const body = new FormData();
+  body.append("image", image);
+  body.append("kind", kind);
+  return zodFetch(z.array(photoItemSchema), "Could not read that photo", "/api/ai/pantry-photo", {
+    method: "POST",
+    body,
+  });
+};
+
+export const addPantryBatch = (items: PhotoItem[]) =>
+  zodFetch(pantryList, "Could not add those", "/api/pantry/batch", {
+    method: "POST",
+    ...json({ items }),
+  });
+
 export const moveCheckedToPantry = () =>
   zodFetch(
     z.object({ moved: z.number(), pantry: pantryList, shopping: shoppingList }),

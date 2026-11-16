@@ -12,6 +12,7 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { PantryPhoto } from "@/components/pantry-photo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -154,6 +155,7 @@ function PantryList({
   today: string;
   onItems: (items: PantryItem[]) => void;
 }) {
+  const { ai } = useSession();
   const [draft, setDraft] = useState("");
   const [expires, setExpires] = useState("");
   const [adding, setAdding] = useState(false);
@@ -217,6 +219,11 @@ function PantryList({
 
   return (
     <div className="space-y-5">
+      {ai && (
+        <div className="flex justify-end">
+          <PantryPhoto onAdded={onItems} />
+        </div>
+      )}
       <form onSubmit={add} className="flex flex-col gap-2 sm:flex-row">
         <Input
           value={draft}

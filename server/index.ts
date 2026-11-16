@@ -32,12 +32,14 @@ import {
   listInvites,
   revokeInvite,
 } from "./invites";
+import { startReminders } from "./push";
 import { registerRoutes } from "./routes";
 import { seedIfEmpty } from "./seed";
 import { sharedRecipe } from "./social";
 import { imageExtension } from "./uploads";
 
 seedIfEmpty();
+startReminders();
 
 const app = new Hono();
 const production = process.env.NODE_ENV === "production";
@@ -65,7 +67,7 @@ const bodyCap = (path: string) => {
   if (path === "/api/admin/restore") return megabytes(512);
   if (path === "/api/import/file") return megabytes(101);
   if (path === "/api/uploads") return megabytes(9);
-  if (path === "/api/ai/recipe") return megabytes(6);
+  if (path === "/api/ai/recipe" || path === "/api/ai/pantry-photo") return megabytes(6);
   return megabytes(1);
 };
 
@@ -354,6 +356,14 @@ app.route("/api", api);
 app.use("/uploads/*", serveStatic({ root: dataDir }));
 
 if (production) {
+  // The service worker and manifest must never be cached (by browsers or a
+  // CDN like Cloudflare), or phones keep running an old version for hours.
+  app.use("/*", async (c, next) => {
+    await next();
+    const path = new URL(c.req.url).pathname;
+    if (path === "/sw.js" || path === "/manifest.webmanifest" || path === "/")
+      c.header("cache-control", "no-cache");
+  });
   app.use("/assets/*", serveStatic({ root: "./dist" }));
   app.use("/*", serveStatic({ root: "./dist" }));
   app.get("*", serveStatic({ path: "./dist/index.html" }));

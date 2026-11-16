@@ -10,6 +10,7 @@ import {
   TimerContext,
   type KitchenTimer,
 } from "@/lib/timer-context";
+import { syncTimer } from "@/lib/push";
 import { formatClock } from "@/shared/timers";
 
 let audio: AudioContext | null = null;
@@ -100,11 +101,12 @@ function TimerProvider({ children }: { children: ReactNode }) {
     start: (label: string, seconds: number, recipe: string | null = null) => {
       unlockAudio();
       const startedAt = Date.now();
+      const id = crypto.randomUUID();
       setNow(startedAt);
       setTimers((current) => [
         ...current,
         {
-          id: crypto.randomUUID(),
+          id,
           label,
           recipe,
           total: seconds,
@@ -113,8 +115,11 @@ function TimerProvider({ children }: { children: ReactNode }) {
           done: false,
         },
       ]);
+      // Also ring through a notification if the phone is locked.
+      syncTimer("start", { id, label, recipe, seconds });
     },
-    pause: (id: string) =>
+    pause: (id: string) => {
+      syncTimer("stop", { id, label: "", recipe: null });
       setTimers((current) =>
         current.map((timer) =>
           timer.id === id && timer.endsAt !== null
@@ -125,10 +130,21 @@ function TimerProvider({ children }: { children: ReactNode }) {
               }
             : timer
         )
-      ),
+      );
+    },
     resume: (id: string) => {
       unlockAudio();
       setNow(Date.now());
+      const paused = latest.current.find(
+        (timer) => timer.id === id && timer.endsAt === null && !timer.done
+      );
+      if (paused)
+        syncTimer("start", {
+          id,
+          label: paused.label,
+          recipe: paused.recipe,
+          seconds: paused.remaining,
+        });
       setTimers((current) =>
         current.map((timer) =>
           timer.id === id && timer.endsAt === null && !timer.done
@@ -137,8 +153,11 @@ function TimerProvider({ children }: { children: ReactNode }) {
         )
       );
     },
-    remove: (id: string) =>
-      setTimers((current) => current.filter((timer) => timer.id !== id)),
+    remove: (id: string) => {
+      const timer = latest.current.find((entry) => entry.id === id);
+      if (timer && !timer.done) syncTimer("stop", { id, label: "", recipe: null });
+      setTimers((current) => current.filter((entry) => entry.id !== id));
+    },
   };
 
   return (

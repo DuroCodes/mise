@@ -6,6 +6,7 @@ import {
   askAboutRecipe,
   extractRecipe,
   findRecipes,
+  readPantryPhoto,
 } from "./ai";
 import {
   addToPantry,
@@ -50,6 +51,18 @@ import {
   setRating,
 } from "./social";
 import { barcodeShape, lookupBarcode } from "./products";
+import {
+  allowedEndpoint,
+  cancelTimer,
+  hasSubscription,
+  publicKey,
+  removeSubscription,
+  saveSubscription,
+  scheduleTimer,
+  sendToUser,
+  subscriptionFor,
+  updatePrefs,
+} from "./push";
 import { createStore, deleteStore, listStores, updateStore } from "./stores";
 import { saveUpload } from "./uploads";
 import { storeLayout } from "../src/shared/stores";
@@ -283,6 +296,35 @@ export const registerRoutes = (api: Api) => {
     return c.json(listPantry(userId));
   });
 
+  api.post("/pantry/batch", async (c) => {
+    const parsed = z
+      .object({ items: z.array(pantryInput).min(1).max(100) })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the items" }, 400);
+    const userId = c.get("user").id;
+    if (listPantry(userId).length + parsed.data.items.length > 500)
+      return c.json({ error: "Your pantry is full (500 items)" }, 400);
+    addToPantry(userId, parsed.data.items);
+    return c.json(listPantry(userId), 201);
+  });
+
+  api.post("/ai/pantry-photo", async (c) => {
+    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    const form = await c.req.formData().catch(() => null);
+    const file = form?.get("image");
+    const kind = form?.get("kind") === "fridge" ? "fridge" : "receipt";
+    if (!(file instanceof File) || file.size === 0) return c.json({ error: "Take a photo first" }, 400);
+    const mediaType = aiImageTypes.find((type) => type === file.type);
+    if (!mediaType) return c.json({ error: "Use a JPEG, PNG, GIF, or WebP photo" }, 400);
+    if (file.size > 5 * 1024 * 1024) return c.json({ error: "Photos must be under 5MB" }, 400);
+    const result = await readPantryPhoto({
+      image: { data: Buffer.from(await file.arrayBuffer()).toString("base64"), mediaType },
+      kind,
+    });
+    if (!result.ok) return c.json({ error: result.error }, 502);
+    return c.json(result.value);
+  });
+
   api.post("/pantry/from-shopping", (c) => {
     const userId = c.get("user").id;
     const moved = moveCheckedToPantry(userId);
@@ -316,6 +358,88 @@ export const registerRoutes = (api: Api) => {
     if (!result.ok) return c.json({ error: "Couldn't look that up right now" }, 502);
     if (!result.product) return c.json({ error: "Product not found" }, 404);
     return c.json(result.product);
+  });
+
+  // Push notifications --------------------------------------------------------------
+
+  const endpointInput = z.string().max(1000).refine(allowedEndpoint, "Unsupported push service");
+  const prefsInput = z.object({ useSoon: z.boolean(), tomorrow: z.boolean() });
+
+  api.get("/push/key", (c) => c.json({ publicKey }));
+
+  api.post("/push/status", async (c) => {
+    const parsed = z.object({ endpoint: z.string().max(1000) }).safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the subscription" }, 400);
+    return c.json({ prefs: subscriptionFor(c.get("user").id, parsed.data.endpoint) });
+  });
+
+  api.post("/push/subscribe", async (c) => {
+    const parsed = z
+      .object({
+        endpoint: endpointInput,
+        keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+      })
+      .extend(prefsInput.shape)
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "This browser's push service isn't supported" }, 400);
+    const { endpoint, keys: subscriptionKeys, useSoon, tomorrow } = parsed.data;
+    saveSubscription(c.get("user").id, { endpoint, ...subscriptionKeys, useSoon, tomorrow });
+    return c.json({ prefs: { useSoon, tomorrow } }, 201);
+  });
+
+  api.patch("/push/subscribe", async (c) => {
+    const parsed = z
+      .object({ endpoint: z.string().max(1000) })
+      .extend(prefsInput.partial().shape)
+      .strict()
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the settings" }, 400);
+    const { endpoint, ...prefs } = parsed.data;
+    const userId = c.get("user").id;
+    if (!updatePrefs(userId, endpoint, prefs))
+      return c.json({ error: "Notifications aren't on for this device" }, 404);
+    return c.json({ prefs: subscriptionFor(userId, endpoint) });
+  });
+
+  api.delete("/push/subscribe", async (c) => {
+    const parsed = z.object({ endpoint: z.string().max(1000) }).safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the subscription" }, 400);
+    removeSubscription(c.get("user").id, parsed.data.endpoint);
+    return c.json(null);
+  });
+
+  api.post("/push/test", async (c) => {
+    const sent = await sendToUser(c.get("user").id, {
+      title: "Notifications are on",
+      body: "This is what they'll look like.",
+      url: "/settings",
+      tag: "test",
+      kind: "test",
+    });
+    if (sent === 0) return c.json({ error: "Couldn't reach this device" }, 502);
+    return c.json({ sent });
+  });
+
+  api.post("/push/timers", async (c) => {
+    const parsed = z
+      .object({
+        id: z.string().min(1).max(64),
+        label: z.string().trim().min(1).max(120),
+        recipe: z.string().trim().max(200).default(""),
+        seconds: z.number().min(1).max(86_400),
+      })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the timer" }, 400);
+    const userId = c.get("user").id;
+    if (!hasSubscription(userId)) return c.json({ scheduled: false });
+    if (!scheduleTimer(userId, { ...parsed.data, seconds: Math.round(parsed.data.seconds) }))
+      return c.json({ error: "Too many timers" }, 400);
+    return c.json({ scheduled: true });
+  });
+
+  api.delete("/push/timers/:id", (c) => {
+    cancelTimer(c.get("user").id, c.req.param("id"));
+    return c.json(null);
   });
 
   api.get("/pantry/suggestions", (c) =>

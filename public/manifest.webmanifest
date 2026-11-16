@@ -14,9 +14,16 @@
     { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  },
   "shortcuts": [
-    { "name": "Shopping list", "url": "/shopping" },
-    { "name": "Meal plan", "url": "/plan" },
-    { "name": "New recipe", "url": "/recipes/new" }
+    { "name": "Scan & shop", "short_name": "Scan", "url": "/shopping?scan=1", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Shopping list", "short_name": "Shopping", "url": "/shopping", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Pantry", "url": "/pantry", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Meal plan", "short_name": "Plan", "url": "/plan", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "New recipe", "short_name": "New", "url": "/recipes/new", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ]
 }

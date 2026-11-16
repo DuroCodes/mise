@@ -5,6 +5,7 @@ import {
   LogOutIcon,
   PackageOpenIcon,
   PlusIcon,
+  SettingsIcon,
   ShoppingBasketIcon,
   UtensilsCrossedIcon,
   WifiOffIcon,
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { clearOfflineData } from "@/lib/offline";
+import { disablePush } from "@/lib/push";
 import { cn } from "cn";
 
 const links = [
@@ -32,6 +34,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 const signOut = async () => {
+  await disablePush();
   await clearOfflineData();
   await authClient.signOut();
 };
@@ -75,6 +78,11 @@ function AppHeader({ account, offline }: { account: Account; offline: boolean })
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
+          <Button asChild variant="ghost" size="icon" aria-label="Settings">
+            <NavLink to="/settings">
+              <SettingsIcon />
+            </NavLink>
+          </Button>
           <Button asChild size="icon-sm" className="sm:hidden" aria-label="New recipe">
             <NavLink to="/recipes/new">
               <PlusIcon />

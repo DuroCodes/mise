@@ -1,7 +1,7 @@
 import { UtensilsCrossedIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState, type ReactNode, type SubmitEvent } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { authClient } from "@/lib/auth-client";
 import { easeOut } from "@/lib/motion";
 import { clearOfflineData } from "@/lib/offline";
 import { useTitle } from "@/lib/use-title";
+import { safeNext } from "@/lib/view";
 
 function AccountShell({
   title,
@@ -147,9 +148,11 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [params] = useSearchParams();
+  const next = safeNext(params.get("next"));
   useTitle("Sign in · Mise");
 
-  if (session.data) return <Navigate to="/" replace />;
+  if (session.data) return <Navigate to={next} replace />;
   if (gate === "setup") return <Navigate to="/setup" replace />;
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -163,7 +166,7 @@ function LoginPage() {
       setPending(false);
       return;
     }
-    navigate("/");
+    navigate(next, { replace: true });
   };
 
   return (

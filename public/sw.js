@@ -1,5 +1,6 @@
 // Mise service worker: makes the app installable and keeps recipes you have
 // opened readable without a connection. Cache names match src/lib/offline.ts.
+// Bump the version comment when this file changes so browsers pick it up: v2.
 const SHELL = "mise-shell-v1";
 const API = "mise-api-v1";
 const IMAGES = "mise-images-v1";
@@ -82,6 +83,52 @@ const offlineJson = () =>
     status: 503,
     headers: { "content-type": "application/json" },
   });
+
+// Notifications --------------------------------------------------------------
+
+self.addEventListener("push", (event) => {
+  let note = {};
+  try {
+    note = event.data ? event.data.json() : {};
+  } catch {
+    note = { title: "Mise", body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    (async () => {
+      // A timer already chimes in an open, visible tab; don't double up.
+      if (note.kind === "timer") {
+        const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+        if (windows.some((client) => client.visibilityState === "visible")) return;
+      }
+      await self.registration.showNotification(note.title || "Mise", {
+        body: note.body || "",
+        tag: note.tag || undefined,
+        renotify: note.kind === "timer",
+        requireInteraction: note.kind === "timer",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: { url: typeof note.url === "string" && note.url.startsWith("/") ? note.url : "/" },
+      });
+    })()
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const existing = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (existing) {
+        await existing.focus();
+        if ("navigate" in existing) await existing.navigate(url).catch(() => undefined);
+        return;
+      }
+      await self.clients.openWindow(url);
+    })()
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;

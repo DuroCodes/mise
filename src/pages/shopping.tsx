@@ -1,6 +1,7 @@
 import {
   CheckIcon,
   ChevronDownIcon,
+  CloudOffIcon,
   CopyIcon,
   PackageOpenIcon,
   PlusIcon,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type SubmitEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { BarcodeScanner } from "@/components/barcode-scanner";
@@ -28,19 +29,25 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  addShoppingItem,
   clearShopping,
-  listShopping,
   finishShopping,
+  listShopping,
   listStores,
-  removeShoppingItem,
-  updateShoppingItem,
   type ShoppingItem,
 } from "@/lib/api";
 import { easeOut } from "@/lib/motion";
+import {
+  flush,
+  onOutboxChange,
+  outboxFor,
+  pendingCount,
+  send,
+  withOutbox,
+  type Op,
+} from "@/lib/outbox";
+import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 import { aisleFor } from "@/shared/aisles";
-import { matchListItem } from "@/shared/pantry";
 import {
   fullLayout,
   sectionTitle,
@@ -246,6 +253,10 @@ function ShoppingPage() {
   const [scanning, setScanning] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [savingDone, setSavingDone] = useState(false);
+  const [waiting, setWaiting] = useState(pendingCount);
+  const [params, setParams] = useSearchParams();
+  const { account, offline } = useSession();
+  outboxFor(account.id);
   const navigate = useNavigate();
   useTitle("Shopping list · Mise");
 
@@ -259,34 +270,69 @@ function ShoppingPage() {
     };
   }, []);
 
+  const visible = (list: ShoppingItem[]) =>
+    withOutbox(list).filter((item) => !pendingRemovals.has(item.id));
+
+  const load = async () => {
+    const result = await listShopping();
+    if (result.ok) {
+      setItems(visible(result.value));
+      setError(null);
+    } else if (items === null) setError(result.error);
+  };
+
+  // Send waiting offline changes, then refresh, whenever the connection comes back.
+  const sync = async () => {
+    if (pendingCount() > 0) await flush();
+    await load();
+  };
+
   useEffect(() => {
-    let active = true;
-    const load = () =>
-      listShopping().then((result) => {
-        if (!active) return;
-        if (result.ok) {
-          setItems(result.value.filter((item) => !pendingRemovals.has(item.id)));
-          setError(null);
-        } else setError(result.error);
-      });
-    void load();
+    void sync();
     const onVisible = () => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void sync();
     };
+    const onOnline = () => void sync();
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
+    const stop = onOutboxChange(setWaiting);
     return () => {
-      active = false;
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
+      stop();
     };
+    // Runs once; sync reads the latest state when it's called.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (params.get("scan") !== "1") return;
+    setScanning(true);
+    const next = new URLSearchParams(params);
+    next.delete("scan");
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   const apply = (
     result: { ok: true; value: ShoppingItem[] } | { ok: false; error: string }
   ) => {
-    if (result.ok)
-      setItems(result.value.filter((item) => !pendingRemovals.has(item.id)));
+    if (result.ok) setItems(visible(result.value));
     else toast.error(result.error);
     return result.ok;
+  };
+
+  /** Applies a change here right away, then sends it (or keeps it for later). */
+  const change = async (op: Op, local: (list: ShoppingItem[]) => ShoppingItem[]) => {
+    setItems((current) => (current ? local(current) : current));
+    const result = await send(op);
+    if (result.queued) return true;
+    if (!result.ok) {
+      toast.error("Couldn't save that change");
+      await load();
+      return false;
+    }
+    if (result.list) setItems(visible(result.list));
+    return true;
   };
 
   const add = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -295,39 +341,27 @@ function ShoppingPage() {
     if (!text) return;
     setAdding(true);
     const match = text.match(/^(\d+(?:[./]\d+)?)\s+(.+)$/);
-    const ok = apply(
-      await addShoppingItem(
-        match ? { amount: match[1] ?? "", name: match[2] ?? text } : { name: text }
-      )
-    );
+    const name = (match ? match[2] : text)?.trim() ?? text;
+    const amount = match?.[1] ?? "";
+    const tempId = `local-${crypto.randomUUID()}`;
+    const ok = await change({ kind: "add", tempId, name, amount, checked: false }, (list) => [
+      ...list,
+      { id: tempId, name, amount, unit: "", note: "", sources: [], checked: false },
+    ]);
     setAdding(false);
     if (ok) setDraft("");
   };
 
-  const toggle = async (item: ShoppingItem) => {
-    setItems(
-      (current) =>
-        current?.map((entry) =>
-          entry.id === item.id ? { ...entry, checked: !entry.checked } : entry
-        ) ?? current
+  const toggle = (item: ShoppingItem) =>
+    change({ kind: "check", id: item.id, checked: !item.checked }, (list) =>
+      list.map((entry) => (entry.id === item.id ? { ...entry, checked: !item.checked } : entry))
     );
-    const result = await updateShoppingItem(item.id, { checked: !item.checked });
-    if (!apply(result))
-      setItems(
-        (current) =>
-          current?.map((entry) =>
-            entry.id === item.id ? { ...entry, checked: item.checked } : entry
-          ) ?? current
-      );
-  };
 
   const remove = (item: ShoppingItem) => {
     setItems((current) => current?.filter((entry) => entry.id !== item.id) ?? current);
     const timer = window.setTimeout(() => {
       pendingRemovals.delete(item.id);
-      void removeShoppingItem(item.id).then((result) => {
-        if (!result.ok) toast.error(result.error);
-      });
+      void send({ kind: "remove", id: item.id });
     }, 5000);
     pendingRemovals.set(item.id, timer);
     toast(`Removed ${item.name}`, {
@@ -374,18 +408,22 @@ function ShoppingPage() {
   };
 
   const addScanned = async (name: string) => {
-    const added = await addShoppingItem({ name });
-    if (!added.ok) {
-      toast.error(added.error);
+    const tempId = `local-${crypto.randomUUID()}`;
+    await change({ kind: "add", tempId, name, amount: "", checked: true }, (list) => [
+      ...list,
+      { id: tempId, name, amount: "", unit: "", note: "", sources: [], checked: true },
+    ]);
+    if (pendingCount() === 0) await load();
+  };
+
+  // Finishing needs the server, so send any offline changes first.
+  const openFinish = async () => {
+    if (pendingCount() > 0 && !(await flush())) {
+      toast.error("You're offline. Finish once you're back online.");
       return;
     }
-    const match = matchListItem(name, added.value) ??
-      added.value.find((item) => !item.checked && item.name === name);
-    if (!match) {
-      apply(added);
-      return;
-    }
-    apply(await updateShoppingItem(match.id, { checked: true }));
+    await load();
+    setFinishing(true);
   };
 
   const chooseGrouping = (value: Grouping) => {
@@ -463,7 +501,7 @@ function ShoppingPage() {
                 </Button>
               )}
               {done.length > 0 && (
-                <Button type="button" size="sm" onClick={() => setFinishing(true)}>
+                <Button type="button" size="sm" onClick={() => void openFinish()}>
                   <CheckIcon data-icon="inline-start" />
                   Done shopping
                 </Button>
@@ -498,6 +536,14 @@ function ShoppingPage() {
           </div>
         )}
       </div>
+
+      {(offline || waiting > 0) && (
+        <p className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
+          <CloudOffIcon className="size-4 shrink-0" aria-hidden="true" />
+          {offline ? "Offline. Changes save here" : "Waiting to sync"}
+          {waiting > 0 && ` · ${waiting} waiting`}
+        </p>
+      )}
 
       <form onSubmit={add} className="flex gap-2">
         <Input
@@ -621,7 +667,7 @@ function ShoppingPage() {
               In the basket
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setFinishing(true)}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => void openFinish()}>
               <PackageOpenIcon data-icon="inline-start" />
               Done shopping
             </Button>

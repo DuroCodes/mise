@@ -51,8 +51,11 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 - **nutrition**: an estimate per serving from a built-in food table. nothing is sent anywhere.
 - **import**: paste a recipe link, or upload a paprika export (`.paprikarecipes`), a mealie export or backup (`.zip`/`.json`), schema.org json-ld, or a saved recipe page.
 - **backup and restore**: admins download a zip of everything (recipes, images, logs, plans, lists, and a copy of the database) and restore it later.
-- **installable app**: add mise to your home screen. recipes you have opened stay readable offline.
-- **claude (optional)**: turn pasted text or a photo of a recipe card into a recipe, and ask about substitutions. off unless `ANTHROPIC_API_KEY` is set.
+- **installable app**: install from settings (or add to home screen on iphone). recipes you have opened stay readable offline, and the shopping list works with no signal, syncing when you're back online. long-press the icon for shortcuts like scan & shop.
+- **scan & shop**: scan barcodes with the camera to check items off (names come from open food facts). done shopping asks how much of each item goes in the pantry.
+- **share to mise** (android): share a recipe link from any app to import it.
+- **notifications**: timers that ring with the phone locked, a 9am "use soon" heads-up for expiring pantry items, and a 6pm note about tomorrow's meals. turn them on per device in settings. on iphone, install mise first.
+- **claude (optional)**: turn pasted text or a photo of a recipe card into a recipe, ask about substitutions, find new recipes from your pantry, and add to the pantry from a photo of a receipt or your fridge. off unless `ANTHROPIC_API_KEY` is set.
 
 ## settings
 
@@ -65,6 +68,7 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 | `BETTER_AUTH_SECRET` | generated into `DATA_DIR` | session signing secret |
 | `ANTHROPIC_API_KEY` | | turns on the claude features; recipe text and photos are sent to anthropic only when someone uses them |
 | `MISE_AI_MODEL` | `claude-opus-5-5` | the claude model to use |
+| `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR` | keys for push notifications |
 
 ## backups
 

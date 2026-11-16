@@ -6,7 +6,8 @@ import { estimateNutrition, gramsFor, matchFood } from "../src/shared/nutrition"
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
 import { covers, isStaple, matchListItem, rankRecipes } from "../src/shared/pantry";
-import { parseFound, toRecipeInput } from "./ai";
+import { safeNext, sharedLink } from "../src/lib/view";
+import { parseFound, toPhotoItems, toRecipeInput } from "./ai";
 import {
   gunzipLimited,
   minutesFromText,
@@ -197,6 +198,94 @@ describe("scanning", () => {
     expect(matchListItem("Barilla Spaghetti n.5", list)).toBe(list[3]);
     expect(matchListItem("Swanson Chicken Broth", list)).toBeNull();
     expect(matchListItem("Nutella", list)).toBeNull();
+  });
+});
+
+describe("share target and sign-in redirects", () => {
+  test("finds the link in whatever an app shared", () => {
+    expect(sharedLink(new URLSearchParams({ url: "https://example.com/soup" }))).toBe("https://example.com/soup");
+    expect(
+      sharedLink(new URLSearchParams({ text: "Try this! https://cooking.test/r/123?x=1). So good" }))
+    ).toBe("https://cooking.test/r/123?x=1");
+    expect(sharedLink(new URLSearchParams({ title: "Soup", text: "no link here" }))).toBeNull();
+    expect(sharedLink(new URLSearchParams({ text: "javascript:alert(1)" }))).toBeNull();
+  });
+
+  test("only returns to pages on this site", () => {
+    expect(safeNext("/recipes/new?import=x")).toBe("/recipes/new?import=x");
+    expect(safeNext("//evil.test/")).toBe("/");
+    expect(safeNext("https://evil.test/")).toBe("/");
+    expect(safeNext("/login?next=/x")).toBe("/");
+    expect(safeNext(null)).toBe("/");
+  });
+});
+
+describe("offline outbox", () => {
+  const store = new Map<string, string>();
+  const fakeStorage = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => void store.set(key, value),
+    removeItem: (key: string) => void store.delete(key),
+    key: (index: number) => [...store.keys()][index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  const originalFetch = globalThis.fetch;
+
+  test("queues changes offline, folds them together, and shows them", async () => {
+    Object.assign(globalThis, { localStorage: fakeStorage });
+    globalThis.fetch = (() => Promise.reject(new TypeError("offline"))) as unknown as typeof fetch;
+    const outbox = await import("../src/lib/outbox");
+    outbox.outboxFor("u1");
+    const server = [
+      { id: "a", name: "milk", amount: "1", unit: "", note: "", sources: [], checked: false },
+      { id: "b", name: "eggs", amount: "12", unit: "", note: "", sources: [], checked: false },
+    ];
+    expect((await outbox.send({ kind: "check", id: "a", checked: true })).queued).toBe(true);
+    expect((await outbox.send({ kind: "check", id: "a", checked: false })).queued).toBe(true);
+    expect(outbox.pendingCount()).toBe(1);
+    await outbox.send({ kind: "remove", id: "b" });
+    await outbox.send({ kind: "add", tempId: "local-1", name: "lemons", amount: "2", checked: false });
+    await outbox.send({ kind: "check", id: "local-1", checked: true });
+    expect(outbox.pendingCount()).toBe(3);
+    const shown = outbox.withOutbox(server);
+    expect(shown.map((item) => [item.id, item.checked])).toEqual([
+      ["a", false],
+      ["local-1", true],
+    ]);
+    await outbox.send({ kind: "remove", id: "local-1" });
+    expect(outbox.pendingCount()).toBe(2);
+
+    // Back online: everything is sent in order and the queue empties.
+    const calls: string[] = [];
+    globalThis.fetch = ((url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? "GET"} ${url}`);
+      return Promise.resolve(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+    }) as unknown as typeof fetch;
+    expect(await outbox.flush()).toBe(true);
+    expect(calls).toEqual(["PATCH /api/shopping/a", "DELETE /api/shopping/b"]);
+    expect(outbox.pendingCount()).toBe(0);
+    outbox.clearOutbox();
+    globalThis.fetch = originalFetch;
+  });
+});
+
+describe("photo to pantry", () => {
+  test("cleans up what Claude read", () => {
+    expect(
+      toPhotoItems({
+        items: [
+          { name: " Yellow Onion ", amount: "3", unit: "" },
+          { name: "yellow onion", amount: "1", unit: "" },
+          { name: "", amount: "1", unit: "" },
+          { name: "Whole Milk", amount: "1", unit: "gallon" },
+        ],
+      })
+    ).toEqual([
+      { name: "yellow onion", amount: "3", unit: "" },
+      { name: "whole milk", amount: "1", unit: "gallon" },
+    ]);
   });
 });
 

@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { aiRecipe } from "@/lib/api";
+import { shrinkPhoto } from "@/lib/images";
 import type { RecipeInput } from "@/shared/recipe";
 
 const accepted = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -26,18 +27,25 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
   const [pending, setPending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const choose = (file: File | undefined) => {
+  // Phone photos are often over the 5MB limit (and iPhones may send HEIC),
+  // so shrink and convert to JPEG first.
+  const choose = async (file: File | undefined) => {
     if (!file) return;
-    if (!accepted.includes(file.type)) {
+    if (!file.type.startsWith("image/")) {
+      setError("Choose a photo");
+      return;
+    }
+    const photo = await shrinkPhoto(file);
+    if (!accepted.includes(photo.type)) {
       setError("Use a JPEG, PNG, GIF, or WebP photo");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Photos must be under 5MB");
+    if (photo.size > 5 * 1024 * 1024) {
+      setError("That photo is too large");
       return;
     }
     setError(null);
-    setImage(file);
+    setImage(photo);
   };
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -119,11 +127,11 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
             <input
               ref={fileRef}
               type="file"
-              accept={accepted.join(",")}
+              accept="image/*"
               capture="environment"
               className="sr-only"
               onChange={(event) => {
-                choose(event.target.files?.[0]);
+                void choose(event.target.files?.[0]);
                 event.target.value = "";
               }}
             />

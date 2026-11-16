@@ -33,7 +33,29 @@ export const sourceHost = (url: string) => {
   }
 };
 
-export const isMeasure = (value: string | null): value is Measure =>
+/** The first http(s) link in whatever was shared (apps put it in url, text, or title). */
+export const sharedLink = (params: URLSearchParams) => {
+  for (const field of ["url", "text", "title"]) {
+    const value = params.get(field) ?? "";
+    const match = value.match(/https?:\/\/[^\s<>"']+/i);
+    if (!match) continue;
+    const link = match[0].replace(/[),.!?]+$/, "");
+    try {
+      return new URL(link).toString();
+    } catch {
+      continue;
+    }
+  }
+  return null;
+};
+
+/** A same-site path to return to after signing in, or "/". */
+export const safeNext = (raw: string | null) =>
+  raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login")
+    ? raw
+    : "/";
+
+export const isMeasure =(value: string | null): value is Measure =>
   value === "original" || value === "metric" || value === "imperial";
 
 /** Today's date in the viewer's time zone, as YYYY-MM-DD. */

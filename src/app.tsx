@@ -27,6 +27,8 @@ import { PantryPage } from "@/pages/pantry";
 import { PlanPage } from "@/pages/plan";
 import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
+import { SettingsPage } from "@/pages/settings";
+import { ShareTargetPage } from "@/pages/share-target";
 import { SharedPage } from "@/pages/shared";
 import { ShoppingPage } from "@/pages/shopping";
 import { StoresPage } from "@/pages/stores";
@@ -79,7 +81,15 @@ function SignedInApp() {
   }, [signedIn]);
 
   if (session.isPending) return <RecipePlaceholder />;
-  if (!signedIn || failed) return <Navigate to="/login" replace />;
+  if (!signedIn || failed) {
+    const back = `${location.pathname}${location.search}`;
+    return (
+      <Navigate
+        to={back === "/" ? "/login" : `/login?next=${encodeURIComponent(back)}`}
+        replace
+      />
+    );
+  }
   if (!account) return <RecipePlaceholder />;
 
   const hideTabs = fullScreen.test(location.pathname);
@@ -109,6 +119,8 @@ function SignedInApp() {
           <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/pantry" element={<PantryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/share-target" element={<ShareTargetPage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:id" element={<CollectionPage />} />
           <Route path="/import" element={<ImportPage />} />

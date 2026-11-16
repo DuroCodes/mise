@@ -162,6 +162,76 @@ export const extractRecipe = async (input: {
   }
 };
 
+const photoItems = z.object({
+  items: z.array(z.object({ name: z.string(), amount: z.string(), unit: z.string() })),
+});
+
+export type PhotoItem = { name: string; amount: string; unit: string };
+
+/** Fits model output to pantry limits. Exported for tests. */
+export const toPhotoItems = (value: z.infer<typeof photoItems>): PhotoItem[] => {
+  const seen = new Set<string>();
+  const out: PhotoItem[] = [];
+  for (const item of value.items) {
+    const name = clip(item.name, 200).toLowerCase();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    out.push({ name, amount: clip(item.amount, 40), unit: clip(item.unit, 40) });
+    if (out.length >= 80) break;
+  }
+  return out;
+};
+
+const photoPrompts = {
+  receipt: `List the groceries bought on this receipt for a pantry tracker.
+- Turn store abbreviations into plain lowercase names ("YEL ONION" -> "yellow onion", "GV WHL MILK" -> "whole milk"). Drop brand names.
+- amount is how many or how much was bought (e.g. "2", "1.5"); unit is the unit if there is one (lb, oz, gallon, dozen), else empty.
+- Skip anything that isn't food or a cooking ingredient, and skip tax, totals, discounts, bags, and deposits.`,
+  fridge: `List the food you can clearly see in this photo of a fridge, pantry, or counter, for a pantry tracker.
+- Use plain lowercase names without brands ("cheddar cheese", "eggs").
+- Give an amount only when it's obvious (a carton of 12 eggs -> "12"); otherwise leave amount and unit empty.
+- Don't guess at things you can't see.`,
+};
+
+export const readPantryPhoto = async (input: {
+  image: { data: string; mediaType: AiImageType };
+  kind: "receipt" | "fridge";
+}): Promise<AiResult<PhotoItem[]>> => {
+  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  try {
+    const response = await anthropic().beta.messages.parse({
+      model: model(),
+      max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      output_config: { effort: "medium", format: betaZodOutputFormat(photoItems) },
+      system: photoPrompts[input.kind],
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: input.image.mediaType, data: input.image.data },
+            },
+            { type: "text", text: input.kind === "receipt" ? "Here's my receipt." : "Here's what I have." },
+          ],
+        },
+      ],
+    });
+    if (response.stop_reason === "refusal")
+      return { ok: false, error: "Claude declined to read that" };
+    const output = response.parsed_output;
+    if (!output) return { ok: false, error: "Claude's answer could not be read" };
+    const items = toPhotoItems(output);
+    if (items.length === 0)
+      return { ok: false, error: input.kind === "receipt" ? "No groceries found on that receipt" : "No food found in that photo" };
+    return { ok: true, value: items };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
 const foundSchema = z.array(
   z.object({
     title: z.string(),

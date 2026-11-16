@@ -345,3 +345,25 @@ export const pantryItems = sqliteTable(
   },
   (table) => [index("pantry_items_user_idx").on(table.userId)]
 );
+
+export const pushSubscriptions = sqliteTable(
+  "push_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    useSoon: integer("use_soon", { mode: "boolean" }).notNull().default(true),
+    tomorrow: integer("tomorrow", { mode: "boolean" }).notNull().default(true),
+    lastUseSoon: text("last_use_soon"),
+    lastTomorrow: text("last_tomorrow"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("push_subscriptions_endpoint_unique").on(table.endpoint),
+    index("push_subscriptions_user_idx").on(table.userId),
+  ]
+);
