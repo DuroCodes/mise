@@ -35,10 +35,7 @@ function BackupPanel() {
       <h2 className="text-xl font-medium tracking-tight">Backups</h2>
       <div className="space-y-4 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
         <p className="leading-6 text-muted-foreground">
-          A backup is a zip with every recipe, image, rating, cooking-log entry,
-          collection, meal plan, shopping list, store, and pantry, plus a full
-          copy of the database. The database copy includes accounts and password hashes,
-          so keep the file somewhere private.
+          Everything in one zip, including accounts. Keep it private.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
@@ -92,10 +89,7 @@ function BackupPanel() {
           <DialogHeader>
             <DialogTitle>Restore {file?.name}?</DialogTitle>
             <DialogDescription>
-              Recipes in the backup replace recipes with the same id here;
-              everything else is added. People are matched by email, and
-              accounts themselves are not changed. To roll the whole site back,
-              including accounts, follow the steps in the README instead.
+              Merges into this site. Accounts aren't changed.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -42,7 +42,7 @@ function AppHeader({ account, offline }: { account: Account; offline: boolean })
       {offline && (
         <p className="flex items-center justify-center gap-1.5 bg-muted px-4 py-1 text-xs text-muted-foreground">
           <WifiOffIcon className="size-3.5" aria-hidden="true" />
-          You’re offline. Recipes you opened before still work; changes won’t save.
+          Offline. Saved recipes still work.
         </p>
       )}
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">

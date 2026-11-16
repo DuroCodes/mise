@@ -272,7 +272,7 @@ function InvitePage() {
     return (
       <AccountShell
         title="This invite doesn't work"
-        lede="It may have expired or already been used. Ask the person who sent it for a new link."
+        lede="It expired or was already used. Ask for a new one."
       >
         <Button asChild variant="outline">
           <Link to="/login">Sign in instead</Link>
@@ -284,7 +284,7 @@ function InvitePage() {
     return (
       <AccountShell
         title="You're already signed in"
-        lede={`You're signed in as ${session.data.user.email}. Sign out to use this invite for a new account.`}
+        lede={`Signed in as ${session.data.user.email}. Sign out to use this invite.`}
       >
         <div className="flex gap-2">
           <Button asChild>
@@ -309,8 +309,8 @@ function InvitePage() {
       title="Join Mise"
       lede={
         invite.inviterName
-          ? `${invite.inviterName} invited you to share recipes, meal plans, and shopping lists.`
-          : "You're invited to share recipes, meal plans, and shopping lists."
+          ? `${invite.inviterName} invited you.`
+          : "You're invited."
       }
     >
       <form onSubmit={submit} className="space-y-4" noValidate>

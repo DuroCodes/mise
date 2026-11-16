@@ -83,9 +83,9 @@ function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
           ))}
         </dl>
         <p className="text-xs leading-5 text-muted-foreground">
-          An estimate from a built-in food table, {label}. Counted{" "}
-          {estimate.counted.length} of {recipe.ingredients.length} ingredients.
-          {missing.length > 0 && ` Not counted: ${missing.join(", ")}.`}
+          Estimate from {estimate.counted.length} of{" "}
+          {recipe.ingredients.length} ingredients.
+          {missing.length > 0 && ` Skipped: ${missing.join(", ")}.`}
         </p>
       </div>
     </section>

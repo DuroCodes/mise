@@ -77,8 +77,7 @@ function InvitePanel() {
       <h2 className="text-xl font-medium tracking-tight">Invite links</h2>
       <div className="space-y-4 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
         <p className="leading-6 text-muted-foreground">
-          Send someone a link to make their own account. Each link works once
-          and new accounts start as members.
+          One-time links for new accounts.
         </p>
         <form onSubmit={create} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1 space-y-2">

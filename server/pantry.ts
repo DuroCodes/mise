@@ -135,6 +135,35 @@ export const moveCheckedToPantry = (userId: string) => {
   return checked.length;
 };
 
+/**
+ * Finishes a shopping trip: adds the amounts you chose to keep to the pantry
+ * and clears every checked item from the list.
+ */
+export const finishShopping = (
+  userId: string,
+  keep: { id: string; amount: string; unit: string }[]
+) => {
+  const checked = db
+    .select()
+    .from(shoppingItems)
+    .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+    .all();
+  const byId = new Map(checked.map((item) => [item.id, item]));
+  const lines: PantryLine[] = [];
+  for (const entry of keep) {
+    const item = byId.get(entry.id);
+    if (!item) continue;
+    if (/^0+(?:\.0+)?$/.test(entry.amount.trim())) continue;
+    lines.push({ name: item.name, amount: entry.amount, unit: entry.unit, note: "" });
+  }
+  if (lines.length) addToPantry(userId, lines);
+  if (checked.length)
+    db.delete(shoppingItems)
+      .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+      .run();
+  return { kept: lines.length, cleared: checked.length };
+};
+
 export const pantrySuggestions = (userId: string, today: string) => {
   const pantry = listPantry(userId);
   if (pantry.length === 0) return [];

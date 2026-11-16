@@ -111,8 +111,7 @@ function CookLog({
             <DialogHeader>
               <DialogTitle>Log a cook</DialogTitle>
               <DialogDescription>
-                Note what you changed or what to try next time. Everyone who can
-                see this recipe sees the log.
+                What would you change next time?
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={submit} className="space-y-4" noValidate>

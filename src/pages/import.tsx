@@ -6,15 +6,9 @@ import { importFile, type ImportResult } from "@/lib/api";
 import { useTitle } from "@/lib/use-title";
 
 const sources = [
-  ["Paprika", "Export recipes from Paprika, then upload the .paprikarecipes file."],
-  [
-    "Mealie",
-    "Upload a recipe export or a site backup (.zip), or a recipe's JSON.",
-  ],
-  [
-    "Other apps and sites",
-    "Any schema.org recipe as .json (JSON-LD), or a saved recipe page (.html).",
-  ],
+  ["Paprika", ".paprikarecipes export"],
+  ["Mealie", "Export or backup (.zip / .json)"],
+  ["Anything else", "Recipe .json (JSON-LD) or saved .html page"],
 ] as const;
 
 function ImportPage() {
@@ -42,10 +36,9 @@ function ImportPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-medium tracking-tight">Import recipes</h1>
         <p className="text-sm text-muted-foreground">
-          Bring recipes over from another app. They arrive as private recipes
-          you can edit. To copy one recipe from a website, use{" "}
+          From another app. For a single website,{" "}
           <Link to="/recipes/new" className="underline underline-offset-4">
-            New recipe → Import from URL
+            import from URL
           </Link>
           .
         </p>

@@ -9,6 +9,7 @@ import {
 } from "./ai";
 import {
   addToPantry,
+  finishShopping,
   listPantry,
   missingFor,
   moveCheckedToPantry,
@@ -48,6 +49,7 @@ import {
   removeShare,
   setRating,
 } from "./social";
+import { barcodeShape, lookupBarcode } from "./products";
 import { createStore, deleteStore, listStores, updateStore } from "./stores";
 import { saveUpload } from "./uploads";
 import { storeLayout } from "../src/shared/stores";
@@ -285,6 +287,35 @@ export const registerRoutes = (api: Api) => {
     const userId = c.get("user").id;
     const moved = moveCheckedToPantry(userId);
     return c.json({ moved, pantry: listPantry(userId), shopping: listShopping(userId) });
+  });
+
+  api.post("/shopping/done", async (c) => {
+    const parsed = z
+      .object({
+        keep: z
+          .array(
+            z.object({
+              id: z.string(),
+              amount: z.string().trim().max(40),
+              unit: z.string().trim().max(40),
+            })
+          )
+          .max(500),
+      })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the amounts" }, 400);
+    const userId = c.get("user").id;
+    const result = finishShopping(userId, parsed.data.keep);
+    return c.json({ ...result, shopping: listShopping(userId), pantry: listPantry(userId) });
+  });
+
+  api.get("/products/:code", async (c) => {
+    const code = c.req.param("code");
+    if (!barcodeShape.test(code)) return c.json({ error: "That isn't a barcode" }, 400);
+    const result = await lookupBarcode(code);
+    if (!result.ok) return c.json({ error: "Couldn't look that up right now" }, 502);
+    if (!result.product) return c.json({ error: "Product not found" }, 404);
+    return c.json(result.product);
   });
 
   api.get("/pantry/suggestions", (c) =>

@@ -80,9 +80,8 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
         <DialogHeader className="pr-8">
           <DialogTitle>Read a recipe with Claude</DialogTitle>
           <DialogDescription>
-            Paste recipe text, or add a photo of a cookbook page or a recipe
-            card. Claude fills this form, and nothing is saved until you click
-            Save. The text and photo are sent to Anthropic to do this.
+            Paste a recipe or add a photo. Claude fills in the form. Sent to
+            Anthropic.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4" noValidate>

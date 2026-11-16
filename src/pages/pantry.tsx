@@ -258,8 +258,7 @@ function PantryList({
           <PackageOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">Your pantry is empty</h2>
           <p className="text-sm text-muted-foreground">
-            Add what you have above, or tick things off on your shopping list
-            and use “Move to pantry”.
+            Add items above, or tap Done shopping on your list.
           </p>
         </div>
       ) : (
@@ -344,9 +343,8 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
           Find new recipes with Claude
         </h2>
         <p className="text-xs leading-5 text-muted-foreground">
-          Claude searches the web for recipes that use what's in your pantry.
-          Your pantry list is sent to Anthropic to do this, and a search takes
-          about half a minute.
+          Searches the web using your pantry (sent to Anthropic). Takes about
+          30 seconds.
         </p>
       </div>
       <form onSubmit={search} className="flex flex-col gap-2 sm:flex-row">
@@ -452,8 +450,8 @@ function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }
           </h2>
           <p className="text-sm text-muted-foreground">
             {hasPantry
-              ? "Add more to your pantry, or find something new below."
-              : "Suggestions come from the recipes in your library that use what's in your pantry."}
+              ? "Add more, or find something new below."
+              : "Suggestions come from your recipes."}
           </p>
         </div>
       )}

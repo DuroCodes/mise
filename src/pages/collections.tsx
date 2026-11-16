@@ -126,7 +126,7 @@ function CollectionsPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-medium tracking-tight">Collections</h1>
           <p className="text-sm text-muted-foreground">
-            Group recipes for an occasion or a mood. Only you see your collections.
+            Only you can see these.
           </p>
         </div>
         <Button type="button" onClick={() => setCreating(true)}>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Err, Ok } from "@/lib/result";
 import { zodFetch } from "@/lib/zod-fetch";
 import type { Measure } from "@/lib/units";
 import { storeSchema, type StoreSection } from "@/shared/stores";
@@ -563,6 +564,47 @@ export const removePantryItem = (id: string) =>
   zodFetch(pantryList, "Could not remove that", `/api/pantry/${id}`, {
     method: "DELETE",
   });
+
+export const finishShopping = (
+  keep: { id: string; amount: string; unit: string }[]
+) =>
+  zodFetch(
+    z.object({
+      kept: z.number(),
+      cleared: z.number(),
+      shopping: shoppingList,
+      pantry: pantryList,
+    }),
+    "Could not finish shopping",
+    "/api/shopping/done",
+    { method: "POST", ...json({ keep }) }
+  );
+
+const productSchema = z.object({
+  name: z.string(),
+  brand: z.string(),
+  quantity: z.string(),
+});
+
+export type Product = z.infer<typeof productSchema>;
+
+const products = new Map<string, Product | null>();
+
+/** Looks up a barcode; null means the product isn't in the database. */
+export const lookupProduct = async (code: string) => {
+  if (products.has(code)) return Ok(products.get(code) ?? null);
+  const response = await fetch(`/api/products/${code}`).catch(() => null);
+  if (!response) return Err("You're offline");
+  if (response.status === 404) {
+    products.set(code, null);
+    return Ok(null);
+  }
+  if (!response.ok) return Err("Couldn't look that up right now");
+  const parsed = productSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) return Err("Couldn't look that up right now");
+  products.set(code, parsed.data);
+  return Ok(parsed.data);
+};
 
 export const moveCheckedToPantry = () =>
   zodFetch(

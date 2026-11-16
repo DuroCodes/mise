@@ -71,8 +71,7 @@ function ImportRecipe({
         <DialogHeader className="pr-8">
           <DialogTitle>Import from URL</DialogTitle>
           <DialogDescription>
-            Paste a recipe link. Mise fills this form, and nothing is saved
-            until you click Save.
+            Paste a link. Nothing saves until you hit Save.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4" noValidate>

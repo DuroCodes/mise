@@ -195,8 +195,7 @@ function StoreEditor({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Drag the sections into the order you walk this store. Add an aisle
-        number if it helps, like “7” or “back wall”.
+        Drag into walking order. Aisle labels are optional.
       </p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext
@@ -305,8 +304,7 @@ function StoresPage() {
         </p>
         <h1 className="text-2xl font-medium tracking-tight">My stores</h1>
         <p className="text-sm leading-6 text-muted-foreground">
-          Set up each store once, in the order you walk it. Then pick the store
-          on your shopping list and it sorts into your route.
+          Pick a store on your shopping list to sort it in walking order.
         </p>
       </div>
 
@@ -330,7 +328,7 @@ function StoresPage() {
           <StoreIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">No stores yet</h2>
           <p className="text-sm text-muted-foreground">
-            Add the store you shop at most to get started.
+            Add the one you shop at most.
           </p>
         </div>
       )}

@@ -5,7 +5,7 @@ import { aisleFor } from "../src/shared/aisles";
 import { estimateNutrition, gramsFor, matchFood } from "../src/shared/nutrition";
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
-import { covers, isStaple, rankRecipes } from "../src/shared/pantry";
+import { covers, isStaple, matchListItem, rankRecipes } from "../src/shared/pantry";
 import { parseFound, toRecipeInput } from "./ai";
 import {
   gunzipLimited,
@@ -179,6 +179,24 @@ describe("pantry matching", () => {
     expect(soupMatch?.missing).toEqual(["heavy cream"]);
     expect(soupMatch?.expiring).toEqual(["potatoes"]);
     expect(isStaple("Salt and pepper")).toBe(true);
+  });
+});
+
+describe("scanning", () => {
+  const list = [
+    { name: "spaghetti", checked: true },
+    { name: "cheddar cheese", checked: false },
+    { name: "heavy cream", checked: false },
+    { name: "spaghetti", checked: false },
+    { name: "chicken", checked: false },
+  ];
+
+  test("matches branded products to list items", () => {
+    expect(matchListItem("Tillamook Medium Cheddar Cheese", list)?.name).toBe("cheddar cheese");
+    expect(matchListItem("Heavy Whipping Cream", list)?.name).toBe("heavy cream");
+    expect(matchListItem("Barilla Spaghetti n.5", list)).toBe(list[3]);
+    expect(matchListItem("Swanson Chicken Broth", list)).toBeNull();
+    expect(matchListItem("Nutella", list)).toBeNull();
   });
 });
 

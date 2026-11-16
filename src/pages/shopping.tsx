@@ -4,6 +4,7 @@ import {
   CopyIcon,
   PackageOpenIcon,
   PlusIcon,
+  ScanLineIcon,
   Share2Icon,
   StoreIcon,
   TrashIcon,
@@ -14,6 +15,8 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { BarcodeScanner } from "@/components/barcode-scanner";
+import { DoneShopping } from "@/components/done-shopping";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,8 +31,8 @@ import {
   addShoppingItem,
   clearShopping,
   listShopping,
+  finishShopping,
   listStores,
-  moveCheckedToPantry,
   removeShoppingItem,
   updateShoppingItem,
   type ShoppingItem,
@@ -37,6 +40,7 @@ import {
 import { easeOut } from "@/lib/motion";
 import { useTitle } from "@/lib/use-title";
 import { aisleFor } from "@/shared/aisles";
+import { matchListItem } from "@/shared/pantry";
 import {
   fullLayout,
   sectionTitle,
@@ -239,6 +243,9 @@ function ShoppingPage() {
   const [grouping, setGrouping] = useState<Grouping>(readGrouping);
   const [stores, setStores] = useState<Store[]>([]);
   const [storeId, setStoreId] = useState(readStoreId);
+  const [scanning, setScanning] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [savingDone, setSavingDone] = useState(false);
   const navigate = useNavigate();
   useTitle("Shopping list · Mise");
 
@@ -342,17 +349,43 @@ function ShoppingPage() {
     });
   };
 
-  const toPantry = async () => {
-    const result = await moveCheckedToPantry();
+  const finish = async (keep: { id: string; amount: string; unit: string }[]) => {
+    setSavingDone(true);
+    const result = await finishShopping(keep);
+    setSavingDone(false);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
+    setFinishing(false);
     setItems(result.value.shopping.filter((item) => !pendingRemovals.has(item.id)));
-    toast.success(
-      `Moved ${result.value.moved} ${result.value.moved === 1 ? "item" : "items"} to your pantry`,
-      { action: { label: "View", onClick: () => navigate("/pantry") } }
-    );
+    if (result.value.kept > 0)
+      toast.success(
+        `Added ${result.value.kept} ${result.value.kept === 1 ? "item" : "items"} to your pantry`,
+        { action: { label: "View", onClick: () => navigate("/pantry") } }
+      );
+    else toast.success("Cleared your basket");
+  };
+
+  // From the scanner: check an item off (never un-check it).
+  const checkOff = (item: ShoppingItem) => {
+    if (item.checked) return;
+    void toggle(item);
+  };
+
+  const addScanned = async (name: string) => {
+    const added = await addShoppingItem({ name });
+    if (!added.ok) {
+      toast.error(added.error);
+      return;
+    }
+    const match = matchListItem(name, added.value) ??
+      added.value.find((item) => !item.checked && item.name === name);
+    if (!match) {
+      apply(added);
+      return;
+    }
+    apply(await updateShoppingItem(match.id, { checked: true }));
   };
 
   const chooseGrouping = (value: Grouping) => {
@@ -414,6 +447,12 @@ function ShoppingPage() {
           {total > 0 && (
             <div className="flex flex-wrap gap-2">
               {open.length > 0 && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setScanning(true)}>
+                  <ScanLineIcon data-icon="inline-start" />
+                  Scan
+                </Button>
+              )}
+              {open.length > 0 && (
                 <Button type="button" variant="outline" size="sm" onClick={() => void shareList()}>
                   {canShare ? (
                     <Share2Icon data-icon="inline-start" />
@@ -424,14 +463,9 @@ function ShoppingPage() {
                 </Button>
               )}
               {done.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => apply(await clearShopping("checked"))}
-                >
+                <Button type="button" size="sm" onClick={() => setFinishing(true)}>
                   <CheckIcon data-icon="inline-start" />
-                  Clear checked
+                  Done shopping
                 </Button>
               )}
               <Button
@@ -490,8 +524,7 @@ function ShoppingPage() {
         <div className="space-y-3 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <h2 className="text-base font-medium">Your list is empty</h2>
           <p className="text-sm text-muted-foreground">
-            Add items above, or use “Shopping list” on a recipe or on this
-            week’s meal plan. Matching ingredients are added together.
+            Add items above, or send them from a recipe or the meal plan.
           </p>
           <div className="flex justify-center gap-2">
             <Button asChild variant="outline">
@@ -588,9 +621,9 @@ function ShoppingPage() {
               In the basket
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void toPantry()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setFinishing(true)}>
               <PackageOpenIcon data-icon="inline-start" />
-              Move to pantry
+              Done shopping
             </Button>
           </div>
           <ul className="divide-y overflow-hidden rounded-xl bg-card/60 ring-1 ring-foreground/10">
@@ -607,6 +640,24 @@ function ShoppingPage() {
             </AnimatePresence>
           </ul>
         </section>
+      )}
+
+      {scanning && (
+        <BarcodeScanner
+          items={items ?? []}
+          onClose={() => setScanning(false)}
+          onCheck={checkOff}
+          onAdd={addScanned}
+        />
+      )}
+
+      {finishing && done.length > 0 && (
+        <DoneShopping
+          items={done}
+          pending={savingDone}
+          onCancel={() => setFinishing(false)}
+          onSave={(keep) => void finish(keep)}
+        />
       )}
 
       <Dialog open={confirmClear} onOpenChange={setConfirmClear}>

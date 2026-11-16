@@ -78,8 +78,7 @@ function ShareRecipe({
         <DialogHeader>
           <DialogTitle>Share {title}</DialogTitle>
           <DialogDescription>
-            Anyone with the link can read this recipe without an account, even
-            if it is private. They cannot edit it or see anything else.
+            Anyone with the link can view this recipe. No account needed.
           </DialogDescription>
         </DialogHeader>
         {token ? (
