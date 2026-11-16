@@ -29,6 +29,7 @@ import {
   cachedRecipe,
   createRecipe,
   discardUpload,
+  aiRecipeFromUrl,
   getRecipe,
   importRecipe,
   updateRecipe,
@@ -193,6 +194,11 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const [params, setParams] = useSearchParams();
   const importUrl = recipe ? null : params.get("import");
   const [importing, setImporting] = useState<string | null>(importUrl);
+  // Read inside the import effect without restarting it when it loads.
+  const aiRef = useRef(ai);
+  useEffect(() => {
+    aiRef.current = ai;
+  }, [ai]);
   useEffect(() => {
     if (!importUrl) return;
     let active = true;
@@ -200,7 +206,23 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
       if (!active) return;
       setImporting(null);
       if (result.ok) fillFrom(result.value);
-      else toast.error(result.error);
+      else
+        toast.error(result.error, {
+          duration: 10_000,
+          action: aiRef.current
+            ? {
+                label: "Try with Claude",
+                onClick: () => {
+                  setImporting(importUrl);
+                  void aiRecipeFromUrl(importUrl).then((retry) => {
+                    setImporting(null);
+                    if (retry.ok) fillFrom(retry.value);
+                    else toast.error(retry.error);
+                  });
+                },
+              }
+            : undefined,
+        });
       setParams(
         (current) => {
           const next = new URLSearchParams(current);

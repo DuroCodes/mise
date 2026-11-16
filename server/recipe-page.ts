@@ -455,12 +455,19 @@ export const parseRecipeHtml = (
 ): { ok: true; recipe: RecipeInput } | { ok: false; error: string } => {
   const found: Record<string, unknown>[] = [];
   const pattern =
-    /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    /<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
   for (const match of html.matchAll(pattern)) {
-    try {
-      collectRecipes(JSON.parse(decode(match[1] ?? "").trim()), found);
-    } catch {
-      continue;
+    const raw = (match[1] ?? "").trim();
+    // Parse the JSON as published first. Decoding HTML entities up front
+    // turns an escaped &quot; inside a string into a bare quote and breaks
+    // valid JSON, so only fall back to decoding for pages that need it.
+    for (const text of [raw, decode(raw).trim()]) {
+      try {
+        collectRecipes(JSON.parse(text), found);
+        break;
+      } catch {
+        continue;
+      }
     }
   }
 

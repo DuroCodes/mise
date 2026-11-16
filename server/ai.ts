@@ -162,6 +162,53 @@ export const extractRecipe = async (input: {
   }
 };
 
+const urlPrompt = `${extractionPrompt}
+Fetch the page at the URL the user gives you with the web_fetch tool, then reply with only a JSON object in a \`\`\`json code block with exactly these fields: found, title, description, prepMinutes, cookMinutes, servings, tags, ingredients (objects with amount, unit, name, note), instructions (strings).`;
+
+/** Reads a recipe page through Claude, for sites that refuse direct imports. */
+export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>> => {
+  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: url }];
+  try {
+    for (let round = 0; round < 4; round += 1) {
+      const response = await anthropic().beta.messages.create({
+        model: model(),
+        max_tokens: 16000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        output_config: { effort: "medium" },
+        system: urlPrompt,
+        tools: [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: 2 }],
+        messages,
+      });
+      if (response.stop_reason === "pause_turn") {
+        messages.push({ role: "assistant", content: response.content });
+        continue;
+      }
+      if (response.stop_reason === "refusal")
+        return { ok: false, error: "Claude declined to read that page" };
+      const text = response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("\n");
+      const json = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+      let raw: unknown;
+      try {
+        raw = JSON.parse(json.trim());
+      } catch {
+        return { ok: false, error: "Claude couldn't read a recipe from that page" };
+      }
+      const parsed = extracted.safeParse(raw);
+      const recipe = parsed.success ? toRecipeInput(parsed.data) : null;
+      if (!recipe) return { ok: false, error: "Claude couldn't find a recipe on that page" };
+      return { ok: true, value: { ...recipe, sourceUrl: url } };
+    }
+    return { ok: false, error: "That took too long. Try again." };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
 const photoItems = z.object({
   items: z.array(z.object({ name: z.string(), amount: z.string(), unit: z.string() })),
 });

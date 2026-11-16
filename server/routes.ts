@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isoDay } from "../src/shared/recipe";
+import { httpUrl, isoDay } from "../src/shared/recipe";
 import {
   aiEnabled,
   aiImageTypes,
@@ -7,6 +7,7 @@ import {
   extractRecipe,
   findRecipes,
   readPantryPhoto,
+  recipeFromUrl,
 } from "./ai";
 import {
   addToPantry,
@@ -728,6 +729,15 @@ export const registerRoutes = (api: Api) => {
     if (!body.trim() && !image)
       return c.json({ error: "Paste a recipe or add a photo" }, 400);
     const result = await extractRecipe({ text: body, image });
+    if (!result.ok) return c.json({ error: result.error }, 502);
+    return c.json({ ...result.value, visibility: "private" });
+  });
+
+  api.post("/ai/recipe-from-url", async (c) => {
+    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    const parsed = z.object({ url: httpUrl }).safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Paste a public http(s) recipe link" }, 400);
+    const result = await recipeFromUrl(parsed.data.url);
     if (!result.ok) return c.json({ error: result.error }, 502);
     return c.json({ ...result.value, visibility: "private" });
   });

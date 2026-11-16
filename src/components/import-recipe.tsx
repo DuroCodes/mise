@@ -1,4 +1,4 @@
-import { Link2Icon } from "lucide-react";
+import { Link2Icon, SparklesIcon } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { importRecipe } from "@/lib/api";
+import { aiRecipeFromUrl, importRecipe } from "@/lib/api";
 import { match } from "@/lib/result";
+import { useSession } from "@/lib/session-context";
 import type { RecipeInput } from "@/shared/recipe";
 
 function ImportRecipe({
@@ -25,6 +26,29 @@ function ImportRecipe({
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const { ai } = useSession();
+
+  const finish = (recipe: RecipeInput) => {
+    setUrl("");
+    setPending(false);
+    setFailedUrl(null);
+    setOpen(false);
+    onImported(recipe);
+  };
+
+  // Some sites refuse direct imports; Claude can often still read the page.
+  const tryClaude = async () => {
+    if (!failedUrl) return;
+    setPending(true);
+    setError(null);
+    const result = await aiRecipeFromUrl(failedUrl);
+    if (result.ok) finish(result.value);
+    else {
+      setError(result.error);
+      setPending(false);
+    }
+  };
 
   const submit = async (event?: SubmitEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -36,20 +60,13 @@ function ImportRecipe({
     }
     setPending(true);
     setError(null);
+    setFailedUrl(null);
     const result = await importRecipe(link);
-    match(
-      result,
-      (recipe) => {
-        setUrl("");
-        setPending(false);
-        setOpen(false);
-        onImported(recipe);
-      },
-      (message) => {
-        setError(message);
-        setPending(false);
-      }
-    );
+    match(result, finish, (message) => {
+      setError(message);
+      setPending(false);
+      if (/^https?:\/\//i.test(link)) setFailedUrl(link);
+    });
   };
 
   return (
@@ -91,6 +108,12 @@ function ImportRecipe({
               <p className="text-sm text-destructive" role="alert">
                 {error}
               </p>
+            )}
+            {error && failedUrl && ai && (
+              <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => void tryClaude()}>
+                <SparklesIcon data-icon="inline-start" />
+                {pending ? "Reading" : "Try with Claude"}
+              </Button>
             )}
           </div>
           <DialogFooter>
