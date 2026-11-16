@@ -7,6 +7,7 @@ const examples: RecipeInput[] = [
     description:
       "Pecorino, black pepper, and pasta water. Take the pan off the heat before the cheese goes in so the sauce stays silky.",
     image: null,
+    sourceUrl: null,
     prepMinutes: 10,
     cookMinutes: 15,
     servings: 4,
@@ -54,6 +55,7 @@ const examples: RecipeInput[] = [
     title: "Shakshuka",
     description: "Eggs poached in a skillet of pepper, cumin, and tomatoes.",
     image: null,
+    sourceUrl: null,
     prepMinutes: 10,
     cookMinutes: 25,
     servings: 4,
@@ -95,6 +97,7 @@ const examples: RecipeInput[] = [
     title: "Miso soup",
     description: "Dashi, soft tofu, and wakame. Keep the miso below a boil.",
     image: null,
+    sourceUrl: null,
     prepMinutes: 10,
     cookMinutes: 10,
     servings: 4,

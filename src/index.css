@@ -141,6 +141,32 @@
   }
 }
 
+@media print {
+  @page {
+    margin: 14mm 16mm;
+  }
+  :root,
+  .dark {
+    --background: #fff;
+    --foreground: #111;
+    --card: #fff;
+    --muted: #f2f2f2;
+    --muted-foreground: #555;
+    --border: #ccc;
+    --brand: #111;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

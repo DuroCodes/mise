@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { HeartMark } from "@/components/heart-mark";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { AiRecipe } from "@/components/ai-recipe";
 import { ImportRecipe } from "@/components/import-recipe";
 import {
   IngredientList,
@@ -33,6 +34,7 @@ import {
   uploadImage,
 } from "@/lib/api";
 import { match } from "@/lib/result";
+import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 import { NotFoundPage } from "@/pages/not-found";
 import { easeOut } from "@/lib/motion";
@@ -43,6 +45,7 @@ type Draft = {
   title: string;
   description: string;
   image: string;
+  sourceUrl: string;
   prepMinutes: string;
   cookMinutes: string;
   servings: string;
@@ -65,6 +68,7 @@ const draftFrom = (recipe: Recipe | null): Draft => ({
   title: recipe?.title ?? "",
   description: recipe?.description ?? "",
   image: recipe?.image ?? "",
+  sourceUrl: recipe?.sourceUrl ?? "",
   prepMinutes: recipe?.prepMinutes?.toString() ?? "",
   cookMinutes: recipe?.cookMinutes?.toString() ?? "",
   servings: recipe?.servings?.toString() ?? "",
@@ -145,6 +149,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState(() => draftFrom(recipe));
+  const { ai } = useSession();
   const [tagDraft, setTagDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -152,6 +157,35 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
 
   const patch = (next: Partial<Draft>) =>
     setDraft((current) => ({ ...current, ...next }));
+
+  const fillFrom = (imported: RecipeInput) => {
+    setErrors({});
+    setDraft({
+      title: imported.title,
+      description: imported.description,
+      image: imported.image ?? "",
+      sourceUrl: imported.sourceUrl ?? "",
+      prepMinutes: imported.prepMinutes?.toString() ?? "",
+      cookMinutes: imported.cookMinutes?.toString() ?? "",
+      servings: imported.servings?.toString() ?? "",
+      favorite: false,
+      visibility: "private",
+      tags: imported.tags,
+      ingredients: imported.ingredients.length
+        ? imported.ingredients.map((item) => ({
+            key: crypto.randomUUID(),
+            ...item,
+            unit: unitValue(item.unit),
+          }))
+        : [emptyIngredient()],
+      instructions: imported.instructions.length
+        ? imported.instructions.map((item) => ({
+            key: crypto.randomUUID(),
+            text: item.text,
+          }))
+        : [{ key: crypto.randomUUID(), text: "" }],
+    });
+  };
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -210,6 +244,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
       title: draft.title,
       description: draft.description,
       image: draft.image.trim() || null,
+      sourceUrl: draft.sourceUrl.trim() || null,
       prepMinutes: Number.isNaN(prepMinutes) ? null : prepMinutes,
       cookMinutes: Number.isNaN(cookMinutes) ? null : cookMinutes,
       servings: Number.isNaN(servings) ? null : servings,
@@ -252,37 +287,8 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
           {recipe ? "Edit recipe" : "New recipe"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          {!recipe && (
-            <ImportRecipe
-              onImported={(imported: RecipeInput) => {
-                setErrors({});
-                setDraft({
-                  title: imported.title,
-                  description: imported.description,
-                  image: imported.image ?? "",
-                  prepMinutes: imported.prepMinutes?.toString() ?? "",
-                  cookMinutes: imported.cookMinutes?.toString() ?? "",
-                  servings: imported.servings?.toString() ?? "",
-                  favorite: false,
-                  visibility: "private",
-                  tags: imported.tags,
-                  ingredients: imported.ingredients.length
-                    ? imported.ingredients.map((item) => ({
-                        key: crypto.randomUUID(),
-                        ...item,
-                        unit: unitValue(item.unit),
-                      }))
-                    : [emptyIngredient()],
-                  instructions: imported.instructions.length
-                    ? imported.instructions.map((item) => ({
-                        key: crypto.randomUUID(),
-                        text: item.text,
-                      }))
-                    : [{ key: crypto.randomUUID(), text: "" }],
-                });
-              }}
-            />
-          )}
+          {!recipe && <ImportRecipe onImported={fillFrom} />}
+          {!recipe && ai && <AiRecipe onImported={fillFrom} />}
           {(!recipe || recipe.ownerId) && (
             <Button
               type="button"
@@ -342,6 +348,21 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
             value={draft.description}
             onChange={(event) => patch({ description: event.target.value })}
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="source-url">Source link</Label>
+          <Input
+            id="source-url"
+            type="url"
+            inputMode="url"
+            value={draft.sourceUrl}
+            placeholder="https:// where the recipe came from"
+            aria-invalid={Boolean(errors.sourceUrl)}
+            onChange={(event) => patch({ sourceUrl: event.target.value })}
+          />
+          {errors.sourceUrl && (
+            <p className="text-sm text-destructive">{errors.sourceUrl}</p>
+          )}
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <CountField

@@ -215,7 +215,7 @@ export const parseIngredientLine = (raw: string): Ingredient | null => {
   };
 };
 
-const minutesOf = (value: unknown) => {
+export const minutesOf = (value: unknown) => {
   if (typeof value === "number" && Number.isFinite(value)) {
     const minutes = Math.round(value);
     return minutes >= 0 && minutes <= 1440 ? minutes : null;
@@ -332,7 +332,9 @@ const ingredientLines = (value: unknown) => {
   return lines;
 };
 
-const isRecipe = (value: unknown): value is Record<string, unknown> => {
+export const isRecipe = (
+  value: unknown
+): value is Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const type = (value as { "@type"?: unknown })["@type"];
   const types = Array.isArray(type) ? type : [type];
@@ -344,7 +346,10 @@ const isRecipe = (value: unknown): value is Record<string, unknown> => {
   );
 };
 
-const collectRecipes = (node: unknown, found: Record<string, unknown>[]) => {
+export const collectRecipes = (
+  node: unknown,
+  found: Record<string, unknown>[]
+) => {
   if (Array.isArray(node)) {
     for (const item of node) collectRecipes(item, found);
     return;
@@ -366,6 +371,83 @@ const pageTitle = (html: string) => {
   const heading = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const raw = plain(og?.[1] ?? swapped?.[1] ?? heading?.[1] ?? "");
   return raw.replace(/\s+[-|]\s+.*$/, "").trim();
+};
+
+const urlOf = (value: unknown): string | null => {
+  const candidates: unknown[] = Array.isArray(value) ? value : [value];
+  for (const candidate of candidates) {
+    const raw =
+      typeof candidate === "string"
+        ? candidate
+        : candidate && typeof candidate === "object"
+          ? ((candidate as Record<string, unknown>)["@id"] ??
+            (candidate as Record<string, unknown>).url)
+          : null;
+    if (typeof raw === "string" && /^https?:\/\//i.test(raw.trim())) {
+      const trimmed = raw.trim();
+      if (trimmed.length > 2000) continue;
+      try {
+        new URL(trimmed);
+        return trimmed;
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
+};
+
+/** Converts one schema.org Recipe object into mise's recipe shape. */
+export const recipeFromJsonLd = (
+  recipe: Record<string, unknown>,
+  fallbackTitle = ""
+): RecipeInput | null => {
+  const tags: string[] = [];
+  addTags(recipe.keywords, tags);
+  addTags(recipe.recipeCategory, tags);
+  addTags(recipe.recipeCuisine, tags);
+
+  const prepMinutes = minutesOf(recipe.prepTime);
+  const cookMinutes =
+    minutesOf(recipe.cookTime) ??
+    (prepMinutes === null ? minutesOf(recipe.totalTime) : null);
+
+  const fromRecipe =
+    plain(typeof recipe.headline === "string" ? recipe.headline : "") ||
+    plain(recipe.name);
+  const title =
+    fallbackTitle &&
+    fromRecipe &&
+    fallbackTitle.toLowerCase() === fromRecipe.toLowerCase()
+      ? fallbackTitle
+      : fromRecipe || fallbackTitle;
+
+  const parsed = recipeInput.safeParse({
+    title: clip(title, 200),
+    description: clip(plain(recipe.description), 4000),
+    image: imageOf(recipe.image),
+    sourceUrl: urlOf(recipe.url) ?? urlOf(recipe.mainEntityOfPage),
+    prepMinutes,
+    cookMinutes,
+    servings: servingsOf(recipe.recipeYield),
+    favorite: false,
+    tags: tags
+      .map((tag) => clip(plain(tag), 40))
+      .filter(Boolean)
+      .slice(0, 20),
+    ingredients: ingredientLines(recipe.recipeIngredient)
+      .map(parseIngredientLine)
+      .filter((item): item is Ingredient => Boolean(item))
+      .slice(0, 80),
+    instructions: stepsOf(recipe.recipeInstructions).map((text) => ({ text })),
+  });
+
+  if (
+    !parsed.success ||
+    (!parsed.data.ingredients.length && !parsed.data.instructions.length)
+  )
+    return null;
+  return parsed.data;
 };
 
 export const parseRecipeHtml = (
@@ -392,50 +474,8 @@ export const parseRecipeHtml = (
   if (!recipe)
     return { ok: false, error: "That page did not include a recipe" };
 
-  const tags: string[] = [];
-  addTags(recipe.keywords, tags);
-  addTags(recipe.recipeCategory, tags);
-  addTags(recipe.recipeCuisine, tags);
-
-  const prepMinutes = minutesOf(recipe.prepTime);
-  const cookMinutes =
-    minutesOf(recipe.cookTime) ??
-    (prepMinutes === null ? minutesOf(recipe.totalTime) : null);
-
-  const fromRecipe =
-    plain(typeof recipe.headline === "string" ? recipe.headline : "") ||
-    plain(recipe.name);
-  const fromPage = pageTitle(html);
-  const title =
-    fromPage &&
-    fromRecipe &&
-    fromPage.toLowerCase() === fromRecipe.toLowerCase()
-      ? fromPage
-      : fromRecipe || fromPage;
-
-  const parsed = recipeInput.safeParse({
-    title: clip(title, 200),
-    description: clip(plain(recipe.description), 4000),
-    image: imageOf(recipe.image),
-    prepMinutes,
-    cookMinutes,
-    servings: servingsOf(recipe.recipeYield),
-    favorite: false,
-    tags: tags
-      .map((tag) => clip(plain(tag), 40))
-      .filter(Boolean)
-      .slice(0, 20),
-    ingredients: ingredientLines(recipe.recipeIngredient)
-      .map(parseIngredientLine)
-      .filter((item): item is Ingredient => Boolean(item))
-      .slice(0, 80),
-    instructions: stepsOf(recipe.recipeInstructions).map((text) => ({ text })),
-  });
-
-  if (
-    !parsed.success ||
-    (!parsed.data.ingredients.length && !parsed.data.instructions.length)
-  )
+  const converted = recipeFromJsonLd(recipe, pageTitle(html));
+  if (!converted)
     return { ok: false, error: "That page did not include a recipe" };
-  return { ok: true, recipe: parsed.data };
+  return { ok: true, recipe: converted };
 };

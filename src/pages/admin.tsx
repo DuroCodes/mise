@@ -7,6 +7,8 @@ import {
   PencilIcon,
   TrashIcon,
 } from "lucide-react";
+import { BackupPanel } from "@/components/backup-panel";
+import { InvitePanel } from "@/components/invite-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -318,6 +320,10 @@ function AdminPage({ selfId }: { selfId: string }) {
           </TableBody>
         </Table>
       </section>
+
+      <InvitePanel />
+
+      <BackupPanel />
 
       <Dialog
         open={adding}

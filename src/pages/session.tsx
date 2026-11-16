@@ -1,14 +1,15 @@
 import { UtensilsCrossedIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState, type ReactNode, type SubmitEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { setupNeeded } from "@/lib/api";
+import { acceptInvite, describeInvite, setupNeeded } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { easeOut } from "@/lib/motion";
+import { clearOfflineData } from "@/lib/offline";
 import { useTitle } from "@/lib/use-title";
 
 function AccountShell({
@@ -155,6 +156,7 @@ function LoginPage() {
     event.preventDefault();
     setPending(true);
     setError(null);
+    await clearOfflineData();
     const result = await authClient.signIn.email({ email, password });
     if (result.error) {
       setError(result.error.message ?? "Could not sign in");
@@ -200,4 +202,160 @@ function LoginPage() {
   );
 }
 
-export { LoginPage, SetupPage };
+function InvitePage() {
+  const { token = "" } = useParams();
+  const navigate = useNavigate();
+  const session = authClient.useSession();
+  const [invite, setInvite] = useState<
+    "loading" | "invalid" | { inviterName: string | null }
+  >("loading");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  useTitle("Join Mise");
+
+  useEffect(() => {
+    let active = true;
+    describeInvite(token).then((result) => {
+      if (!active) return;
+      setInvite(result.ok ? { inviterName: result.value.inviterName } : "invalid");
+    });
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      setError("Add your name and email");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Use a password of at least 8 characters");
+      return;
+    }
+    setPending(true);
+    setError(null);
+    const created = await acceptInvite(token, {
+      name: name.trim(),
+      email: email.trim(),
+      password,
+    });
+    if (!created.ok) {
+      setError(created.error);
+      setPending(false);
+      return;
+    }
+    await clearOfflineData();
+    const signedIn = await authClient.signIn.email({
+      email: email.trim(),
+      password,
+    });
+    if (signedIn.error) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  };
+
+  if (invite === "loading" || session.isPending)
+    return (
+      <AccountShell title="Join Mise" lede="Checking your invite…">
+        <span />
+      </AccountShell>
+    );
+
+  if (invite === "invalid")
+    return (
+      <AccountShell
+        title="This invite doesn't work"
+        lede="It may have expired or already been used. Ask the person who sent it for a new link."
+      >
+        <Button asChild variant="outline">
+          <Link to="/login">Sign in instead</Link>
+        </Button>
+      </AccountShell>
+    );
+
+  if (session.data)
+    return (
+      <AccountShell
+        title="You're already signed in"
+        lede={`You're signed in as ${session.data.user.email}. Sign out to use this invite for a new account.`}
+      >
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link to="/">Go to recipes</Link>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              await clearOfflineData();
+              await authClient.signOut();
+            }}
+          >
+            Sign out
+          </Button>
+        </div>
+      </AccountShell>
+    );
+
+  return (
+    <AccountShell
+      title="Join Mise"
+      lede={
+        invite.inviterName
+          ? `${invite.inviterName} invited you to share recipes, meal plans, and shopping lists.`
+          : "You're invited to share recipes, meal plans, and shopping lists."
+      }
+    >
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={name}
+            maxLength={80}
+            autoComplete="name"
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            autoComplete="email"
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            autoComplete="new-password"
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+        </div>
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        <Button type="submit" disabled={pending}>
+          {pending ? "Creating your account" : "Create account"}
+        </Button>
+      </form>
+    </AccountShell>
+  );
+}
+
+export { InvitePage, LoginPage, SetupPage };

@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { ArrowDownUpIcon, FileUpIcon, SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -6,6 +6,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listRecipes } from "@/lib/api";
+import { totalMinutes } from "@/lib/format";
 import { easeIn, easeOut } from "@/lib/motion";
 import { useTitle } from "@/lib/use-title";
 import type { Recipe } from "@/shared/recipe";
@@ -24,6 +25,10 @@ const matches = (
     return false;
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
+  return searchable(recipe).includes(needle);
+};
+
+const searchable = (recipe: Recipe) => {
   const haystack = [
     recipe.title,
     recipe.description,
@@ -35,7 +40,56 @@ const matches = (
   ]
     .join("\n")
     .toLowerCase();
-  return haystack.includes(needle);
+  return haystack;
+};
+
+const sorts = [
+  { id: "updated", label: "Recently updated" },
+  { id: "newest", label: "Newest" },
+  { id: "az", label: "A to Z" },
+  { id: "quickest", label: "Quickest" },
+  { id: "cooked", label: "Recently cooked" },
+  { id: "rated", label: "Top rated" },
+] as const;
+
+type SortId = (typeof sorts)[number]["id"];
+
+const isSort = (value: string | null): value is SortId =>
+  sorts.some((sort) => sort.id === value);
+
+const last = Number.POSITIVE_INFINITY;
+
+const sortRecipes = (list: Recipe[], sort: SortId) => {
+  const sorted = [...list];
+  const byTitle = (a: Recipe, b: Recipe) => a.title.localeCompare(b.title);
+  switch (sort) {
+    case "newest":
+      return sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    case "az":
+      return sorted.sort(byTitle);
+    case "quickest":
+      return sorted.sort(
+        (a, b) =>
+          (totalMinutes(a.prepMinutes, a.cookMinutes) ?? last) -
+            (totalMinutes(b.prepMinutes, b.cookMinutes) ?? last) ||
+          byTitle(a, b)
+      );
+    case "cooked":
+      return sorted.sort(
+        (a, b) =>
+          (b.lastCooked ?? "").localeCompare(a.lastCooked ?? "") ||
+          byTitle(a, b)
+      );
+    case "rated":
+      return sorted.sort(
+        (a, b) =>
+          (b.rating.average ?? -1) - (a.rating.average ?? -1) ||
+          b.rating.count - a.rating.count ||
+          byTitle(a, b)
+      );
+    default:
+      return sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
 };
 
 function LibraryPage() {
@@ -47,6 +101,8 @@ function LibraryPage() {
   const query = params.get("q") ?? "";
   const tag = params.get("tag") ?? "";
   const favorites = params.get("favorite") === "1";
+  const sortParam = params.get("sort");
+  const sort: SortId = isSort(sortParam) ? sortParam : "updated";
 
   useEffect(() => {
     let active = true;
@@ -72,8 +128,9 @@ function LibraryPage() {
   const tags = [
     ...new Set((recipes ?? []).flatMap((recipe) => recipe.tags)),
   ].sort((a, b) => a.localeCompare(b));
-  const shown = (recipes ?? []).filter((recipe) =>
-    matches(recipe, query, tag, favorites)
+  const shown = sortRecipes(
+    (recipes ?? []).filter((recipe) => matches(recipe, query, tag, favorites)),
+    sort
   );
   const filtering = Boolean(query.trim() || tag || favorites);
 
@@ -91,16 +148,43 @@ function LibraryPage() {
                   : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
             </p>
           </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/import">
+              <FileUpIcon data-icon="inline-start" />
+              Import
+            </Link>
+          </Button>
         </div>
-        <div className="relative max-w-md">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setFilter({ q: event.target.value })}
-            placeholder="Search titles, ingredients, steps"
-            aria-label="Search recipes"
-            className="pl-8"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-md">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setFilter({ q: event.target.value })}
+              placeholder="Search titles, ingredients, steps"
+              aria-label="Search recipes"
+              className="pl-8"
+            />
+          </div>
+          <div className="relative">
+            <select
+              aria-label="Sort recipes"
+              value={sort}
+              onChange={(event) =>
+                setFilter({
+                  sort: event.target.value === "updated" ? null : event.target.value,
+                })
+              }
+              className="h-8 appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            >
+              {sorts.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ArrowDownUpIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

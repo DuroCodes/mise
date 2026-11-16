@@ -153,7 +153,11 @@ export const importRecipeFromUrl = async (raw: string) => {
           error: parsed.error,
           status: 404 as const,
         };
-      return { ok: true as const, recipe: parsed.recipe };
+      return {
+        ok: true as const,
+        recipe: parsed.recipe,
+        url: current.toString(),
+      };
     }
   } catch {
     return {

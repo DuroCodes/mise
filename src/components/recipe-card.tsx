@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { HeartMark } from "@/components/heart-mark";
+import { Stars } from "@/components/star-rating";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { setFavorite } from "@/lib/api";
@@ -67,6 +68,14 @@ function RecipeCard({
                 .filter(Boolean)
                 .join(" · ") || "No time set"}
             </p>
+            {recipe.rating.average !== null && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Stars value={recipe.rating.average} />
+                <span className="sr-only">Rated</span>
+                {recipe.rating.average.toFixed(1)}
+                <span className="sr-only">out of 5</span>
+              </p>
+            )}
           </div>
           {recipe.tags.length > 0 && (
             <div className="mt-auto flex flex-wrap gap-1.5">

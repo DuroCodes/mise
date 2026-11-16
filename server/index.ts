@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Hono } from "hono";
 import { serveStatic } from "@hono/bun";
+import { bodyLimit } from "hono/body-limit";
 import { recipeInput } from "../src/shared/recipe";
 import { auth, sessionUser, withSignup, type SessionUser } from "./auth";
 import {
@@ -24,7 +25,17 @@ import {
   dataDir,
 } from "./db";
 import { importRecipeFromUrl } from "./fetch-recipe";
+import {
+  acceptInvite,
+  createInvite,
+  describeInvite,
+  listInvites,
+  revokeInvite,
+} from "./invites";
+import { registerRoutes } from "./routes";
 import { seedIfEmpty } from "./seed";
+import { sharedRecipe } from "./social";
+import { imageExtension } from "./uploads";
 
 seedIfEmpty();
 
@@ -47,9 +58,33 @@ const readJson = async (request: Request) => {
 
 const api = new Hono<{ Variables: { user: SessionUser } }>();
 
+const megabytes = (count: number) => count * 1024 * 1024;
+
+/** Largest request body each route accepts; most only take small JSON. */
+const bodyCap = (path: string) => {
+  if (path === "/api/admin/restore") return megabytes(512);
+  if (path === "/api/import/file") return megabytes(101);
+  if (path === "/api/uploads") return megabytes(9);
+  if (path === "/api/ai/recipe") return megabytes(6);
+  return megabytes(1);
+};
+
+api.use("*", (c, next) =>
+  bodyLimit({
+    maxSize: bodyCap(new URL(c.req.url).pathname),
+    onError: (context) => context.json({ error: "That is too large" }, 413),
+  })(c, next)
+);
+
 api.use("*", async (c, next) => {
   const path = new URL(c.req.url).pathname;
-  if (path === "/api/health" || path === "/api/setup") return next();
+  if (
+    path === "/api/health" ||
+    path === "/api/setup" ||
+    path.startsWith("/api/share/") ||
+    path.startsWith("/api/invite/")
+  )
+    return next();
   const current = await sessionUser(c.req.raw.headers);
   if (!current) return c.json({ error: "Sign in first" }, 401);
   c.set("user", current);
@@ -59,6 +94,66 @@ api.use("*", async (c, next) => {
 api.get("/health", (c) => c.json({ ok: true }));
 
 api.get("/setup", (c) => c.json({ needed: countUsers() === 0 }));
+
+api.get("/share/:token", (c) => {
+  const recipe = sharedRecipe(c.req.param("token"));
+  if (!recipe) return c.json({ error: "This link no longer works" }, 404);
+  c.header("cache-control", "no-store");
+  c.header("x-robots-tag", "noindex");
+  return c.json(recipe);
+});
+
+api.get("/invite/:token", (c) => {
+  const invite = describeInvite(c.req.param("token"));
+  c.header("cache-control", "no-store");
+  c.header("x-robots-tag", "noindex");
+  if (!invite)
+    return c.json(
+      { error: "This invite link has expired or was already used" },
+      404
+    );
+  return c.json(invite);
+});
+
+api.post("/invite/:token", async (c) => {
+  const parsed = accountInput.safeParse(await readJson(c.req.raw));
+  if (!parsed.success)
+    return c.json(
+      { error: "Use a name, email, and a password of at least 8 characters" },
+      400
+    );
+  const result = await acceptInvite(c.req.param("token"), parsed.data);
+  if (!result.ok) return c.json({ error: result.error }, result.status);
+  return c.json(null, 201);
+});
+
+api.get("/invites", (c) => {
+  if (c.get("user").role !== "admin")
+    return c.json({ error: "An admin has to do that" }, 403);
+  return c.json(listInvites());
+});
+
+api.post("/invites", async (c) => {
+  if (c.get("user").role !== "admin")
+    return c.json({ error: "An admin has to do that" }, 403);
+  const parsed = z
+    .object({
+      note: z.string().trim().max(80).default(""),
+      days: z.union([z.literal(1), z.literal(7), z.literal(30)]).default(7),
+    })
+    .safeParse(await readJson(c.req.raw));
+  if (!parsed.success) return c.json({ error: "Check the invite" }, 400);
+  createInvite(c.get("user").id, parsed.data.note, parsed.data.days);
+  return c.json(listInvites(), 201);
+});
+
+api.delete("/invites/:id", (c) => {
+  if (c.get("user").role !== "admin")
+    return c.json({ error: "An admin has to do that" }, 403);
+  if (!revokeInvite(c.req.param("id")))
+    return c.json({ error: "Invite not found" }, 404);
+  return c.json(listInvites());
+});
 
 api.get("/me", (c) => c.json(c.get("user")));
 
@@ -115,7 +210,11 @@ api.post("/import", async (c) => {
   const url = typeof body?.url === "string" ? body.url : "";
   const imported = await importRecipeFromUrl(url);
   if (!imported.ok) return c.json({ error: imported.error }, imported.status);
-  return c.json({ ...imported.recipe, visibility: "private" });
+  return c.json({
+    ...imported.recipe,
+    sourceUrl: imported.url.length <= 2000 ? imported.url : imported.recipe.sourceUrl,
+    visibility: "private",
+  });
 });
 
 api.get("/users", (c) => {
@@ -223,16 +322,7 @@ api.post("/uploads", async (c) => {
   if (file.size > 8 * 1024 * 1024)
     return c.json({ error: "Image must be under 8MB" }, 400);
 
-  const extension =
-    file.type === "image/png"
-      ? "png"
-      : file.type === "image/webp"
-        ? "webp"
-        : file.type === "image/gif"
-          ? "gif"
-          : file.type === "image/avif"
-            ? "avif"
-            : "jpg";
+  const extension = imageExtension(file.type);
 
   const name = `${crypto.randomUUID()}.${extension}`;
   await Bun.write(`${uploadDir}/${name}`, file);
@@ -250,6 +340,15 @@ api.delete("/uploads", async (c) => {
   return c.json(null);
 });
 
+registerRoutes(api);
+
+app.use(
+  "/api/auth/*",
+  bodyLimit({
+    maxSize: megabytes(1),
+    onError: (context) => context.json({ error: "That is too large" }, 413),
+  })
+);
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 app.route("/api", api);
 app.use("/uploads/*", serveStatic({ root: dataDir }));
@@ -264,6 +363,7 @@ const port = Number(process.env.PORT ?? (production ? 3000 : 3001));
 
 export default {
   port,
-  hostname: "0.0.0.0",
+  hostname: process.env.HOST ?? "0.0.0.0",
+  maxRequestBodySize: 512 * 1024 * 1024,
   fetch: app.fetch,
 };
