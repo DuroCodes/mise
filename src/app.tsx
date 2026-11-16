@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { currentAccount, getFeatures, type Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { SessionContext } from "@/lib/session-context";
+import { themeIds } from "@/lib/themes";
 import { AdminPage } from "@/pages/admin";
 import { CollectionPage, CollectionsPage } from "@/pages/collections";
 import { CookPage } from "@/pages/cook";
@@ -22,6 +23,7 @@ import { EditorPage } from "@/pages/editor";
 import { ImportPage } from "@/pages/import";
 import { LibraryPage } from "@/pages/library";
 import { NotFoundPage } from "@/pages/not-found";
+import { PantryPage } from "@/pages/pantry";
 import { PlanPage } from "@/pages/plan";
 import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
@@ -106,6 +108,7 @@ function SignedInApp() {
           <Route path="/plan" element={<PlanPage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/stores" element={<StoresPage />} />
+          <Route path="/pantry" element={<PantryPage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:id" element={<CollectionPage />} />
           <Route path="/import" element={<ImportPage />} />
@@ -125,6 +128,7 @@ function App() {
   return (
     <ThemeProvider
       attribute="class"
+      themes={[...themeIds]}
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange

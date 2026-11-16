@@ -1,6 +1,21 @@
 import { z } from "zod";
 import { isoDay } from "../src/shared/recipe";
-import { aiEnabled, aiImageTypes, askAboutRecipe, extractRecipe } from "./ai";
+import {
+  aiEnabled,
+  aiImageTypes,
+  askAboutRecipe,
+  extractRecipe,
+  findRecipes,
+} from "./ai";
+import {
+  addToPantry,
+  listPantry,
+  missingFor,
+  moveCheckedToPantry,
+  pantrySuggestions,
+  removePantryItem,
+  updatePantryItem,
+} from "./pantry";
 import { isAdmin, readJson, type Api } from "./api";
 import { createBackupZip, restoreBackup } from "./backup";
 import {
@@ -214,6 +229,98 @@ export const registerRoutes = (api: Api) => {
     const userId = c.get("user").id;
     clearItems(userId, parsed.data.which);
     return c.json(listShopping(userId));
+  });
+
+  // Pantry ----------------------------------------------------------------------
+
+  const pantryFields = {
+    name: z.string().trim().min(1).max(200),
+    amount: z.string().trim().max(40),
+    unit: z.string().trim().max(40),
+    note: z.string().trim().max(200),
+    expiresOn: isoDay.nullable(),
+  };
+  const pantryInput = z.object({
+    name: pantryFields.name,
+    amount: pantryFields.amount.default(""),
+    unit: pantryFields.unit.default(""),
+    note: pantryFields.note.default(""),
+    expiresOn: pantryFields.expiresOn.default(null),
+  });
+  const pantryPatch = z.object(pantryFields).partial().strict();
+  const todayParam = (raw: string | undefined) => {
+    const parsed = isoDay.safeParse(raw);
+    return parsed.success ? parsed.data : new Date().toISOString().slice(0, 10);
+  };
+
+  api.get("/pantry", (c) => c.json(listPantry(c.get("user").id)));
+
+  api.post("/pantry", async (c) => {
+    const parsed = pantryInput.safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Name the item" }, 400);
+    const userId = c.get("user").id;
+    if (listPantry(userId).length >= 500)
+      return c.json({ error: "Your pantry is full (500 items)" }, 400);
+    addToPantry(userId, [parsed.data]);
+    return c.json(listPantry(userId), 201);
+  });
+
+  api.patch("/pantry/:id", async (c) => {
+    const parsed = pantryPatch.safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the item" }, 400);
+    const userId = c.get("user").id;
+    if (!updatePantryItem(userId, c.req.param("id"), parsed.data))
+      return c.json({ error: "Item not found" }, 404);
+    return c.json(listPantry(userId));
+  });
+
+  api.delete("/pantry/:id", (c) => {
+    const userId = c.get("user").id;
+    if (!removePantryItem(userId, c.req.param("id")))
+      return c.json({ error: "Item not found" }, 404);
+    return c.json(listPantry(userId));
+  });
+
+  api.post("/pantry/from-shopping", (c) => {
+    const userId = c.get("user").id;
+    const moved = moveCheckedToPantry(userId);
+    return c.json({ moved, pantry: listPantry(userId), shopping: listShopping(userId) });
+  });
+
+  api.get("/pantry/suggestions", (c) =>
+    c.json(pantrySuggestions(c.get("user").id, todayParam(c.req.query("today"))))
+  );
+
+  api.post("/shopping/missing", async (c) => {
+    const user = c.get("user");
+    const parsed = z
+      .object({ recipeId: z.string(), measure })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Pick a recipe" }, 400);
+    const recipe = getRecipe(parsed.data.recipeId, user.id, isAdmin(user));
+    if (!recipe) return c.json({ error: "Recipe not found" }, 404);
+    const missing = missingFor(user.id, recipe);
+    const lines = recipeLines(recipe, recipe.servings, parsed.data.measure).filter(
+      (_, index) => missing.has(recipe.ingredients[index]?.name ?? "")
+    );
+    if (lines.length === 0)
+      return c.json({ error: "You already have everything for this one" }, 400);
+    mergeLines(user.id, lines);
+    return c.json({ added: lines.length, shopping: listShopping(user.id) });
+  });
+
+  api.post("/ai/find-recipes", async (c) => {
+    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    const parsed = z
+      .object({ focus: z.string().trim().max(200).default("") })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Keep the request short" }, 400);
+    const pantry = listPantry(c.get("user").id).map((item) => item.name);
+    if (pantry.length === 0 && !parsed.data.focus)
+      return c.json({ error: "Add a few things to your pantry first" }, 400);
+    const result = await findRecipes(pantry, parsed.data.focus);
+    if (!result.ok) return c.json({ error: result.error }, 502);
+    return c.json(result.value);
   });
 
   // Stores ----------------------------------------------------------------------

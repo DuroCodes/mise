@@ -3,6 +3,7 @@ import {
   BookOpenIcon,
   FolderIcon,
   LogOutIcon,
+  PackageOpenIcon,
   PlusIcon,
   ShoppingBasketIcon,
   UtensilsCrossedIcon,
@@ -20,6 +21,7 @@ const links = [
   { to: "/", label: "Recipes", icon: BookOpenIcon, end: true },
   { to: "/plan", label: "Plan", icon: CalendarDaysIcon, end: false },
   { to: "/shopping", label: "Shopping", icon: ShoppingBasketIcon, end: false },
+  { to: "/pantry", label: "Pantry", icon: PackageOpenIcon, end: false },
   { to: "/collections", label: "Collections", icon: FolderIcon, end: false },
 ] as const;
 
@@ -107,7 +109,7 @@ function BottomNav() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden print:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {links.map((link) => (
           <li key={link.to}>
             <NavLink
@@ -115,7 +117,7 @@ function BottomNav() {
               end={link.end}
               className={({ isActive }) =>
                 cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 text-[0.7rem] font-medium outline-none focus-visible:bg-muted",
+                  "flex h-16 flex-col items-center justify-center gap-1 text-[0.68rem] font-medium outline-none focus-visible:bg-muted",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )
               }

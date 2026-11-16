@@ -14,6 +14,7 @@ import {
   mealPlan,
   ratings,
   recipes,
+  pantryItems,
   shoppingItems,
   stores,
   user,
@@ -155,6 +156,21 @@ export const exportData = () => {
         createdAt: stamp(row.createdAt),
         updatedAt: stamp(row.updatedAt),
       })),
+    pantry: db
+      .select()
+      .from(pantryItems)
+      .all()
+      .map((row) => ({
+        id: row.id,
+        userEmail: emailOf.get(row.userId) ?? null,
+        name: row.name,
+        amount: row.amount,
+        unit: row.unit,
+        note: row.note,
+        expiresOn: row.expiresOn,
+        createdAt: stamp(row.createdAt),
+        updatedAt: stamp(row.updatedAt),
+      })),
   };
 };
 
@@ -280,6 +296,21 @@ const backupSchema = z.object({
       })
     )
     .default([]),
+  pantry: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(64),
+        userEmail: email,
+        name: z.string().min(1).max(200),
+        amount: z.string().max(40),
+        unit: z.string().max(40),
+        note: z.string().max(200),
+        expiresOn: isoDay.nullable(),
+        createdAt: when,
+        updatedAt: when,
+      })
+    )
+    .default([]),
 });
 
 export type RestoreSummary = {
@@ -291,6 +322,7 @@ export type RestoreSummary = {
   mealPlan: number;
   shopping: number;
   stores: number;
+  pantry: number;
   skipped: number;
 };
 
@@ -360,6 +392,7 @@ export const restoreBackup = (
     mealPlan: 0,
     shopping: 0,
     stores: 0,
+    pantry: 0,
     skipped: 0,
   };
 
@@ -506,6 +539,20 @@ export const restoreBackup = (
         .onConflictDoNothing()
         .run();
       summary.stores += 1;
+    }
+
+    for (const row of backup.pantry) {
+      const userId = personFor(row.userEmail);
+      if (!userId) {
+        summary.skipped += 1;
+        continue;
+      }
+      const { userEmail: _email, ...values } = row;
+      tx.insert(pantryItems)
+        .values({ ...values, userId })
+        .onConflictDoNothing()
+        .run();
+      summary.pantry += 1;
     }
   });
 

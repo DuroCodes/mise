@@ -41,6 +41,9 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 - **cook mode**: a full-screen view that keeps the screen awake, with an ingredient checklist and one step at a time (arrow keys or swipe).
 - **timers**: durations in steps, like "simmer 10 minutes", become buttons that start a countdown and chime when done.
 - **shopping list**: add a recipe or a whole week of the meal plan. matching ingredients are added together, converting units when they are compatible.
+- **my stores**: save the stores you shop at with their sections in the order you walk them (and aisle numbers), then sort the shopping list into that route.
+- **pantry**: keep track of what you have, with use-by dates. tick things off the shopping list and move them in. "what can I make" ranks your recipes by what you already have and adds the missing items to your list, and claude (optional) can search the web for new recipes that use your pantry.
+- **themes**: light, paper, dark (neutral greys), black (true black for oled screens), espresso, or follow the system.
 - **meal plan**: a weekly planner. drag recipes onto days, or tap add on a phone.
 - **ratings and cooking log**: everyone rates recipes and logs when they cooked them, with notes.
 - **share links**: a read-only link to one recipe for someone without an account. it can be turned off at any time.

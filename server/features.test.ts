@@ -5,7 +5,8 @@ import { aisleFor } from "../src/shared/aisles";
 import { estimateNutrition, gramsFor, matchFood } from "../src/shared/nutrition";
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
-import { toRecipeInput } from "./ai";
+import { covers, isStaple, rankRecipes } from "../src/shared/pantry";
+import { parseFound, toRecipeInput } from "./ai";
 import {
   gunzipLimited,
   minutesFromText,
@@ -126,6 +127,82 @@ describe("store aisles", () => {
     expect(aisleFor("frozen corn")).toBe("Frozen");
     expect(aisleFor("Panko bread crumbs")).toBe("Pantry");
     expect(aisleFor("unobtainium")).toBe("Other");
+  });
+});
+
+describe("pantry matching", () => {
+  test("covers the right ingredients", () => {
+    expect(covers("eggs", "large eggs")).toBe(true);
+    expect(covers("onions", "yellow onion")).toBe(true);
+    expect(covers("chicken broth", "chicken stock")).toBe(true);
+    expect(covers("parmesan", "Parmigiano Reggiano")).toBe(true);
+    expect(covers("chicken", "chicken stock")).toBe(false);
+    expect(covers("garlic", "garlic powder")).toBe(false);
+    expect(covers("butter", "peanut butter")).toBe(false);
+    expect(covers("gochujang", "gochujang paste")).toBe(true);
+    expect(covers("", "eggs")).toBe(false);
+  });
+
+  test("ranks recipes and ignores staples and optional items", () => {
+    const soup = {
+      id: "soup",
+      ingredients: [
+        { name: "russet potatoes", note: "" },
+        { name: "chicken stock", note: "" },
+        { name: "heavy cream", note: "" },
+        { name: "salt and black pepper", note: "" },
+        { name: "green onions", note: "optional, for garnish" },
+      ],
+    };
+    const toast = {
+      id: "toast",
+      ingredients: [
+        { name: "bread", note: "" },
+        { name: "butter", note: "" },
+      ],
+    };
+    const unrelated = { id: "x", ingredients: [{ name: "lobster", note: "" }] };
+    const ranked = rankRecipes(
+      [soup, toast, unrelated],
+      [
+        { name: "potatoes", expiresOn: "2026-11-17" },
+        { name: "chicken broth", expiresOn: null },
+        { name: "bread", expiresOn: "2026-12-30" },
+        { name: "butter", expiresOn: null },
+      ],
+      "2026-11-16"
+    );
+    expect(ranked.map((match) => match.recipe.id)).toEqual(["toast", "soup"]);
+    expect(ranked[0]?.coverage).toBe(1);
+    const soupMatch = ranked[1];
+    expect(soupMatch?.have).toEqual(["russet potatoes", "chicken stock"]);
+    expect(soupMatch?.missing).toEqual(["heavy cream"]);
+    expect(soupMatch?.expiring).toEqual(["potatoes"]);
+    expect(isStaple("Salt and pepper")).toBe(true);
+  });
+});
+
+describe("Claude recipe search results", () => {
+  const searched = new Set([
+    "https://example.com/soup",
+    "https://www.recipes.test/toast",
+  ]);
+
+  test("keeps only links that came from the search", () => {
+    const text = 'Here you go:\n```json\n[{"title":"Soup","url":"https://example.com/soup/#top","why":"Uses potatoes","uses":["potatoes"]},{"title":"Made up","url":"https://invented.test/x","why":"","uses":[]},{"title":"Soup again","url":"https://example.com/soup","why":"","uses":[]},{"title":"Toast","url":"https://www.recipes.test/toast","uses":["bread"]}]\n```';
+    const found = parseFound(text, searched);
+    expect(found.map((item) => item.url)).toEqual([
+      "https://example.com/soup",
+      "https://www.recipes.test/toast",
+    ]);
+    expect(found[1]?.site).toBe("recipes.test");
+    expect(found[1]?.why).toBe("");
+  });
+
+  test("handles a bare array, bad JSON, and unsafe links", () => {
+    expect(parseFound('[{"title":"T","url":"https://example.com/soup"}]', searched)).toHaveLength(1);
+    expect(parseFound("no json here", searched)).toEqual([]);
+    expect(parseFound('[{"title":"x","url":"javascript:alert(1)"}]', new Set(["javascript:alert(1)"]))).toEqual([]);
   });
 });
 

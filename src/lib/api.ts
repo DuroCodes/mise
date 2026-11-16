@@ -504,6 +504,7 @@ const restoreSummarySchema = z.object({
   mealPlan: z.number(),
   shopping: z.number(),
   stores: z.number(),
+  pantry: z.number(),
   skipped: z.number(),
 });
 
@@ -519,6 +520,104 @@ export const restoreBackup = (file: File) => {
     { method: "POST", body }
   );
 };
+
+// Pantry ------------------------------------------------------------------------
+
+const pantryItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  amount: z.string(),
+  unit: z.string(),
+  note: z.string(),
+  expiresOn: z.string().nullable(),
+});
+
+export type PantryItem = z.infer<typeof pantryItemSchema>;
+const pantryList = z.array(pantryItemSchema);
+
+export const listPantry = () =>
+  zodFetch(pantryList, "Could not load your pantry", "/api/pantry");
+
+export const addPantryItem = (input: {
+  name: string;
+  amount?: string;
+  unit?: string;
+  note?: string;
+  expiresOn?: string | null;
+}) =>
+  zodFetch(pantryList, "Could not add that", "/api/pantry", {
+    method: "POST",
+    ...json(input),
+  });
+
+export const updatePantryItem = (
+  id: string,
+  patch: Partial<Omit<PantryItem, "id">>
+) =>
+  zodFetch(pantryList, "Could not update that", `/api/pantry/${id}`, {
+    method: "PATCH",
+    ...json(patch),
+  });
+
+export const removePantryItem = (id: string) =>
+  zodFetch(pantryList, "Could not remove that", `/api/pantry/${id}`, {
+    method: "DELETE",
+  });
+
+export const moveCheckedToPantry = () =>
+  zodFetch(
+    z.object({ moved: z.number(), pantry: pantryList, shopping: shoppingList }),
+    "Could not move those to your pantry",
+    "/api/pantry/from-shopping",
+    { method: "POST" }
+  );
+
+const suggestionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  image: z.string().nullable(),
+  prepMinutes: z.number().nullable(),
+  cookMinutes: z.number().nullable(),
+  have: z.array(z.string()),
+  missing: z.array(z.string()),
+  expiring: z.array(z.string()),
+  coverage: z.number(),
+});
+
+export type PantrySuggestion = z.infer<typeof suggestionSchema>;
+
+export const pantrySuggestions = (today: string) =>
+  zodFetch(
+    z.array(suggestionSchema),
+    "Could not load suggestions",
+    `/api/pantry/suggestions?today=${today}`
+  );
+
+export const addMissingToShopping = (recipeId: string, measure: Measure) =>
+  zodFetch(
+    z.object({ added: z.number(), shopping: shoppingList }),
+    "Could not add to the shopping list",
+    "/api/shopping/missing",
+    { method: "POST", ...json({ recipeId, measure }) }
+  );
+
+const foundRecipeSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  site: z.string(),
+  why: z.string(),
+  uses: z.array(z.string()),
+});
+
+export type FoundRecipe = z.infer<typeof foundRecipeSchema>;
+
+export const findRecipesWithClaude = (focus: string) =>
+  zodFetch(
+    z.array(foundRecipeSchema),
+    "Could not search for recipes",
+    "/api/ai/find-recipes",
+    { method: "POST", ...json({ focus }) }
+  );
 
 // Stores ------------------------------------------------------------------------
 

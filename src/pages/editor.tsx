@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { HeartMark } from "@/components/heart-mark";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AiRecipe } from "@/components/ai-recipe";
 import { ImportRecipe } from "@/components/import-recipe";
@@ -30,9 +30,11 @@ import {
   createRecipe,
   discardUpload,
   getRecipe,
+  importRecipe,
   updateRecipe,
   uploadImage,
 } from "@/lib/api";
+import { sourceHost } from "@/lib/view";
 import { match } from "@/lib/result";
 import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
@@ -187,6 +189,32 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     });
   };
 
+  // Opened from "Import" on a Claude search result: fill the form from that page.
+  const [params, setParams] = useSearchParams();
+  const importUrl = recipe ? null : params.get("import");
+  const [importing, setImporting] = useState<string | null>(importUrl);
+  useEffect(() => {
+    if (!importUrl) return;
+    let active = true;
+    importRecipe(importUrl).then((result) => {
+      if (!active) return;
+      setImporting(null);
+      if (result.ok) fillFrom(result.value);
+      else toast.error(result.error);
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete("import");
+          return next;
+        },
+        { replace: true }
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [importUrl, setParams]);
+
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setUploading(true);
@@ -282,6 +310,14 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
 
   return (
     <form onSubmit={save} className="space-y-8" noValidate>
+      {importing && (
+        <p
+          className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground"
+          aria-live="polite"
+        >
+          Importing the recipe from {sourceHost(importing)}…
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-medium tracking-tight">
           {recipe ? "Edit recipe" : "New recipe"}

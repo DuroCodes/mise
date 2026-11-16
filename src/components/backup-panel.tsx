@@ -36,8 +36,8 @@ function BackupPanel() {
       <div className="space-y-4 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
         <p className="leading-6 text-muted-foreground">
           A backup is a zip with every recipe, image, rating, cooking-log entry,
-          collection, meal plan, and shopping list, plus a full copy of the
-          database. The database copy includes accounts and password hashes,
+          collection, meal plan, shopping list, store, and pantry, plus a full
+          copy of the database. The database copy includes accounts and password hashes,
           so keep the file somewhere private.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -79,7 +79,8 @@ function BackupPanel() {
             Restored {summary.recipes} recipes, {summary.images} images,{" "}
             {summary.ratings} ratings, {summary.cookLogs} log entries,{" "}
             {summary.collections} collections, {summary.mealPlan} planned meals,
-            {summary.shopping} shopping items, and {summary.stores} stores.
+            {summary.shopping} shopping items, {summary.stores} stores, and{" "}
+            {summary.pantry} pantry items.
             {summary.skipped > 0 &&
               ` Skipped ${summary.skipped} rows for people without an account here.`}
           </p>

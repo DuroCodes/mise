@@ -327,3 +327,21 @@ export const stores = sqliteTable(
   },
   (table) => [index("stores_user_idx").on(table.userId)]
 );
+
+export const pantryItems = sqliteTable(
+  "pantry_items",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    amount: text("amount").notNull().default(""),
+    unit: text("unit").notNull().default(""),
+    note: text("note").notNull().default(""),
+    expiresOn: text("expires_on"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [index("pantry_items_user_idx").on(table.userId)]
+);

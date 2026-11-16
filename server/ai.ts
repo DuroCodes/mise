@@ -162,6 +162,126 @@ export const extractRecipe = async (input: {
   }
 };
 
+const foundSchema = z.array(
+  z.object({
+    title: z.string(),
+    url: z.string(),
+    why: z.string().default(""),
+    uses: z.array(z.string()).default([]),
+  })
+);
+
+export type FoundRecipe = {
+  title: string;
+  url: string;
+  site: string;
+  why: string;
+  uses: string[];
+};
+
+const normalizeUrl = (raw: string) => {
+  try {
+    const url = new URL(raw.trim());
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    url.hash = "";
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+};
+
+/** Pulls the JSON array out of the model's final text (a ```json block or a bare array). */
+export const parseFound = (text: string, searched: Set<string>): FoundRecipe[] => {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
+  const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
+  let raw: unknown;
+  try {
+    raw = JSON.parse((fenced ?? bare).trim());
+  } catch {
+    return [];
+  }
+  const parsed = foundSchema.safeParse(raw);
+  if (!parsed.success) return [];
+  const seen = new Set<string>();
+  const out: FoundRecipe[] = [];
+  for (const item of parsed.data) {
+    const url = normalizeUrl(item.url);
+    // Only links that actually came back from a search, so nothing is invented.
+    if (!url || !searched.has(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push({
+      title: clip(item.title, 200) || new URL(url).hostname,
+      url,
+      site: new URL(url).hostname.replace(/^www\./, ""),
+      why: clip(item.why, 300),
+      uses: item.uses.map((use) => clip(use, 60)).filter(Boolean).slice(0, 12),
+    });
+    if (out.length >= 6) break;
+  }
+  return out;
+};
+
+const findPrompt = `You find real recipes on the web for a home cook who wants to use what's in their pantry.
+Use web search. Pick individual recipe pages (not roundups or listicles) from sites that publish a full ingredient list, since each one will be imported into a recipe app.
+Prefer recipes that use several of the pantry items and need few extra ingredients.
+Finish with only a JSON array in a \`\`\`json code block, 3 to 6 items, each:
+{"title": "...", "url": "the exact page URL from your search results", "why": "one short sentence on why it fits", "uses": ["pantry items it uses"]}`;
+
+export const findRecipes = async (
+  pantry: string[],
+  focus: string
+): Promise<AiResult<FoundRecipe[]>> => {
+  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  const list = pantry.slice(0, 80).map((name) => `- ${name}`).join("\n");
+  const messages: Anthropic.Beta.BetaMessageParam[] = [
+    {
+      role: "user",
+      content: `<pantry>\n${list}\n</pantry>${focus.trim() ? `\n\nWhat I'm in the mood for: ${focus.trim()}` : ""}`,
+    },
+  ];
+  const searched = new Set<string>();
+
+  try {
+    for (let round = 0; round < 4; round += 1) {
+      const response = await anthropic().beta.messages.create({
+        model: model(),
+        max_tokens: 16000,
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        output_config: { effort: "medium" },
+        system: findPrompt,
+        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
+        messages,
+      });
+      for (const block of response.content) {
+        if (block.type !== "web_search_tool_result" || !Array.isArray(block.content))
+          continue;
+        for (const result of block.content) {
+          const url = normalizeUrl(result.url);
+          if (url) searched.add(url);
+        }
+      }
+      if (response.stop_reason === "pause_turn") {
+        messages.push({ role: "assistant", content: response.content });
+        continue;
+      }
+      if (response.stop_reason === "refusal")
+        return { ok: false, error: "Claude declined to search for that" };
+      const text = response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("\n");
+      const found = parseFound(text, searched);
+      if (found.length === 0)
+        return { ok: false, error: "Claude couldn't find recipes this time. Try again or change the focus." };
+      return { ok: true, value: found };
+    }
+    return { ok: false, error: "The search took too long. Try again." };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
 export const askAboutRecipe = async (
   recipe: Pick<Recipe, "title" | "servings" | "ingredients" | "instructions">,
   question: string
