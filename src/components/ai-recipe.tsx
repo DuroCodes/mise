@@ -93,6 +93,7 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
               value={text}
               rows={7}
               maxLength={60000}
+              className="max-h-[40svh] overflow-y-auto"
               placeholder="Paste the ingredients and steps"
               onChange={(event) => setText(event.target.value)}
             />
