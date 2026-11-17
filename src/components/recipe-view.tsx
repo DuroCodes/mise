@@ -1,4 +1,15 @@
-import { CarrotIcon, ChevronDownIcon, ExternalLinkIcon, ListOrderedIcon, LockIcon } from "lucide-react";
+import {
+  CarrotIcon,
+  ChevronDownIcon,
+  DropletIcon,
+  DrumstickIcon,
+  ExternalLinkIcon,
+  FlameIcon,
+  LeafIcon,
+  ListOrderedIcon,
+  LockIcon,
+  WheatIcon,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
@@ -67,18 +78,23 @@ function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
       </button>
       <div className={cn("space-y-3", open ? "block" : "hidden print:block")}>
         <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {[
-            ["Calories", `${Math.round(figures.kcal)}`],
-            ["Protein", `${round(figures.protein)} g`],
-            ["Carbs", `${round(figures.carbs)} g`],
-            ["Fat", `${round(figures.fat)} g`],
-            ["Fiber", `${round(figures.fiber)} g`],
-          ].map(([name, value]) => (
+          {(
+            [
+              [FlameIcon, "Calories", `${Math.round(figures.kcal)}`],
+              [DrumstickIcon, "Protein", `${round(figures.protein)} g`],
+              [WheatIcon, "Carbs", `${round(figures.carbs)} g`],
+              [DropletIcon, "Fat", `${round(figures.fat)} g`],
+              [LeafIcon, "Fiber", `${round(figures.fiber)} g`],
+            ] as const
+          ).map(([Icon, name, value]) => (
             <div
               key={name}
               className="rounded-lg bg-muted/60 px-3 py-2 print:bg-transparent print:px-0"
             >
-              <dt className="text-xs text-muted-foreground">{name}</dt>
+              <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Icon className="size-3.5 print:hidden" aria-hidden="true" />
+                {name}
+              </dt>
               <dd className="text-base font-medium tabular-nums">{value}</dd>
             </div>
           ))}
