@@ -4,6 +4,7 @@ import {
   DownloadIcon,
   KeyRoundIcon,
   Share2Icon,
+  SparklesIcon,
   SquarePlusIcon,
 } from "lucide-react";
 import {
@@ -36,7 +37,9 @@ import {
   updatePushPrefs,
   type PushPrefs,
 } from "@/lib/push";
+import { getUserSettings, updateUserSettings } from "@/lib/api";
 import { bookmarkletFor } from "@/lib/bookmarklet";
+import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 
 function Section({
@@ -361,6 +364,59 @@ function PasswordSection() {
   );
 }
 
+function AiSection() {
+  const { aiAvailable, refreshFeatures } = useSession();
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!aiAvailable) return;
+    let active = true;
+    getUserSettings().then((result) => {
+      if (!active) return;
+      if (result.ok) setEnabled(result.value.aiEnabled);
+      else toast.error(result.error);
+    });
+    return () => {
+      active = false;
+    };
+  }, [aiAvailable]);
+
+  if (!aiAvailable) return null;
+
+  const change = async (next: boolean) => {
+    setSaving(true);
+    setEnabled(next);
+    const result = await updateUserSettings({ aiEnabled: next });
+    setSaving(false);
+    if (!result.ok) {
+      setEnabled(!next);
+      toast.error(result.error);
+      return;
+    }
+    refreshFeatures();
+  };
+
+  return (
+    <Section
+      icon={<SparklesIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="AI features"
+    >
+      <Toggle
+        label="Use AI features"
+        hint={
+          enabled === false
+            ? "Off. The AI buttons are hidden and nothing of yours is sent to the AI provider."
+            : "Read recipes from photos, ask about substitutions, plan meals, and more. Only what you use them on is sent."
+        }
+        checked={enabled ?? true}
+        disabled={enabled === null || saving}
+        onChange={change}
+      />
+    </Section>
+  );
+}
+
 function SettingsPage() {
   useTitle("Settings · Mise");
   return (
@@ -369,6 +425,7 @@ function SettingsPage() {
       <InstallSection />
       <SendToMiseSection />
       <NotificationsSection />
+      <AiSection />
       <PasswordSection />
     </div>
   );

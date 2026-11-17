@@ -3,11 +3,20 @@ import { httpUrl, isoDay } from "../src/shared/recipe";
 import {
   aiEnabled,
   aiImageTypes,
+  aiProviders,
+  aiStatus,
   askAboutRecipe,
+  checkSetup,
+  defaultModel,
+  localDefaultUrl,
+  needsKey,
   extractRecipe,
   findRecipes,
+  planMeals,
   readPantryPhoto,
   recipeFromUrl,
+  savedKeyFor,
+  saveSetup,
 } from "./ai";
 import {
   addToPantry,
@@ -20,6 +29,7 @@ import {
   updatePantryItem,
 } from "./pantry";
 import { isAdmin, readJson, type Api } from "./api";
+import { getUserSettings, updateUserSettings } from "./user-settings";
 import { createBackupZip, restoreBackup } from "./backup";
 import {
   addToCollection,
@@ -31,7 +41,7 @@ import {
   removeFromCollection,
   updateCollection,
 } from "./collections";
-import { createRecipe, getRecipe, viewable } from "./db";
+import { createRecipe, getRecipe, listRecipes, viewable } from "./db";
 import {
   maxImportBytes,
   maxImportRecipes,
@@ -75,7 +85,34 @@ const measure = z.enum(["original", "metric", "imperial"]).default("original");
 const servings = z.number().int().min(1).max(999).nullable();
 
 export const registerRoutes = (api: Api) => {
-  api.get("/features", (c) => c.json({ ai: aiEnabled() }));
+  // aiAvailable: the server has a model set up. ai: this person also has AI
+  // turned on in their settings, so the AI buttons should show.
+  api.get("/features", (c) => {
+    const available = aiEnabled();
+    return c.json({
+      ai: available && getUserSettings(c.get("user").id).aiEnabled,
+      aiAvailable: available,
+    });
+  });
+
+  // People who turn AI off never have their recipes or pantry sent anywhere.
+  api.use("/ai/*", async (c, next) => {
+    if (!getUserSettings(c.get("user").id).aiEnabled)
+      return c.json({ error: "AI is turned off in your settings" }, 403);
+    return next();
+  });
+
+  api.get("/settings", (c) => c.json(getUserSettings(c.get("user").id)));
+
+  api.patch("/settings", async (c) => {
+    const parsed = z
+      .object({ aiEnabled: z.boolean() })
+      .partial()
+      .strict()
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the settings" }, 400);
+    return c.json(updateUserSettings(c.get("user").id, parsed.data));
+  });
 
   // Ratings and cooking log -------------------------------------------------
 
@@ -562,6 +599,11 @@ export const registerRoutes = (api: Api) => {
 
   // Meal plan -----------------------------------------------------------------
 
+  const shiftDay = (day: string, by: number) =>
+    new Date(Date.parse(`${day}T00:00:00Z`) + by * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+
   const dayRange = (from: string, to: string) => {
     const span =
       (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
@@ -614,6 +656,76 @@ export const registerRoutes = (api: Api) => {
     if (!removePlan(c.get("user").id, c.req.param("id")))
       return c.json({ error: "Plan entry not found" }, 404);
     return c.json(null);
+  });
+
+  // Suggests recipes for empty days and meals. Nothing is saved; the page adds
+  // the meals the cook keeps through POST /plan.
+  api.post("/ai/plan-week", async (c) => {
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
+    const parsed = z
+      .object({
+        today: isoDay,
+        fill: z
+          .array(
+            z.object({
+              day: isoDay,
+              slots: z.array(z.enum(slots)).min(1).max(slots.length),
+            })
+          )
+          .min(1)
+          .max(14),
+        notes: z.string().trim().max(500).default(""),
+      })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success)
+      return c.json({ error: "Pick the days and meals to plan" }, 400);
+    const user = c.get("user");
+    const recipes = listRecipes(user.id);
+    if (recipes.length === 0)
+      return c.json({ error: "Add a few recipes first" }, 400);
+    const days = parsed.data.fill.map((entry) => entry.day).sort();
+    const from = days[0] ?? parsed.data.today;
+    const to = days[days.length - 1] ?? parsed.data.today;
+    const planned = listPlan(
+      user.id,
+      shiftDay(from, -3),
+      shiftDay(to, 3),
+      isAdmin(user)
+    );
+    const result = await planMeals({
+      today: parsed.data.today,
+      recipes,
+      pantry: listPantry(user.id),
+      planned,
+      fill: parsed.data.fill.map((entry) => ({
+        day: entry.day,
+        slots: [...new Set(entry.slots)],
+      })),
+      notes: parsed.data.notes,
+    });
+    if (!result.ok) return c.json({ error: result.error }, 502);
+    const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+    return c.json({
+      summary: result.value.summary,
+      meals: result.value.meals.flatMap((meal) => {
+        const recipe = byId.get(meal.recipeId);
+        return recipe
+          ? [
+              {
+                ...meal,
+                title: recipe.title,
+                image: recipe.image,
+                servings: recipe.servings,
+                minutes:
+                  recipe.prepMinutes === null && recipe.cookMinutes === null
+                    ? null
+                    : (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0),
+              },
+            ]
+          : [];
+      }),
+    });
   });
 
   // Collections ---------------------------------------------------------------
@@ -789,7 +901,67 @@ export const registerRoutes = (api: Api) => {
     return c.json(result.summary);
   });
 
-  // Claude ------------------------------------------------------------------------
+  // AI ----------------------------------------------------------------------------
+
+  // The key itself never leaves the server; admins see its last four characters.
+  api.get("/admin/ai", (c) => {
+    if (!isAdmin(c.get("user")))
+      return c.json({ error: "An admin has to do that" }, 403);
+    return c.json(aiStatus());
+  });
+
+  api.put("/admin/ai", async (c) => {
+    if (!isAdmin(c.get("user")))
+      return c.json({ error: "An admin has to do that" }, 403);
+    const parsed = z
+      .object({
+        provider: z.enum(aiProviders),
+        model: z.string().trim().max(200).regex(/^\S*$/).default(""),
+        // Blank keeps the saved key for the same provider.
+        apiKey: z.string().trim().max(400).regex(/^\S*$/).default(""),
+        // Only used for a local server; blank means Ollama on this machine.
+        baseURL: z.union([httpUrl, z.literal("")]).default(""),
+      })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success)
+      return c.json(
+        { error: "Check the provider, model, key, and address" },
+        400
+      );
+    if (aiStatus().source === "environment")
+      return c.json(
+        {
+          error:
+            "This server already gets its AI settings from its environment",
+        },
+        409
+      );
+    const { provider } = parsed.data;
+    const model = parsed.data.model || defaultModel(provider);
+    if (!model) return c.json({ error: "Name the model to use" }, 400);
+    const apiKey = parsed.data.apiKey || savedKeyFor(provider) || "";
+    if (needsKey(provider)) {
+      if (!apiKey) return c.json({ error: "Paste the API key" }, 400);
+      if (apiKey.length < 20)
+        return c.json({ error: "Paste the whole API key" }, 400);
+    }
+    const baseURL =
+      provider === "local"
+        ? (parsed.data.baseURL || localDefaultUrl).replace(/\/+$/, "")
+        : undefined;
+    const setup = { provider, model, apiKey, baseURL };
+    const checked = await checkSetup(setup);
+    if (!checked.ok) return c.json({ error: checked.error }, 400);
+    saveSetup(setup);
+    return c.json(aiStatus());
+  });
+
+  api.delete("/admin/ai", (c) => {
+    if (!isAdmin(c.get("user")))
+      return c.json({ error: "An admin has to do that" }, 403);
+    saveSetup(null);
+    return c.json(aiStatus());
+  });
 
   api.post("/ai/recipe", async (c) => {
     if (!aiEnabled())

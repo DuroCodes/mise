@@ -56,6 +56,8 @@ function SignedInApp() {
   const location = useLocation();
   const [account, setAccount] = useState<Account | null>(null);
   const [ai, setAi] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState(false);
+  const [featuresVersion, setFeaturesVersion] = useState(0);
   const [failed, setFailed] = useState(false);
 
   // Offline, the session check fails; the service worker can still answer
@@ -72,13 +74,23 @@ function SignedInApp() {
       if (result.ok) setAccount(result.value);
       else setFailed(true);
     });
-    getFeatures().then((result) => {
-      if (active && result.ok) setAi(result.value.ai);
-    });
     return () => {
       active = false;
     };
   }, [signedIn]);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    let active = true;
+    getFeatures().then((result) => {
+      if (!active || !result.ok) return;
+      setAi(result.value.ai);
+      setAiAvailable(result.value.aiAvailable ?? result.value.ai);
+    });
+    return () => {
+      active = false;
+    };
+  }, [signedIn, featuresVersion]);
 
   if (session.isPending) return <RecipePlaceholder />;
   if (!signedIn || failed) {
@@ -96,7 +108,15 @@ function SignedInApp() {
   const cooking = /^\/recipes\/[^/]+\/cook\/?$/.test(location.pathname);
 
   return (
-    <SessionContext.Provider value={{ account, ai, offline: !online }}>
+    <SessionContext.Provider
+      value={{
+        account,
+        ai,
+        aiAvailable,
+        refreshFeatures: () => setFeaturesVersion((value) => value + 1),
+        offline: !online,
+      }}
+    >
       <a
         href="#content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-background focus:px-3 focus:py-2 focus:ring-3 focus:ring-ring"

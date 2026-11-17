@@ -381,3 +381,11 @@ export const pushSubscriptions = sqliteTable(
     index("push_subscriptions_user_idx").on(table.userId),
   ]
 );
+
+/** Per-person preferences. A missing row means every default. */
+export const userSettings = sqliteTable("user_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  aiEnabled: integer("ai_enabled", { mode: "boolean" }).notNull().default(true),
+});

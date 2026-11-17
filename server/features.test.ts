@@ -23,8 +23,11 @@ import {
 } from "../src/shared/pantry";
 import { safeNext, sharedLink } from "../src/lib/view";
 import {
+  aiStatus,
   linksFromSearchHtml,
   parseFound,
+  plannerRecipes,
+  toMealPlan,
   toPhotoItems,
   toRecipeInput,
 } from "./ai";
@@ -799,5 +802,94 @@ describe("Claude output normalization", () => {
     expect(
       toRecipeInput({ ...base, ingredients: [], instructions: [] })
     ).toBeNull();
+  });
+});
+
+describe("Claude meal planner", () => {
+  const keys = new Map([
+    ["r1", "soup"],
+    ["r2", "pasta"],
+  ]);
+  const wanted = new Map([
+    ["2026-11-17", new Set(["dinner" as const])],
+    ["2026-11-18", new Set(["lunch" as const, "dinner" as const])],
+  ]);
+
+  test("keeps meals for requested slots and known recipes only", () => {
+    const plan = toMealPlan(
+      {
+        summary: "  A light week. ",
+        meals: [
+          { day: "2026-11-17", slot: "Dinner", recipe: "R1", why: "warm" },
+          { day: "2026-11-17", slot: "dinner", recipe: "r2", why: "double" },
+          { day: "2026-11-17", slot: "lunch", recipe: "r2", why: "not asked" },
+          { day: "2026-11-18", slot: "lunch", recipe: "r9", why: "made up" },
+          { day: "2026-11-19", slot: "dinner", recipe: "r1", why: "wrong day" },
+          { day: "2026-11-18", slot: "dinner", recipe: "r2", why: "quick" },
+        ],
+      },
+      keys,
+      wanted
+    );
+    expect(plan.summary).toBe("A light week.");
+    expect(plan.meals).toEqual([
+      { day: "2026-11-17", slot: "dinner", recipeId: "soup", why: "warm" },
+      { day: "2026-11-18", slot: "dinner", recipeId: "pasta", why: "quick" },
+    ]);
+  });
+
+  test("sends favorites and regulars first", () => {
+    const recipe = (id: string, favorite: boolean, cookCount: number) => ({
+      id,
+      title: id,
+      tags: [],
+      prepMinutes: null,
+      cookMinutes: null,
+      servings: null,
+      favorite,
+      lastCooked: null,
+      cookCount,
+      rating: { average: null, count: 0, mine: null },
+      ingredients: [],
+    });
+    const order = plannerRecipes([
+      recipe("new", false, 0),
+      recipe("regular", false, 5),
+      recipe("loved", true, 0),
+    ]).map((item) => item.id);
+    expect(order).toEqual(["loved", "regular", "new"]);
+  });
+});
+
+describe("local models", () => {
+  test("a local model turns AI on without a key", () => {
+    const names = [
+      "MISE_AI_MODEL",
+      "MISE_AI_API_KEY",
+      "MISE_AI_BASE_URL",
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+    ];
+    const before = names.map((name) => process.env[name]);
+    try {
+      for (const name of names) delete process.env[name];
+      process.env.MISE_AI_MODEL = "local:hermes3";
+      expect(aiStatus()).toMatchObject({
+        enabled: true,
+        source: "environment",
+        provider: "local",
+        model: "hermes3",
+        baseURL: "http://localhost:11434/v1",
+        hint: null,
+      });
+      process.env.MISE_AI_MODEL = "openai:gpt-5";
+      expect(aiStatus().source).not.toBe("environment");
+    } finally {
+      names.forEach((name, index) => {
+        const value = before[index];
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      });
+    }
   });
 });

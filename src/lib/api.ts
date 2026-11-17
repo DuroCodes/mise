@@ -209,10 +209,69 @@ export const discardUpload = (url: string) =>
 
 export const getFeatures = () =>
   zodFetch(
-    z.object({ ai: z.boolean() }),
+    // aiAvailable is optional so an older cached answer still reads offline.
+    z.object({ ai: z.boolean(), aiAvailable: z.boolean().optional() }),
     "Could not load settings",
     "/api/features"
   );
+
+const userSettingsSchema = z.object({ aiEnabled: z.boolean() });
+
+export type UserSettings = z.infer<typeof userSettingsSchema>;
+
+export const getUserSettings = () =>
+  zodFetch(userSettingsSchema, "Could not load your settings", "/api/settings");
+
+export const updateUserSettings = (patch: Partial<UserSettings>) =>
+  zodFetch(userSettingsSchema, "Could not save that", "/api/settings", {
+    method: "PATCH",
+    ...json(patch),
+  });
+
+export const aiProviders = [
+  "anthropic",
+  "openai",
+  "openrouter",
+  "local",
+] as const;
+export type AiProvider = (typeof aiProviders)[number];
+
+export const aiProviderLabel: Record<AiProvider, string> = {
+  anthropic: "Claude (Anthropic)",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+  local: "Local model (Ollama…)",
+};
+
+const aiStatusSchema = z.object({
+  enabled: z.boolean(),
+  source: z.enum(["environment", "saved"]).nullable(),
+  provider: z.enum(aiProviders).nullable(),
+  model: z.string().nullable(),
+  baseURL: z.string().nullable(),
+  hint: z.string().nullable(),
+});
+
+export type AiStatus = z.infer<typeof aiStatusSchema>;
+
+export const getAiStatus = () =>
+  zodFetch(aiStatusSchema, "Could not load the AI setting", "/api/admin/ai");
+
+export const saveAiSetup = (input: {
+  provider: AiProvider;
+  model: string;
+  apiKey: string;
+  baseURL: string;
+}) =>
+  zodFetch(aiStatusSchema, "Could not save the AI setting", "/api/admin/ai", {
+    method: "PUT",
+    ...json(input),
+  });
+
+export const removeAiKey = () =>
+  zodFetch(aiStatusSchema, "Could not turn AI off", "/api/admin/ai", {
+    method: "DELETE",
+  });
 
 // Ratings and cooking log ---------------------------------------------------
 
@@ -409,6 +468,31 @@ export const removePlanEntry = (id: string) =>
   zodFetch(z.null(), "Could not remove that", `/api/plan/${id}`, {
     method: "DELETE",
   });
+
+const plannedMealSchema = z.object({
+  day: z.string(),
+  slot: z.enum(mealSlots),
+  recipeId: z.string(),
+  why: z.string(),
+  title: z.string(),
+  image: z.string().nullable(),
+  servings: z.number().nullable(),
+  minutes: z.number().nullable(),
+});
+
+export type PlannedMeal = z.infer<typeof plannedMealSchema>;
+
+export const planWeekWithAi = (input: {
+  today: string;
+  fill: { day: string; slots: MealSlot[] }[];
+  notes: string;
+}) =>
+  zodFetch(
+    z.object({ summary: z.string(), meals: z.array(plannedMealSchema) }),
+    "Could not plan the week",
+    "/api/ai/plan-week",
+    { method: "POST", ...json(input) }
+  );
 
 // Collections ---------------------------------------------------------------
 

@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
@@ -6,18 +7,48 @@ import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
- * Optional model features. They stay off unless `MISE_AI_API_KEY` is set, so
- * recipes never leave the machine unless the person running mise opts in.
+ * Optional model features. They stay off unless the server has a model set
+ * up, so recipes never leave the machine unless the person running mise opts
+ * in.
  *
- * `MISE_AI_MODEL` picks the provider and model, as `provider:model`. A bare
- * model id, or no model at all, means Anthropic. Examples:
- * `anthropic:claude-opus-5-5`, `openai:gpt-5`, `openrouter:openai/gpt-5`.
+ * Set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
+ * chooses the provider. A bare model id means Anthropic. A local model needs
+ * no key: `local:hermes3`, with `MISE_AI_BASE_URL` if it isn't Ollama on this
+ * machine. Examples: `anthropic:claude-opus-5-5`, `openai:gpt-5`,
+ * `openrouter:openai/gpt-5`.
+ *
+ * Without those, an admin can set the provider, model, and key in Admin > AI.
+ * The environment always wins over the saved setting.
  */
-type ProviderId = "anthropic" | "openai" | "openrouter";
+export const aiProviders = [
+  "anthropic",
+  "openai",
+  "openrouter",
+  "local",
+] as const;
+type ProviderId = (typeof aiProviders)[number];
 
-const providers = new Set<ProviderId>(["anthropic", "openai", "openrouter"]);
+type AiSetup = {
+  provider: ProviderId;
+  model: string;
+  /** Empty for a local server that doesn't ask for one. */
+  apiKey: string;
+  baseURL?: string;
+};
 
-export const aiSetup = () => {
+const providers = new Set<ProviderId>(aiProviders);
+
+/** Ollama's OpenAI-compatible endpoint on the same machine. */
+export const localDefaultUrl = "http://localhost:11434/v1";
+
+/** Claude has a sensible default; the others need a model named. */
+export const defaultModel = (provider: ProviderId) =>
+  provider === "anthropic" ? "claude-opus-5-5" : "";
+
+/** Only local servers can run without a key. */
+export const needsKey = (provider: ProviderId) => provider !== "local";
+
+const envSetup = () => {
   const raw = process.env.MISE_AI_MODEL?.trim();
   let provider: ProviderId = "anthropic";
   let model = "claude-opus-5-5";
@@ -32,16 +63,50 @@ export const aiSetup = () => {
     }
   }
   const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
-  if (!apiKey || !model) return null;
-  const baseURL = process.env.MISE_AI_BASE_URL?.trim() || undefined;
+  if ((needsKey(provider) && !apiKey) || !model) return null;
+  const baseURL =
+    process.env.MISE_AI_BASE_URL?.trim() ||
+    (provider === "local" ? localDefaultUrl : undefined);
   return { provider, model, apiKey, baseURL };
 };
 
+// Same default as db.ts; read here so importing this module never opens the
+// database (the tests import it).
+const settingsFile = `${process.env.DATA_DIR ?? "./data"}/ai-settings.json`;
+
+const savedShape = z.object({
+  provider: z.enum(aiProviders),
+  model: z.string().min(1),
+  apiKey: z.string(),
+  baseURL: z.string().optional(),
+});
+
+let saved: AiSetup | null | undefined;
+const savedSetup = (): AiSetup | null => {
+  if (saved !== undefined) return saved;
+  saved = null;
+  if (existsSync(settingsFile)) {
+    try {
+      const parsed = savedShape.safeParse(
+        JSON.parse(readFileSync(settingsFile, "utf8"))
+      );
+      if (
+        parsed.success &&
+        (parsed.data.apiKey || !needsKey(parsed.data.provider))
+      )
+        saved = parsed.data;
+    } catch {
+      saved = null;
+    }
+  }
+  return saved;
+};
+
+export const aiSetup = (): AiSetup | null => envSetup() ?? savedSetup();
+
 export const aiEnabled = () => aiSetup() !== null;
 
-const languageModel = () => {
-  const setup = aiSetup();
-  if (!setup) throw new Error("AI is not set up");
+const modelFor = (setup: AiSetup) => {
   if (setup.provider === "anthropic") {
     return createAnthropic({
       apiKey: setup.apiKey,
@@ -49,14 +114,110 @@ const languageModel = () => {
     })(setup.model);
   }
   const openai = createOpenAI({
-    apiKey: setup.apiKey,
+    // Local servers like Ollama ignore the key, but the client wants one.
+    apiKey: setup.apiKey || "local",
     baseURL:
       setup.baseURL ??
       (setup.provider === "openrouter"
         ? "https://openrouter.ai/api/v1"
-        : undefined),
+        : setup.provider === "local"
+          ? localDefaultUrl
+          : undefined),
   });
   return openai.chat(setup.model);
+};
+
+const languageModel = () => {
+  const setup = aiSetup();
+  if (!setup) throw new Error("AI is not set up");
+  return modelFor(setup);
+};
+
+export type AiStatus = {
+  enabled: boolean;
+  source: "environment" | "saved" | null;
+  provider: ProviderId | null;
+  model: string | null;
+  baseURL: string | null;
+  hint: string | null;
+};
+
+/** What admins see. The key itself never leaves the server. */
+export const aiStatus = (): AiStatus => {
+  const fromEnv = envSetup();
+  const setup = fromEnv ?? savedSetup();
+  return {
+    enabled: Boolean(setup),
+    source: fromEnv ? "environment" : setup ? "saved" : null,
+    provider: setup?.provider ?? null,
+    model: setup?.model ?? null,
+    baseURL: setup?.provider === "local" ? (setup.baseURL ?? null) : null,
+    hint: setup?.apiKey ? `…${setup.apiKey.slice(-4)}` : null,
+  };
+};
+
+/** The saved key, so an admin can switch models without pasting it again. */
+export const savedKeyFor = (provider: ProviderId) => {
+  const setup = savedSetup();
+  return setup?.provider === provider ? setup.apiKey : null;
+};
+
+/** Sends a one-word request to make sure the key and model work. */
+export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
+  const local = setup.provider === "local";
+  try {
+    await generateText({
+      model: modelFor(setup),
+      prompt: "Reply with the word ok.",
+      maxOutputTokens: 16,
+      maxRetries: 0,
+      // A local model may need to load into memory first.
+      abortSignal: AbortSignal.timeout(local ? 120_000 : 30_000),
+    });
+    return { ok: true, value: null };
+  } catch (error) {
+    console.error(error);
+    if (APICallError.isInstance(error)) {
+      if (error.statusCode === 401 || error.statusCode === 403)
+        return { ok: false, error: "The provider didn't accept that key" };
+      if (error.statusCode === 404)
+        return {
+          ok: false,
+          error: local
+            ? "The server doesn't have that model. Pull it first, e.g. ollama pull hermes3."
+            : "The provider doesn't know that model",
+        };
+      if (error.statusCode === 400)
+        return { ok: false, error: "The provider rejected that model or key" };
+      if (error.statusCode === 429)
+        return {
+          ok: false,
+          error: "The provider is busy. Try again in a minute.",
+        };
+      if (!error.statusCode && local)
+        return {
+          ok: false,
+          error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
+        };
+      return {
+        ok: false,
+        error: "Couldn't check the key with the provider right now",
+      };
+    }
+    if (local)
+      return {
+        ok: false,
+        error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
+      };
+    return { ok: false, error: "Couldn't reach the provider to check the key" };
+  }
+};
+
+export const saveSetup = (setup: AiSetup | null) => {
+  if (setup)
+    writeFileSync(settingsFile, JSON.stringify(setup), { mode: 0o600 });
+  else if (existsSync(settingsFile)) unlinkSync(settingsFile);
+  saved = setup;
 };
 
 export const aiImageTypes = [
@@ -568,6 +729,185 @@ export const askAboutRecipe = async (
     if (!answer)
       return { ok: false as const, error: "The model did not answer" };
     return { ok: true as const, value: answer };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
+// Meal planning ---------------------------------------------------------------
+
+export type PlanSlot = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type PlannerRecipe = Pick<
+  Recipe,
+  | "id"
+  | "title"
+  | "tags"
+  | "prepMinutes"
+  | "cookMinutes"
+  | "servings"
+  | "favorite"
+  | "lastCooked"
+  | "cookCount"
+  | "rating"
+  | "ingredients"
+>;
+
+export type PlannedMeal = {
+  day: string;
+  slot: PlanSlot;
+  recipeId: string;
+  why: string;
+};
+
+export type MealPlanIdea = { meals: PlannedMeal[]; summary: string };
+
+const mealPlanOutput = z.object({
+  meals: z.array(
+    z.object({
+      day: z.string(),
+      slot: z.string(),
+      recipe: z.string(),
+      why: z.string(),
+    })
+  ),
+  summary: z.string(),
+});
+
+/** At most this many recipes go to Claude; favorites and regulars first. */
+const plannerLimit = 300;
+
+/** Picks and orders the recipes Claude sees. Exported for tests. */
+export const plannerRecipes = <T extends PlannerRecipe>(recipes: T[]) =>
+  [...recipes]
+    .sort(
+      (a, b) =>
+        Number(b.favorite) - Number(a.favorite) ||
+        (b.rating.mine ?? 0) - (a.rating.mine ?? 0) ||
+        b.cookCount - a.cookCount
+    )
+    .slice(0, plannerLimit);
+
+const recipeLine = (recipe: PlannerRecipe, key: string) => {
+  const minutes = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
+  const facts = [
+    recipe.tags.length ? `tags: ${recipe.tags.join(", ")}` : "",
+    minutes ? `${minutes} min` : "",
+    recipe.servings ? `serves ${recipe.servings}` : "",
+    recipe.favorite ? "favorite" : "",
+    recipe.rating.mine ? `rated ${recipe.rating.mine}/5` : "",
+    recipe.cookCount
+      ? `cooked ${recipe.cookCount}x${recipe.lastCooked ? `, last ${recipe.lastCooked}` : ""}`
+      : "never cooked",
+    `ingredients: ${recipe.ingredients
+      .slice(0, 15)
+      .map((item) => item.name)
+      .join(", ")}`,
+  ].filter(Boolean);
+  return `${key} | ${recipe.title.replace(/\s+/g, " ")} | ${facts.join(" | ")}`;
+};
+
+/**
+ * Keeps only meals that land on a requested day and meal, use a recipe from
+ * the library, and don't double up a slot. Exported for tests.
+ */
+export const toMealPlan = (
+  value: z.infer<typeof mealPlanOutput>,
+  keys: Map<string, string>,
+  wanted: Map<string, Set<PlanSlot>>
+): MealPlanIdea => {
+  const taken = new Set<string>();
+  const meals: PlannedMeal[] = [];
+  for (const meal of value.meals) {
+    const day = meal.day.trim();
+    const slot = meal.slot.trim().toLowerCase() as PlanSlot;
+    const recipeId = keys.get(meal.recipe.trim().toLowerCase());
+    if (!recipeId || !wanted.get(day)?.has(slot)) continue;
+    if (taken.has(`${day} ${slot}`)) continue;
+    taken.add(`${day} ${slot}`);
+    meals.push({ day, slot, recipeId, why: clip(meal.why, 200) });
+  }
+  return { meals, summary: clip(value.summary, 600) };
+};
+
+const planPrompt = `You plan meals for a home cook from the recipes they already have in their recipe app.
+Fill the requested days and meals with recipes from <recipes>, referring to each by its key (r1, r2, ...). Never invent a recipe.
+- Follow the cook's notes first.
+- Fit each recipe to the meal: breakfast recipes for breakfast, lighter dishes or leftovers-friendly ones for lunch, mains for dinner, snacks for snack. Leave a meal out rather than force a recipe that doesn't suit it.
+- Vary the week: avoid repeating a recipe, a main protein, or a cuisine on back-to-back days, unless there are too few recipes to do otherwise.
+- Use up pantry items, especially ones with a use-by date soon, and favor recipes that share ingredients so the shopping list stays short.
+- Lean toward favorites and well-rated dishes, mix in a few that haven't been cooked lately or ever, and keep weeknight dinners quicker than weekend ones.
+- Keep what's already planned in mind for variety; don't replace it.
+For each meal give a short reason (under 15 words), such as "uses the spinach before Thursday" or "quick after a long Monday".
+The summary is one or two plain sentences about the shape of the plan.`;
+
+const weekday = (day: string) =>
+  new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", {
+    weekday: "long",
+    timeZone: "UTC",
+  });
+
+export const planMeals = async (input: {
+  today: string;
+  recipes: PlannerRecipe[];
+  pantry: { name: string; expiresOn: string | null }[];
+  planned: { day: string; slot: string; title: string }[];
+  fill: { day: string; slots: PlanSlot[] }[];
+  notes: string;
+}): Promise<AiResult<MealPlanIdea>> => {
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
+  const chosen = plannerRecipes(input.recipes);
+  const keys = new Map(
+    chosen.map((recipe, index) => [`r${index + 1}`, recipe.id])
+  );
+  const wanted = new Map(
+    input.fill.map((entry) => [entry.day, new Set(entry.slots)])
+  );
+
+  const recipeList = chosen
+    .map((recipe, index) => recipeLine(recipe, `r${index + 1}`))
+    .join("\n");
+  const pantry = input.pantry
+    .slice(0, 150)
+    .map(
+      (item) =>
+        `- ${item.name}${item.expiresOn ? ` (use by ${item.expiresOn})` : ""}`
+    )
+    .join("\n");
+  const planned = input.planned
+    .map((entry) => `- ${entry.day} ${entry.slot}: ${entry.title}`)
+    .join("\n");
+  const fill = input.fill
+    .map(
+      (entry) =>
+        `- ${entry.day} (${weekday(entry.day)}): ${entry.slots.join(", ")}`
+    )
+    .join("\n");
+  const notes = input.notes.trim();
+
+  const content = [
+    `<recipes>\n${recipeList}\n</recipes>`,
+    `<pantry>\n${pantry || "(empty)"}\n</pantry>`,
+    `<already_planned>\n${planned || "(nothing)"}\n</already_planned>`,
+    `Today is ${input.today} (${weekday(input.today)}).`,
+    `<fill>\n${fill}\n</fill>`,
+    notes ? `<notes>\n${notes}\n</notes>` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  try {
+    const output = await objectFrom(mealPlanOutput, planPrompt, content);
+    if (!output)
+      return { ok: false, error: "The model's answer could not be read" };
+    const plan = toMealPlan(output, keys, wanted);
+    if (plan.meals.length === 0)
+      return {
+        ok: false,
+        error: "Couldn't find recipes that fit. Try different meals or notes.",
+      };
+    return { ok: true, value: plan };
   } catch (error) {
     return failure(error);
   }

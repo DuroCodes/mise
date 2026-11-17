@@ -69,8 +69,8 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 | `BETTER_AUTH_URL`                                  |                             | the public origin, such as `https://mise.example.com`                                  |
 | `BETTER_AUTH_SECRET`                               | generated into `DATA_DIR`   | session signing secret                                                                 |
 | `MISE_AI_API_KEY`                                  |                             | turns on the optional model features. one key, for whichever provider the model names  |
-| `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, or `openrouter:` plus the model id. a bare id means anthropic |
-| `MISE_AI_BASE_URL`                                 |                             | optional base url for an openai-compatible server                                      |
+| `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, `openrouter:`, or `local:` plus the model id. a bare id means anthropic |
+| `MISE_AI_BASE_URL`                                 | Ollama on this machine      | address of a local or openai-compatible server. `local:` uses `http://localhost:11434/v1` when unset |
 | `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR`   | keys for push notifications                                                            |
 
 ## backups
