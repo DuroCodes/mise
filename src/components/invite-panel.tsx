@@ -4,6 +4,13 @@ import { toast } from "sonner";
 import { QrCode } from "@/components/qr-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   createInvite,
@@ -94,16 +101,19 @@ function InvitePanel() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="invite-days">Expires in</Label>
-            <select
-              id="invite-days"
-              value={days}
-              onChange={(event) => setDays(Number(event.target.value) as 1 | 7 | 30)}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-32 dark:bg-input/30"
+            <Select
+              value={String(days)}
+              onValueChange={(value) => setDays(Number(value) as 1 | 7 | 30)}
             >
-              <option value={1}>1 day</option>
-              <option value={7}>7 days</option>
-              <option value={30}>30 days</option>
-            </select>
+              <SelectTrigger id="invite-days" aria-label="Expires in" className="w-full sm:w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 day</SelectItem>
+                <SelectItem value="7">7 days</SelectItem>
+                <SelectItem value="30">30 days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button type="submit" disabled={pending}>
             <LinkIcon data-icon="inline-start" />

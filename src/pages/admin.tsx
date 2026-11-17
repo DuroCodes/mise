@@ -1,12 +1,7 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import {
-  ChevronDownIcon,
-  KeyRoundIcon,
-  PencilIcon,
-  TrashIcon,
-} from "lucide-react";
+import { KeyRoundIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { BackupPanel } from "@/components/backup-panel";
 import { InvitePanel } from "@/components/invite-panel";
 import { Button } from "@/components/ui/button";
@@ -18,6 +13,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -209,23 +211,21 @@ function AdminPage({ selfId }: { selfId: string }) {
                   {person.email}
                 </TableCell>
                 <TableCell>
-                  <div className="relative w-32">
-                    <select
-                      aria-label={`Role for ${person.name}`}
-                      value={person.role === "admin" ? "admin" : "member"}
-                      disabled={person.id === selfId}
-                      onChange={(event) => {
-                        const next = event.target.value;
-                        if (next === "admin" || next === "member")
-                          changeRole(person, next);
-                      }}
-                      className="h-8 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="member">Member</option>
-                    </select>
-                    <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <Select
+                    value={person.role === "admin" ? "admin" : "member"}
+                    disabled={person.id === selfId}
+                    onValueChange={(next) => {
+                      if (next === "admin" || next === "member") changeRole(person, next);
+                    }}
+                  >
+                    <SelectTrigger aria-label={`Role for ${person.name}`} className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">

@@ -557,7 +557,7 @@ function PantryPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-medium tracking-tight">Pantry</h1>

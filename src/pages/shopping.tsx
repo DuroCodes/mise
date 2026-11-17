@@ -1,6 +1,5 @@
 import {
   CheckIcon,
-  ChevronDownIcon,
   CloudOffIcon,
   CopyIcon,
   PackageOpenIcon,
@@ -28,6 +27,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   clearShopping,
   finishShopping,
@@ -467,7 +473,7 @@ function ShoppingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       <div className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
@@ -585,32 +591,26 @@ function ShoppingPage() {
 
       {open.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="relative">
-            <StoreIcon
-              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <select
-              aria-label="Store"
-              value={store ? store.id : ""}
-              onChange={(event) => chooseStore(event.target.value)}
-              className="h-8 max-w-56 appearance-none truncate rounded-lg border border-input bg-transparent pr-8 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              <option value="">Usual store order</option>
+          <Select
+            value={store ? store.id : "usual"}
+            onValueChange={(value) => chooseStore(value === "usual" ? "" : value)}
+          >
+            <SelectTrigger aria-label="Store" className="max-w-56">
+              <StoreIcon className="size-4 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="usual">Usual store order</SelectItem>
               {stores.map((entry) => (
-                <option key={entry.id} value={entry.id}>
+                <SelectItem key={entry.id} value={entry.id}>
                   {entry.name}
-                </option>
+                </SelectItem>
               ))}
-              <option value="__manage">
+              <SelectItem value="__manage">
                 {stores.length ? "Edit my stores…" : "Set up my stores…"}
-              </option>
-            </select>
-            <ChevronDownIcon
-              className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-          </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Group by">
             {(
               [

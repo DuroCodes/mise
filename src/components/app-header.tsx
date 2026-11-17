@@ -97,12 +97,22 @@ function AppHeader({ account, offline }: { account: Account; offline: boolean })
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="icon-sm"
+            className="sm:hidden"
             aria-label="Sign out"
             onClick={() => void signOut()}
           >
+            <LogOutIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="max-sm:hidden"
+            onClick={() => void signOut()}
+          >
             <LogOutIcon data-icon="inline-start" />
-            <span className="max-sm:sr-only">Sign out</span>
+            Sign out
           </Button>
         </div>
       </div>

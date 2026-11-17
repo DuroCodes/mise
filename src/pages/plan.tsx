@@ -26,6 +26,13 @@ import { toast } from "sonner";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -48,9 +55,6 @@ import {
 import { useTitle } from "@/lib/use-title";
 import { addDays, dayFromKey, localDay, storedMeasure, weekStart } from "@/lib/view";
 import type { Recipe } from "@/shared/recipe";
-
-const selectClass =
-  "h-7 rounded-md border border-input bg-transparent px-1.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
 function DraggableRecipe({ recipe }: { recipe: Recipe }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -116,18 +120,18 @@ function EntryCard({
         >
           {entry.title}
         </Link>
-        <select
-          aria-label={`Meal for ${entry.title}`}
-          value={entry.slot}
-          onChange={(event) => onSlot(event.target.value as MealSlot)}
-          className={cn(selectClass, "mt-0.5")}
-        >
-          {mealSlots.map((slot) => (
-            <option key={slot} value={slot}>
-              {slotLabel[slot]}
-            </option>
-          ))}
-        </select>
+        <Select value={entry.slot} onValueChange={(slot) => onSlot(slot as MealSlot)}>
+          <SelectTrigger size="sm" aria-label={`Meal for ${entry.title}`} className="mt-0.5">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {mealSlots.map((slot) => (
+              <SelectItem key={slot} value={slot}>
+                {slotLabel[slot]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <Button
         type="button"
@@ -369,9 +373,14 @@ function PlanPage() {
                 <ChevronRightIcon />
               </Button>
             </div>
-            <Button type="button" disabled={adding || !entries || entries.length === 0} onClick={toShopping}>
+            <Button
+              type="button"
+              disabled={adding || !entries || entries.length === 0}
+              aria-busy={adding}
+              onClick={toShopping}
+            >
               <ShoppingBasketIcon data-icon="inline-start" />
-              {adding ? "Adding" : "Shopping list"}
+              Shopping list
             </Button>
           </div>
         </div>
@@ -444,18 +453,18 @@ function PlanPage() {
             <DialogDescription>Pick a meal, then a recipe.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
-            <select
-              aria-label="Meal"
-              value={pickSlot}
-              onChange={(event) => setPickSlot(event.target.value as MealSlot)}
-              className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
-              {mealSlots.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slotLabel[slot]}
-                </option>
-              ))}
-            </select>
+            <Select value={pickSlot} onValueChange={(slot) => setPickSlot(slot as MealSlot)}>
+              <SelectTrigger aria-label="Meal">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {mealSlots.map((slot) => (
+                  <SelectItem key={slot} value={slot}>
+                    {slotLabel[slot]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
               value={query}
               placeholder="Search recipes"

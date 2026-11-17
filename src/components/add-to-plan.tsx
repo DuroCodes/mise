@@ -12,6 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { addPlanEntry, mealSlots, slotLabel, type MealSlot } from "@/lib/api";
 import { localDay } from "@/lib/view";
@@ -87,18 +94,18 @@ function AddToPlan({
             </div>
             <div className="space-y-2">
               <Label htmlFor="plan-slot">Meal</Label>
-              <select
-                id="plan-slot"
-                value={slot}
-                onChange={(event) => setSlot(event.target.value as MealSlot)}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              >
-                {mealSlots.map((item) => (
-                  <option key={item} value={item}>
-                    {slotLabel[item]}
-                  </option>
-                ))}
-              </select>
+              <Select value={slot} onValueChange={(value) => setSlot(value as MealSlot)}>
+                <SelectTrigger id="plan-slot" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {mealSlots.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {slotLabel[item]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           {error && (

@@ -160,10 +160,11 @@ function RecipeBody({
             variant="outline"
             size="sm"
             disabled={adding || recipe.ingredients.length === 0}
+            aria-busy={adding}
             onClick={addToList}
           >
             <ShoppingBasketIcon data-icon="inline-start" />
-            {adding ? "Adding" : "Shopping list"}
+            Shopping list
           </Button>
           <AddToPlan
             recipeId={recipe.id}

@@ -1,10 +1,17 @@
-import { ArrowDownUpIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { listRecipes } from "@/lib/api";
 import { totalMinutes } from "@/lib/format";
 import { easeIn, easeOut } from "@/lib/motion";
@@ -158,25 +165,23 @@ function LibraryPage() {
               className="pl-8"
             />
           </div>
-          <div className="relative">
-            <select
-              aria-label="Sort recipes"
-              value={sort}
-              onChange={(event) =>
-                setFilter({
-                  sort: event.target.value === "updated" ? null : event.target.value,
-                })
-              }
-              className="h-8 appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-            >
+          <Select
+            value={sort}
+            onValueChange={(value) =>
+              setFilter({ sort: value === "updated" ? null : value })
+            }
+          >
+            <SelectTrigger aria-label="Sort recipes">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {sorts.map((option) => (
-                <option key={option.id} value={option.id}>
+                <SelectItem key={option.id} value={option.id}>
                   {option.label}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <ArrowDownUpIcon className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          </div>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

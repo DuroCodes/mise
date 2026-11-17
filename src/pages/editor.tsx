@@ -44,7 +44,12 @@ import { useTitle } from "@/lib/use-title";
 import { NotFoundPage } from "@/pages/not-found";
 import { easeOut } from "@/lib/motion";
 import { unitValue } from "@/lib/units";
-import { recipeInput, type Recipe, type RecipeInput } from "@/shared/recipe";
+import {
+  isReservedTag,
+  recipeInput,
+  type Recipe,
+  type RecipeInput,
+} from "@/shared/recipe";
 
 type Draft = {
   title: string;
@@ -320,6 +325,9 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     ) {
       local.servings = "Servings should be from 1 to 999";
     }
+    if ([...draft.tags, tagDraft].some((tag) => isReservedTag(tag))) {
+      local.tags = "Favorites is not a tag";
+    }
 
     const ingredients = draft.ingredients
       .map(({ amount, unit, name, note }) => ({
@@ -505,7 +513,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Label htmlFor="image">Image</Label>
         {draft.image && (
           <img
@@ -517,6 +525,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="image"
+            className="min-w-0 flex-1"
             value={draft.image}
             placeholder="https:// or an uploaded file"
             aria-invalid={Boolean(errors.image)}
@@ -539,43 +548,48 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
               Remove
             </Button>
           )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+            className="sr-only"
+            onChange={(event) => onFile(event.target.files?.[0])}
+          />
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-          className="sr-only"
-          onChange={(event) => onFile(event.target.files?.[0])}
-        />
         {errors.image && (
           <p className="text-sm text-destructive">{errors.image}</p>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Label htmlFor="tag">Tags</Label>
-        <div className="flex flex-wrap gap-2">
-          {draft.tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className="rounded-4xl bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
-              onClick={() =>
-                patch({ tags: draft.tags.filter((item) => item !== tag) })
-              }
-            >
-              {tag}
-              <span aria-hidden="true"> ×</span>
-              <span className="sr-only">, remove</span>
-            </button>
-          ))}
-        </div>
+        {draft.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {draft.tags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className="rounded-4xl bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                onClick={() =>
+                  patch({ tags: draft.tags.filter((item) => item !== tag) })
+                }
+              >
+                {tag}
+                <span aria-hidden="true"> ×</span>
+                <span className="sr-only">, remove</span>
+              </button>
+            ))}
+          </div>
+        )}
         <TagField
           tags={draft.tags}
           draft={tagDraft}
           onTags={(tags) => patch({ tags })}
           onDraft={setTagDraft}
         />
+        {errors.tags && (
+          <p className="text-sm text-destructive">{errors.tags}</p>
+        )}
       </div>
 
       <IngredientList

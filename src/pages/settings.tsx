@@ -314,7 +314,7 @@ function PasswordSection() {
 function SettingsPage() {
   useTitle("Settings · Mise");
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="space-y-4">
       <h1 className="text-2xl font-medium tracking-tight">Settings</h1>
       <InstallSection />
       <SendToMiseSection />

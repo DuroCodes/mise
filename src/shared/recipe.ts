@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const reservedTags = new Set(["favorites"]);
+
+/** The library already uses this word for the favorite filter. */
+export const isReservedTag = (name: string) =>
+  reservedTags.has(name.trim().toLowerCase().replace(/\s+/g, " "));
+
 const cleanTags = (tags: string[]) => {
   const seen = new Set<string>();
   const next: string[] = [];
@@ -7,7 +13,7 @@ const cleanTags = (tags: string[]) => {
   for (const tag of tags) {
     const name = tag.trim().replace(/\s+/g, " ");
     const key = name.toLowerCase();
-    if (!name || seen.has(key)) continue;
+    if (!name || seen.has(key) || reservedTags.has(key)) continue;
     seen.add(key);
     next.push(key);
   }
