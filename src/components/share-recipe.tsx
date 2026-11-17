@@ -70,9 +70,13 @@ function ShareRecipe({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm">
-          <Share2Icon data-icon="inline-start" />
-          Share
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={`Share ${title}`}
+        >
+          <Share2Icon />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

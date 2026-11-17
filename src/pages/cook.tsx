@@ -3,6 +3,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ListChecksIcon,
+  ListOrderedIcon,
   SunIcon,
   XIcon,
 } from "lucide-react";
@@ -203,9 +204,76 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
 
   const current = recipe.instructions[step];
 
+  const pager = (
+    <footer className="space-y-3 border-t px-4 py-3 sm:px-6">
+      <div className="flex justify-center gap-1.5" aria-hidden="true">
+        {recipe.instructions.map((_, index) => (
+          <span
+            key={index}
+            className={cn(
+              "h-1.5 rounded-full transition-all",
+              index === step ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/30"
+            )}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="min-w-28"
+          disabled={step === 0}
+          onClick={() => go(step - 1)}
+        >
+          <ChevronLeftIcon data-icon="inline-start" />
+          Back
+        </Button>
+        <Button
+          type="button"
+          variant={view === "ingredients" ? "default" : "ghost"}
+          size="lg"
+          onClick={() =>
+            setView(view === "ingredients" ? "steps" : "ingredients")
+          }
+        >
+          {view === "ingredients" ? (
+            <>
+              <ListOrderedIcon data-icon="inline-start" />
+              Steps
+            </>
+          ) : (
+            <>
+              <ListChecksIcon data-icon="inline-start" />
+              <span className="max-sm:sr-only">Ingredients</span>
+            </>
+          )}
+        </Button>
+        {step < total - 1 ? (
+          <Button
+            type="button"
+            size="lg"
+            className="min-w-28"
+            onClick={() => go(step + 1)}
+          >
+            Next
+            <ChevronRightIcon data-icon="inline-end" />
+          </Button>
+        ) : (
+          <Button asChild size="lg" className="min-w-28">
+            <Link to={`/recipes/${recipe.id}`}>
+              Done
+              <CheckIcon data-icon="inline-end" />
+            </Link>
+          </Button>
+        )}
+      </div>
+    </footer>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background pb-[env(safe-area-inset-bottom)]">
-      <header className="flex items-center gap-2 border-b px-3 py-2 sm:px-6">
+      <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2 sm:px-6">
         <Button
           asChild
           variant="ghost"
@@ -230,7 +298,10 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
         {wake === "on" && (
           <SunIcon className="size-4 text-brand" aria-hidden="true" />
         )}
-        <div className="flex rounded-lg bg-muted p-0.5" role="tablist">
+        <div
+          className="flex basis-full rounded-lg bg-muted p-0.5 sm:basis-auto"
+          role="tablist"
+        >
           {(
             [
               ["steps", "Steps"],
@@ -246,7 +317,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
               disabled={id !== "ingredients" && total === 0}
               onClick={() => (id === "timing" ? openTiming() : setView(id))}
               className={cn(
-                "rounded-md px-2 py-1.5 text-xs font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring disabled:opacity-50 sm:px-3 sm:text-sm",
+                "flex-1 rounded-md px-2 py-1.5 text-xs font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring disabled:opacity-50 sm:flex-none sm:px-3 sm:text-sm",
                 view === id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground"
@@ -278,55 +349,58 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
           />
         </div>
       ) : view === "ingredients" ? (
-        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
-          <ul className="mx-auto max-w-2xl space-y-2">
-            {ingredients.map((item, index) => {
-              const done = checked.has(index);
-              return (
-                <li key={`${item.name}-${index}`}>
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={done}
-                    onClick={() => toggle(index)}
-                    className="flex w-full items-start gap-4 rounded-xl px-3 py-3 text-left text-xl leading-8 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring"
-                  >
-                    <span
-                      className={cn(
-                        "mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg border-2",
-                        done
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-input"
-                      )}
-                      aria-hidden="true"
+        <>
+          <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
+            <ul className="mx-auto max-w-2xl space-y-2">
+              {ingredients.map((item, index) => {
+                const done = checked.has(index);
+                return (
+                  <li key={`${item.name}-${index}`}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={done}
+                      onClick={() => toggle(index)}
+                      className="flex w-full items-start gap-4 rounded-xl px-3 py-3 text-left text-xl leading-8 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring"
                     >
-                      {done && <CheckIcon className="size-4" />}
-                    </span>
-                    <span
-                      className={cn(
-                        "min-w-0",
-                        done && "text-muted-foreground line-through"
-                      )}
-                    >
-                      {ingredientLine(item)}
-                      {item.note.trim() && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          {parenthetical(item.note)}
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {ingredients.length === 0 && (
-            <p className="text-center text-muted-foreground">
-              No ingredients listed.
-            </p>
-          )}
-        </div>
+                      <span
+                        className={cn(
+                          "mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg border-2",
+                          done
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input"
+                        )}
+                        aria-hidden="true"
+                      >
+                        {done && <CheckIcon className="size-4" />}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0",
+                          done && "text-muted-foreground line-through"
+                        )}
+                      >
+                        {ingredientLine(item)}
+                        {item.note.trim() && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            {parenthetical(item.note)}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {ingredients.length === 0 && (
+              <p className="text-center text-muted-foreground">
+                No ingredients listed.
+              </p>
+            )}
+          </div>
+          {total > 0 && pager}
+        </>
       ) : (
         <>
           <div
@@ -375,61 +449,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
               )}
             </AnimatePresence>
           </div>
-          <footer className="space-y-3 border-t px-4 py-3 sm:px-6">
-            <div className="flex justify-center gap-1.5" aria-hidden="true">
-              {recipe.instructions.map((_, index) => (
-                <span
-                  key={index}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all",
-                    index === step
-                      ? "w-6 bg-brand"
-                      : "w-1.5 bg-muted-foreground/30"
-                  )}
-                />
-              ))}
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="min-w-28"
-                disabled={step === 0}
-                onClick={() => go(step - 1)}
-              >
-                <ChevronLeftIcon data-icon="inline-start" />
-                Back
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="lg"
-                onClick={() => setView("ingredients")}
-              >
-                <ListChecksIcon data-icon="inline-start" />
-                <span className="max-sm:sr-only">Ingredients</span>
-              </Button>
-              {step < total - 1 ? (
-                <Button
-                  type="button"
-                  size="lg"
-                  className="min-w-28"
-                  onClick={() => go(step + 1)}
-                >
-                  Next
-                  <ChevronRightIcon data-icon="inline-end" />
-                </Button>
-              ) : (
-                <Button asChild size="lg" className="min-w-28">
-                  <Link to={`/recipes/${recipe.id}`}>
-                    Done
-                    <CheckIcon data-icon="inline-end" />
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </footer>
+          {pager}
         </>
       )}
     </div>

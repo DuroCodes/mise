@@ -31,8 +31,7 @@ import {
   removeFromCollection,
   updateCollection,
 } from "./collections";
-import { canEdit, createRecipe, db, getRecipe, viewable } from "./db";
-import { recipes } from "./db/schema";
+import { createRecipe, getRecipe, viewable } from "./db";
 import {
   maxImportBytes,
   maxImportRecipes,
@@ -72,17 +71,8 @@ import {
 import { createStore, deleteStore, listStores, updateStore } from "./stores";
 import { saveUpload } from "./uploads";
 import { storeLayout } from "../src/shared/stores";
-import { eq } from "drizzle-orm";
-
 const measure = z.enum(["original", "metric", "imperial"]).default("original");
 const servings = z.number().int().min(1).max(999).nullable();
-
-const ownerOf = (id: string) =>
-  db
-    .select({ ownerId: recipes.ownerId })
-    .from(recipes)
-    .where(eq(recipes.id, id))
-    .get();
 
 export const registerRoutes = (api: Api) => {
   api.get("/features", (c) => c.json({ ai: aiEnabled() }));
@@ -139,15 +129,11 @@ export const registerRoutes = (api: Api) => {
 
   // Share links --------------------------------------------------------------
 
-  const editable = (id: string, user: { id: string; role: string }) => {
-    const row = ownerOf(id);
-    return Boolean(row && (user.role === "admin" || canEdit(row, user.id)));
-  };
-
   api.post("/recipes/:id/share", (c) => {
     const user = c.get("user");
     const id = c.req.param("id");
-    if (!editable(id, user)) return c.json({ error: "Recipe not found" }, 404);
+    if (!viewable(id, user.id, user.role === "admin"))
+      return c.json({ error: "Recipe not found" }, 404);
     const token = createShare(id);
     if (!token) return c.json({ error: "Recipe not found" }, 404);
     return c.json({ token });
@@ -156,7 +142,8 @@ export const registerRoutes = (api: Api) => {
   api.delete("/recipes/:id/share", (c) => {
     const user = c.get("user");
     const id = c.req.param("id");
-    if (!editable(id, user)) return c.json({ error: "Recipe not found" }, 404);
+    if (!viewable(id, user.id, user.role === "admin"))
+      return c.json({ error: "Recipe not found" }, 404);
     removeShare(id);
     return c.json(null);
   });

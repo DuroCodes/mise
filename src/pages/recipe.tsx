@@ -125,55 +125,63 @@ function RecipeBody({
           : null
       }
       actions={
-        recipe.canEdit ? (
-          <>
-            {recipe.ownerId && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-pressed={recipe.visibility === "public"}
-                aria-label={
-                  recipe.visibility === "public"
-                    ? `Make ${recipe.title} private`
-                    : `Make ${recipe.title} public`
-                }
-                disabled={sharing}
-                onClick={toggleVisibility}
-              >
-                {recipe.visibility === "public" ? <GlobeIcon /> : <LockIcon />}
-              </Button>
-            )}
+        <>
+          {recipe.canEdit && recipe.ownerId && (
             <Button
               type="button"
               variant="outline"
               size="icon"
-              aria-pressed={recipe.favorite}
+              aria-pressed={recipe.visibility === "public"}
               aria-label={
-                recipe.favorite
-                  ? `Remove ${recipe.title} from favorites`
-                  : `Favorite ${recipe.title}`
+                recipe.visibility === "public"
+                  ? `Make ${recipe.title} private`
+                  : `Make ${recipe.title} public`
               }
-              disabled={pending}
-              onClick={toggleFavorite}
+              disabled={sharing}
+              onClick={toggleVisibility}
             >
-              <HeartMark filled={recipe.favorite} />
+              {recipe.visibility === "public" ? <GlobeIcon /> : <LockIcon />}
             </Button>
-            <Button asChild variant="outline" size="icon">
-              <Link
-                to={`/recipes/${recipe.id}/edit`}
-                aria-label={`Edit ${recipe.title}`}
-              >
-                <PencilIcon />
-              </Link>
-            </Button>
-            <DeleteRecipe
-              id={recipe.id}
-              title={recipe.title}
-              onDeleted={onDeleted}
-            />
-          </>
-        ) : null
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-pressed={recipe.favorite}
+            aria-label={
+              recipe.favorite
+                ? `Remove ${recipe.title} from favorites`
+                : `Favorite ${recipe.title}`
+            }
+            disabled={pending}
+            onClick={toggleFavorite}
+          >
+            <HeartMark filled={recipe.favorite} />
+          </Button>
+          <ShareRecipe
+            recipeId={recipe.id}
+            title={recipe.title}
+            token={recipe.shareToken}
+            onToken={(shareToken) => onRecipe({ ...recipe, shareToken })}
+          />
+          {recipe.canEdit && (
+            <>
+              <Button asChild variant="outline" size="icon">
+                <Link
+                  to={`/recipes/${recipe.id}/edit`}
+                  aria-label={`Edit ${recipe.title}`}
+                >
+                  <PencilIcon />
+                </Link>
+              </Button>
+              <DeleteRecipe
+                id={recipe.id}
+                title={recipe.title}
+                onDeleted={onDeleted}
+              />
+            </>
+          )}
+        </>
       }
       aside={
         <div className="print:hidden">
@@ -218,14 +226,6 @@ function RecipeBody({
             servings={recipe.servings ? servings : null}
           />
           <AddToCollection recipeId={recipe.id} />
-          {recipe.canEdit && (
-            <ShareRecipe
-              recipeId={recipe.id}
-              title={recipe.title}
-              token={recipe.shareToken}
-              onToken={(shareToken) => onRecipe({ ...recipe, shareToken })}
-            />
-          )}
           <Button
             type="button"
             variant="outline"

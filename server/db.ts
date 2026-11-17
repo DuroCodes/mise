@@ -213,7 +213,7 @@ const toRecipe = (
     ownerId: row.ownerId,
     ownerName: row.owner?.name ?? null,
     canEdit: editable,
-    shareToken: editable ? row.shareToken : null,
+    shareToken: row.shareToken,
     rating: stats.rating,
     lastCooked: stats.lastCooked,
     cookCount: stats.cookCount,
