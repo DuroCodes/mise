@@ -64,6 +64,13 @@
       "when": 1794840000000,
       "tag": "0008_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794850000000,
+      "tag": "0009_user_settings",
+      "breakpoints": true
     }
   ]
 }

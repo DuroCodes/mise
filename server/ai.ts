@@ -11,31 +11,46 @@ import {
 import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
- * Optional model features. They stay off unless the server has a key, so
- * recipes never leave the machine unless the person running mise opts in.
+ * Optional model features. They stay off unless the server has a model set
+ * up, so recipes never leave the machine unless the person running mise opts
+ * in.
  *
  * ANTHROPIC_API_KEY still turns on Claude. For anything else set
  * MISE_AI_API_KEY and MISE_AI_MODEL as `provider:model`, for example
- * `openrouter:openai/gpt-5` or `anthropic:claude-opus-5-5`.
+ * `openrouter:openai/gpt-5` or `anthropic:claude-opus-5-5`. A local model
+ * needs no key: `local:hermes3`, with MISE_AI_BASE_URL if it isn't Ollama on
+ * this machine.
  *
- * Without those, an admin can save a provider, model, and key in
- * Admin > AI. The environment always wins over the saved setting.
+ * Without those, an admin can set the provider, model, and key in Admin > AI.
+ * The environment always wins over the saved setting.
  */
-export const aiProviders = ["anthropic", "openai", "openrouter"] as const;
+export const aiProviders = [
+  "anthropic",
+  "openai",
+  "openrouter",
+  "local",
+] as const;
 type ProviderId = (typeof aiProviders)[number];
 
 type AiSetup = {
   provider: ProviderId;
   model: string;
+  /** Empty for a local server that doesn't ask for one. */
   apiKey: string;
   baseURL?: string;
 };
 
 const providers = new Set<ProviderId>(aiProviders);
 
+/** Ollama's OpenAI-compatible endpoint on the same machine. */
+export const localDefaultUrl = "http://localhost:11434/v1";
+
 /** Claude has a sensible default; the others need a model named. */
 export const defaultModel = (provider: ProviderId) =>
   provider === "anthropic" ? "claude-opus-5-5" : "";
+
+/** Only local servers can run without a key. */
+export const needsKey = (provider: ProviderId) => provider !== "local";
 
 const envSetup = (): AiSetup | null => {
   const raw = process.env.MISE_AI_MODEL?.trim();
@@ -56,8 +71,10 @@ const envSetup = (): AiSetup | null => {
     process.env.ANTHROPIC_API_KEY?.trim() ||
     process.env.ANTHROPIC_AUTH_TOKEN?.trim();
   const apiKey = shared || (provider === "anthropic" ? anthropic : "") || "";
-  if (!apiKey || !model) return null;
-  const baseURL = process.env.MISE_AI_BASE_URL?.trim() || undefined;
+  if ((needsKey(provider) && !apiKey) || !model) return null;
+  const baseURL =
+    process.env.MISE_AI_BASE_URL?.trim() ||
+    (provider === "local" ? localDefaultUrl : undefined);
   return { provider, model, apiKey, baseURL };
 };
 
@@ -68,7 +85,8 @@ const settingsFile = `${process.env.DATA_DIR ?? "./data"}/ai-settings.json`;
 const savedShape = z.object({
   provider: z.enum(aiProviders),
   model: z.string().min(1),
-  apiKey: z.string().min(1),
+  apiKey: z.string(),
+  baseURL: z.string().optional(),
 });
 
 let saved: AiSetup | null | undefined;
@@ -80,7 +98,11 @@ const savedSetup = (): AiSetup | null => {
       const parsed = savedShape.safeParse(
         JSON.parse(readFileSync(settingsFile, "utf8"))
       );
-      if (parsed.success) saved = parsed.data;
+      if (
+        parsed.success &&
+        (parsed.data.apiKey || !needsKey(parsed.data.provider))
+      )
+        saved = parsed.data;
     } catch {
       saved = null;
     }
@@ -100,12 +122,15 @@ const modelFor = (setup: AiSetup) => {
     })(setup.model);
   }
   const openai = createOpenAI({
-    apiKey: setup.apiKey,
+    // Local servers like Ollama ignore the key, but the client wants one.
+    apiKey: setup.apiKey || "local",
     baseURL:
       setup.baseURL ??
       (setup.provider === "openrouter"
         ? "https://openrouter.ai/api/v1"
-        : undefined),
+        : setup.provider === "local"
+          ? localDefaultUrl
+          : undefined),
   });
   return openai.chat(setup.model);
 };
@@ -121,6 +146,7 @@ export type AiStatus = {
   source: "environment" | "saved" | null;
   provider: ProviderId | null;
   model: string | null;
+  baseURL: string | null;
   hint: string | null;
 };
 
@@ -133,7 +159,8 @@ export const aiStatus = (): AiStatus => {
     source: fromEnv ? "environment" : setup ? "saved" : null,
     provider: setup?.provider ?? null,
     model: setup?.model ?? null,
-    hint: setup ? `…${setup.apiKey.slice(-4)}` : null,
+    baseURL: setup?.provider === "local" ? (setup.baseURL ?? null) : null,
+    hint: setup?.apiKey ? `…${setup.apiKey.slice(-4)}` : null,
   };
 };
 
@@ -144,17 +171,16 @@ export const savedKeyFor = (provider: ProviderId) => {
 };
 
 /** Sends a one-word request to make sure the key and model work. */
-export const checkSetup = async (setup: {
-  provider: ProviderId;
-  model: string;
-  apiKey: string;
-}): Promise<AiResult<null>> => {
+export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
+  const local = setup.provider === "local";
   try {
     await generateText({
       model: modelFor(setup),
       prompt: "Reply with the word ok.",
       maxOutputTokens: 16,
       maxRetries: 0,
+      // A local model may need to load into memory first.
+      abortSignal: AbortSignal.timeout(local ? 120_000 : 30_000),
     });
     return { ok: true, value: null };
   } catch (error) {
@@ -163,7 +189,12 @@ export const checkSetup = async (setup: {
       if (error.statusCode === 401 || error.statusCode === 403)
         return { ok: false, error: "The provider didn't accept that key" };
       if (error.statusCode === 404)
-        return { ok: false, error: "The provider doesn't know that model" };
+        return {
+          ok: false,
+          error: local
+            ? "The server doesn't have that model. Pull it first, e.g. ollama pull hermes3."
+            : "The provider doesn't know that model",
+        };
       if (error.statusCode === 400)
         return { ok: false, error: "The provider rejected that model or key" };
       if (error.statusCode === 429)
@@ -171,18 +202,26 @@ export const checkSetup = async (setup: {
           ok: false,
           error: "The provider is busy. Try again in a minute.",
         };
+      if (!error.statusCode && local)
+        return {
+          ok: false,
+          error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
+        };
       return {
         ok: false,
         error: "Couldn't check the key with the provider right now",
       };
     }
+    if (local)
+      return {
+        ok: false,
+        error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
+      };
     return { ok: false, error: "Couldn't reach the provider to check the key" };
   }
 };
 
-export const saveSetup = (
-  setup: { provider: ProviderId; model: string; apiKey: string } | null
-) => {
+export const saveSetup = (setup: AiSetup | null) => {
   if (setup)
     writeFileSync(settingsFile, JSON.stringify(setup), { mode: 0o600 });
   else if (existsSync(settingsFile)) unlinkSync(settingsFile);

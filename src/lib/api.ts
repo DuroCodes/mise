@@ -209,18 +209,38 @@ export const discardUpload = (url: string) =>
 
 export const getFeatures = () =>
   zodFetch(
-    z.object({ ai: z.boolean() }),
+    // aiAvailable is optional so an older cached answer still reads offline.
+    z.object({ ai: z.boolean(), aiAvailable: z.boolean().optional() }),
     "Could not load settings",
     "/api/features"
   );
 
-export const aiProviders = ["anthropic", "openai", "openrouter"] as const;
+const userSettingsSchema = z.object({ aiEnabled: z.boolean() });
+
+export type UserSettings = z.infer<typeof userSettingsSchema>;
+
+export const getUserSettings = () =>
+  zodFetch(userSettingsSchema, "Could not load your settings", "/api/settings");
+
+export const updateUserSettings = (patch: Partial<UserSettings>) =>
+  zodFetch(userSettingsSchema, "Could not save that", "/api/settings", {
+    method: "PATCH",
+    ...json(patch),
+  });
+
+export const aiProviders = [
+  "anthropic",
+  "openai",
+  "openrouter",
+  "local",
+] as const;
 export type AiProvider = (typeof aiProviders)[number];
 
 export const aiProviderLabel: Record<AiProvider, string> = {
   anthropic: "Claude (Anthropic)",
   openai: "OpenAI",
   openrouter: "OpenRouter",
+  local: "Local model (Ollama…)",
 };
 
 const aiStatusSchema = z.object({
@@ -228,6 +248,7 @@ const aiStatusSchema = z.object({
   source: z.enum(["environment", "saved"]).nullable(),
   provider: z.enum(aiProviders).nullable(),
   model: z.string().nullable(),
+  baseURL: z.string().nullable(),
   hint: z.string().nullable(),
 });
 
@@ -240,6 +261,7 @@ export const saveAiSetup = (input: {
   provider: AiProvider;
   model: string;
   apiKey: string;
+  baseURL: string;
 }) =>
   zodFetch(aiStatusSchema, "Could not save the AI setting", "/api/admin/ai", {
     method: "PUT",

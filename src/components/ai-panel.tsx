@@ -44,22 +44,33 @@ const providerHelp: Record<
     model: "anthropic/claude-opus-5-5",
     modelHint: "Use the full OpenRouter name, like vendor/model.",
   },
+  local: {
+    keys: "https://ollama.com/library",
+    site: "ollama.com",
+    model: "hermes3",
+    modelHint:
+      "The name your model server uses, like hermes3 or qwen3. It has to be pulled already. Photos need a model that reads images.",
+  },
 };
 
+const localDefaultUrl = "http://localhost:11434/v1";
+
 function AiPanel() {
-  const { setAi } = useSession();
+  const { refreshFeatures } = useSession();
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [provider, setProvider] = useState<AiProvider>("anthropic");
   const [model, setModel] = useState("");
   const [key, setKey] = useState("");
+  const [baseURL, setBaseURL] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   const apply = (next: AiStatus) => {
     setStatus(next);
-    setAi(next.enabled);
+    refreshFeatures();
     if (next.provider) setProvider(next.provider);
     setModel(next.source === "saved" ? (next.model ?? "") : "");
+    setBaseURL(next.source === "saved" ? (next.baseURL ?? "") : "");
   };
 
   useEffect(() => {
@@ -69,7 +80,10 @@ function AiPanel() {
       if (result.ok) {
         setStatus(result.value);
         if (result.value.provider) setProvider(result.value.provider);
-        if (result.value.source === "saved") setModel(result.value.model ?? "");
+        if (result.value.source === "saved") {
+          setModel(result.value.model ?? "");
+          setBaseURL(result.value.baseURL ?? "");
+        }
       } else setError(result.error);
     });
     return () => {
@@ -77,12 +91,16 @@ function AiPanel() {
     };
   }, []);
 
-  const keepsKey = status?.source === "saved" && status.provider === provider;
+  const local = provider === "local";
+  const keepsKey =
+    status?.source === "saved" &&
+    status.provider === provider &&
+    status.hint !== null;
 
   const save = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (pending) return;
-    if (!key.trim() && !keepsKey) {
+    if (!local && !key.trim() && !keepsKey) {
       setError("Paste the API key");
       return;
     }
@@ -96,6 +114,7 @@ function AiPanel() {
       provider,
       model: model.trim(),
       apiKey: key.trim(),
+      baseURL: local ? baseURL.trim() : "",
     });
     setPending(false);
     if (!result.ok) {
@@ -143,10 +162,12 @@ function AiPanel() {
           {status === null
             ? "Checking…"
             : status.enabled && status.provider
-              ? `On: ${aiProviderLabel[status.provider]}, ${status.model}, key ending ${status.hint}${
+              ? `On: ${aiProviderLabel[status.provider]}, ${status.model}${
+                  status.baseURL ? ` at ${status.baseURL}` : ""
+                }${status.hint ? `, key ending ${status.hint}` : ""}${
                   fromEnvironment ? ", from the server's environment" : ""
                 }.`
-              : "Off. Add a key to turn it on."}
+              : "Off. Pick a provider to turn it on."}
         </p>
 
         {status && !fromEnvironment && (
@@ -158,11 +179,10 @@ function AiPanel() {
                   value={provider}
                   onValueChange={(value) => {
                     setProvider(value as AiProvider);
-                    setModel(
-                      status.source === "saved" && status.provider === value
-                        ? (status.model ?? "")
-                        : ""
-                    );
+                    const same =
+                      status.source === "saved" && status.provider === value;
+                    setModel(same ? (status.model ?? "") : "");
+                    setBaseURL(same ? (status.baseURL ?? "") : "");
                     setError(null);
                   }}
                   disabled={pending}
@@ -195,9 +215,33 @@ function AiPanel() {
             <p className="-mt-1 text-xs text-muted-foreground">
               {help.modelHint}
             </p>
+            {local && (
+              <div className="space-y-2">
+                <Label htmlFor="ai-url">Server address</Label>
+                <Input
+                  id="ai-url"
+                  value={baseURL}
+                  spellCheck={false}
+                  autoComplete="off"
+                  inputMode="url"
+                  placeholder={localDefaultUrl}
+                  disabled={pending}
+                  onChange={(event) => setBaseURL(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Any OpenAI-compatible server (Ollama, LM Studio, llama.cpp,
+                  vLLM). Leave blank for Ollama on this machine. Nothing leaves
+                  your network.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="ai-key">
-                {keepsKey ? "API key (blank keeps the saved one)" : "API key"}
+                {local
+                  ? "API key (optional)"
+                  : keepsKey
+                    ? "API key (blank keeps the saved one)"
+                    : "API key"}
               </Label>
               <Input
                 id="ai-key"
@@ -210,18 +254,36 @@ function AiPanel() {
                 onChange={(event) => setKey(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Get one at{" "}
-                <a
-                  href={help.keys}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  {help.site}
-                </a>
-                . Saving sends a one-word test request, then keeps the key in
-                this server's data folder. It's never put in backups or shown
-                again.
+                {local ? (
+                  <>
+                    Only if your server asks for one. Find models at{" "}
+                    <a
+                      href={help.keys}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      {help.site}
+                    </a>
+                    . Saving sends a one-word test request, which can take a
+                    minute while the model loads.
+                  </>
+                ) : (
+                  <>
+                    Get one at{" "}
+                    <a
+                      href={help.keys}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      {help.site}
+                    </a>
+                    . Saving sends a one-word test request, then keeps the key
+                    in this server's data folder. It's never put in backups or
+                    shown again.
+                  </>
+                )}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -244,8 +306,9 @@ function AiPanel() {
 
         {fromEnvironment && (
           <p className="text-xs text-muted-foreground">
-            Set by ANTHROPIC_API_KEY or MISE_AI_API_KEY and MISE_AI_MODEL. To
-            manage it here instead, start the server without them.
+            Set by ANTHROPIC_API_KEY or MISE_AI_MODEL (with MISE_AI_API_KEY or
+            MISE_AI_BASE_URL). To manage it here instead, start the server
+            without them.
           </p>
         )}
 

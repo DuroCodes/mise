@@ -23,6 +23,7 @@ import {
 } from "../src/shared/pantry";
 import { safeNext, sharedLink } from "../src/lib/view";
 import {
+  aiStatus,
   linksFromSearchHtml,
   parseFound,
   plannerRecipes,
@@ -857,5 +858,38 @@ describe("Claude meal planner", () => {
       recipe("loved", true, 0),
     ]).map((item) => item.id);
     expect(order).toEqual(["loved", "regular", "new"]);
+  });
+});
+
+describe("local models", () => {
+  test("a local model turns AI on without a key", () => {
+    const names = [
+      "MISE_AI_MODEL",
+      "MISE_AI_API_KEY",
+      "MISE_AI_BASE_URL",
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+    ];
+    const before = names.map((name) => process.env[name]);
+    try {
+      for (const name of names) delete process.env[name];
+      process.env.MISE_AI_MODEL = "local:hermes3";
+      expect(aiStatus()).toMatchObject({
+        enabled: true,
+        source: "environment",
+        provider: "local",
+        model: "hermes3",
+        baseURL: "http://localhost:11434/v1",
+        hint: null,
+      });
+      process.env.MISE_AI_MODEL = "openai:gpt-5";
+      expect(aiStatus().source).not.toBe("environment");
+    } finally {
+      names.forEach((name, index) => {
+        const value = before[index];
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      });
+    }
   });
 });

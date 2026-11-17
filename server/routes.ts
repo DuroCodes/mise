@@ -8,6 +8,8 @@ import {
   askAboutRecipe,
   checkSetup,
   defaultModel,
+  localDefaultUrl,
+  needsKey,
   extractRecipe,
   findRecipes,
   planMeals,
@@ -27,6 +29,7 @@ import {
   updatePantryItem,
 } from "./pantry";
 import { isAdmin, readJson, type Api } from "./api";
+import { getUserSettings, updateUserSettings } from "./user-settings";
 import { createBackupZip, restoreBackup } from "./backup";
 import {
   addToCollection,
@@ -99,7 +102,34 @@ const ownerOf = (id: string) =>
     .get();
 
 export const registerRoutes = (api: Api) => {
-  api.get("/features", (c) => c.json({ ai: aiEnabled() }));
+  // aiAvailable: the server has a model set up. ai: this person also has AI
+  // turned on in their settings, so the AI buttons should show.
+  api.get("/features", (c) => {
+    const available = aiEnabled();
+    return c.json({
+      ai: available && getUserSettings(c.get("user").id).aiEnabled,
+      aiAvailable: available,
+    });
+  });
+
+  // People who turn AI off never have their recipes or pantry sent anywhere.
+  api.use("/ai/*", async (c, next) => {
+    if (!getUserSettings(c.get("user").id).aiEnabled)
+      return c.json({ error: "AI is turned off in your settings" }, 403);
+    return next();
+  });
+
+  api.get("/settings", (c) => c.json(getUserSettings(c.get("user").id)));
+
+  api.patch("/settings", async (c) => {
+    const parsed = z
+      .object({ aiEnabled: z.boolean() })
+      .partial()
+      .strict()
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success) return c.json({ error: "Check the settings" }, 400);
+    return c.json(updateUserSettings(c.get("user").id, parsed.data));
+  });
 
   // Ratings and cooking log -------------------------------------------------
 
@@ -909,10 +939,15 @@ export const registerRoutes = (api: Api) => {
         model: z.string().trim().max(200).regex(/^\S*$/).default(""),
         // Blank keeps the saved key for the same provider.
         apiKey: z.string().trim().max(400).regex(/^\S*$/).default(""),
+        // Only used for a local server; blank means Ollama on this machine.
+        baseURL: z.union([httpUrl, z.literal("")]).default(""),
       })
       .safeParse(await readJson(c.req.raw));
     if (!parsed.success)
-      return c.json({ error: "Check the provider, model, and key" }, 400);
+      return c.json(
+        { error: "Check the provider, model, key, and address" },
+        400
+      );
     if (aiStatus().source === "environment")
       return c.json(
         {
@@ -924,13 +959,20 @@ export const registerRoutes = (api: Api) => {
     const { provider } = parsed.data;
     const model = parsed.data.model || defaultModel(provider);
     if (!model) return c.json({ error: "Name the model to use" }, 400);
-    const apiKey = parsed.data.apiKey || savedKeyFor(provider);
-    if (!apiKey) return c.json({ error: "Paste the API key" }, 400);
-    if (apiKey.length < 20)
-      return c.json({ error: "Paste the whole API key" }, 400);
-    const checked = await checkSetup({ provider, model, apiKey });
+    const apiKey = parsed.data.apiKey || savedKeyFor(provider) || "";
+    if (needsKey(provider)) {
+      if (!apiKey) return c.json({ error: "Paste the API key" }, 400);
+      if (apiKey.length < 20)
+        return c.json({ error: "Paste the whole API key" }, 400);
+    }
+    const baseURL =
+      provider === "local"
+        ? (parsed.data.baseURL || localDefaultUrl).replace(/\/+$/, "")
+        : undefined;
+    const setup = { provider, model, apiKey, baseURL };
+    const checked = await checkSetup(setup);
     if (!checked.ok) return c.json({ error: checked.error }, 400);
-    saveSetup({ provider, model, apiKey });
+    saveSetup(setup);
     return c.json(aiStatus());
   });
 
