@@ -2,6 +2,8 @@
 
 a self-hosted recipe manager, inspired by mealie.
 
+![demo](demo.png)
+
 ## dev
 
 you need [bun](https://bun.sh).
