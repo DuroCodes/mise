@@ -54,7 +54,13 @@ import {
   type PlanEntry,
 } from "@/lib/api";
 import { useTitle } from "@/lib/use-title";
-import { addDays, dayFromKey, localDay, storedMeasure, weekStart } from "@/lib/view";
+import {
+  addDays,
+  dayFromKey,
+  localDay,
+  storedMeasure,
+  weekStart,
+} from "@/lib/view";
 import type { Recipe } from "@/shared/recipe";
 
 function DraggableRecipe({ recipe }: { recipe: Recipe }) {
@@ -73,7 +79,10 @@ function DraggableRecipe({ recipe }: { recipe: Recipe }) {
       {...listeners}
       aria-label={`Drag ${recipe.title} onto a day`}
     >
-      <GripVerticalIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <GripVerticalIcon
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+      />
       <span className="min-w-0 truncate">{recipe.title}</span>
     </li>
   );
@@ -110,9 +119,16 @@ function EntryCard({
         <GripVerticalIcon className="size-4" />
       </button>
       {entry.image ? (
-        <img src={entry.image} alt="" className="size-9 shrink-0 rounded-md object-cover" />
+        <img
+          src={entry.image}
+          alt=""
+          className="size-9 shrink-0 rounded-md object-cover"
+        />
       ) : (
-        <span className="size-9 shrink-0 rounded-md bg-muted" aria-hidden="true" />
+        <span
+          className="size-9 shrink-0 rounded-md bg-muted"
+          aria-hidden="true"
+        />
       )}
       <div className="min-w-0 flex-1">
         <Link
@@ -121,8 +137,15 @@ function EntryCard({
         >
           {entry.title}
         </Link>
-        <Select value={entry.slot} onValueChange={(slot) => onSlot(slot as MealSlot)}>
-          <SelectTrigger size="sm" aria-label={`Meal for ${entry.title}`} className="mt-0.5">
+        <Select
+          value={entry.slot}
+          onValueChange={(slot) => onSlot(slot as MealSlot)}
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label={`Meal for ${entry.title}`}
+            className="mt-0.5"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -167,7 +190,11 @@ function DayRow({
   return (
     <section
       ref={setNodeRef}
-      aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+      aria-label={date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })}
       className={cn(
         "rounded-xl p-3 ring-1 ring-foreground/10 transition-colors",
         isOver ? "bg-brand/10 ring-brand" : "bg-muted/30",
@@ -179,7 +206,10 @@ function DayRow({
           {date.toLocaleDateString(undefined, { weekday: "long" })}
           <span className="font-normal text-muted-foreground">
             {" "}
-            {date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            {date.toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}
             {today && " · today"}
           </span>
         </h2>
@@ -211,7 +241,9 @@ function PlanPage() {
   const [params, setParams] = useSearchParams();
   const today = localDay();
   const requested = params.get("week");
-  const start = weekStart(requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : today);
+  const start = weekStart(
+    requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : today
+  );
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
   const end = days[6] ?? start;
 
@@ -219,6 +251,7 @@ function PlanPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [query, setQuery] = useState("");
   const [picking, setPicking] = useState<string | null>(null);
+  const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [pickSlot, setPickSlot] = useState<MealSlot>("dinner");
   const [dragging, setDragging] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -227,7 +260,9 @@ function PlanPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor)
   );
 
@@ -247,7 +282,9 @@ function PlanPage() {
     let active = true;
     listRecipes().then((result) => {
       if (active && result.ok)
-        setRecipes([...result.value].sort((a, b) => a.title.localeCompare(b.title)));
+        setRecipes(
+          [...result.value].sort((a, b) => a.title.localeCompare(b.title))
+        );
     });
     return () => {
       active = false;
@@ -269,8 +306,11 @@ function PlanPage() {
 
   const move = async (entry: PlanEntry, day: string) => {
     if (entry.day === day) return;
-    setEntries((current) =>
-      current?.map((item) => (item.id === entry.id ? { ...item, day } : item)) ?? current
+    setEntries(
+      (current) =>
+        current?.map((item) =>
+          item.id === entry.id ? { ...item, day } : item
+        ) ?? current
     );
     const result = await updatePlanEntry(entry.id, { day });
     if (!result.ok) toast.error(result.error);
@@ -278,8 +318,11 @@ function PlanPage() {
   };
 
   const setSlot = async (entry: PlanEntry, slot: MealSlot) => {
-    setEntries((current) =>
-      current?.map((item) => (item.id === entry.id ? { ...item, slot } : item)) ?? current
+    setEntries(
+      (current) =>
+        current?.map((item) =>
+          item.id === entry.id ? { ...item, slot } : item
+        ) ?? current
     );
     const result = await updatePlanEntry(entry.id, { slot });
     if (!result.ok) toast.error(result.error);
@@ -287,7 +330,9 @@ function PlanPage() {
   };
 
   const remove = async (entry: PlanEntry) => {
-    setEntries((current) => current?.filter((item) => item.id !== entry.id) ?? current);
+    setEntries(
+      (current) => current?.filter((item) => item.id !== entry.id) ?? current
+    );
     const result = await removePlanEntry(entry.id);
     if (!result.ok) {
       toast.error(result.error);
@@ -295,7 +340,8 @@ function PlanPage() {
     }
   };
 
-  const onDragStart = (event: DragStartEvent) => setDragging(String(event.active.id));
+  const onDragStart = (event: DragStartEvent) =>
+    setDragging(String(event.active.id));
 
   const onDragEnd = (event: DragEndEvent) => {
     setDragging(null);
@@ -303,8 +349,7 @@ function PlanPage() {
     if (!over.startsWith("day:")) return;
     const day = over.slice(4);
     const data = event.active.data.current as
-      | { recipe?: Recipe; entry?: PlanEntry }
-      | undefined;
+      { recipe?: Recipe; entry?: PlanEntry } | undefined;
     if (data?.recipe) void add(day, data.recipe, "dinner");
     else if (data?.entry) void move(data.entry, day);
   };
@@ -355,7 +400,12 @@ function PlanPage() {
   })}`;
 
   return (
-    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setDragging(null)}
+    >
       <div className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
@@ -364,13 +414,30 @@ function PlanPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1">
-              <Button type="button" variant="outline" size="icon" aria-label="Previous week" onClick={() => goWeek(addDays(start, -7))}>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Previous week"
+                onClick={() => goWeek(addDays(start, -7))}
+              >
                 <ChevronLeftIcon />
               </Button>
-              <Button type="button" variant="outline" disabled={start === weekStart(today)} onClick={() => goWeek(weekStart(today))}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={start === weekStart(today)}
+                onClick={() => goWeek(weekStart(today))}
+              >
                 This week
               </Button>
-              <Button type="button" variant="outline" size="icon" aria-label="Next week" onClick={() => goWeek(addDays(start, 7))}>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Next week"
+                onClick={() => goWeek(addDays(start, 7))}
+              >
                 <ChevronRightIcon />
               </Button>
             </div>
@@ -400,7 +467,9 @@ function PlanPage() {
           <aside className="hidden space-y-3 lg:block">
             <div className="sticky top-20 space-y-3">
               <h2 className="text-sm font-medium">Recipes</h2>
-              <p className="text-xs text-muted-foreground">Drag one onto a day.</p>
+              <p className="text-xs text-muted-foreground">
+                Drag one onto a day.
+              </p>
               <div className="relative">
                 <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -416,7 +485,9 @@ function PlanPage() {
                   <DraggableRecipe key={recipe.id} recipe={recipe} />
                 ))}
                 {shown.length === 0 && (
-                  <li className="text-xs text-muted-foreground">No recipes match.</li>
+                  <li className="text-xs text-muted-foreground">
+                    No recipes match.
+                  </li>
                 )}
               </ul>
             </div>
@@ -431,6 +502,7 @@ function PlanPage() {
                 entries={(entries ?? []).filter((entry) => entry.day === day)}
                 onAdd={() => {
                   setQuery("");
+                  setPickedDay(day);
                   setPicking(day);
                 }}
                 onSlot={setSlot}
@@ -449,13 +521,16 @@ function PlanPage() {
         ) : null}
       </DragOverlay>
 
-      <Dialog open={picking !== null} onOpenChange={(open) => !open && setPicking(null)}>
+      <Dialog
+        open={picking !== null}
+        onOpenChange={(open) => !open && setPicking(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               Add to{" "}
-              {picking &&
-                dayFromKey(picking).toLocaleDateString(undefined, {
+              {pickedDay &&
+                dayFromKey(pickedDay).toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "short",
                   day: "numeric",
@@ -464,7 +539,10 @@ function PlanPage() {
             <DialogDescription>Pick a meal, then a recipe.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
-            <Select value={pickSlot} onValueChange={(slot) => setPickSlot(slot as MealSlot)}>
+            <Select
+              value={pickSlot}
+              onValueChange={(slot) => setPickSlot(slot as MealSlot)}
+            >
               <SelectTrigger aria-label="Meal">
                 <SelectValue />
               </SelectTrigger>
@@ -495,16 +573,25 @@ function PlanPage() {
                   }}
                 >
                   {recipe.image ? (
-                    <img src={recipe.image} alt="" className="size-8 shrink-0 rounded-md object-cover" />
+                    <img
+                      src={recipe.image}
+                      alt=""
+                      className="size-8 shrink-0 rounded-md object-cover"
+                    />
                   ) : (
-                    <span className="size-8 shrink-0 rounded-md bg-muted" aria-hidden="true" />
+                    <span
+                      className="size-8 shrink-0 rounded-md bg-muted"
+                      aria-hidden="true"
+                    />
                   )}
                   <span className="min-w-0 truncate">{recipe.title}</span>
                 </button>
               </li>
             ))}
             {shown.length === 0 && (
-              <li className="px-2 py-2 text-sm text-muted-foreground">No recipes match.</li>
+              <li className="px-2 py-2 text-sm text-muted-foreground">
+                No recipes match.
+              </li>
             )}
           </ul>
         </DialogContent>
