@@ -4,6 +4,7 @@ import {
   PrinterIcon,
   ShoppingBasketIcon,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -163,7 +164,17 @@ function RecipeBody({
             aria-busy={adding}
             onClick={addToList}
           >
-            <ShoppingBasketIcon data-icon="inline-start" />
+            <motion.span
+              className="inline-flex"
+              animate={adding ? { rotate: [0, -8, 6, 0] } : { rotate: 0 }}
+              transition={
+                adding
+                  ? { duration: 0.6, ease: "easeInOut", repeat: Infinity }
+                  : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
+              }
+            >
+              <ShoppingBasketIcon data-icon="inline-start" />
+            </motion.span>
             Shopping list
           </Button>
           <AddToPlan
