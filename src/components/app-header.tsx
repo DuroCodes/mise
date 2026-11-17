@@ -84,7 +84,13 @@ function AppHeader({
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
-          <Button asChild variant="ghost" size="icon" aria-label="Settings">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            aria-label="Settings"
+            className="[&_svg]:transition-transform [&_svg]:duration-200 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] hover:[&_svg]:rotate-60 aria-[current=page]:[&_svg]:rotate-60 motion-reduce:[&_svg]:transition-none"
+          >
             <NavLink to="/settings">
               <SettingsIcon />
             </NavLink>

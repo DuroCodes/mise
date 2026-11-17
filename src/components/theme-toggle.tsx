@@ -16,7 +16,7 @@ function ThemeToggle() {
           variant="ghost"
           size="icon"
           aria-label="Choose a theme"
-          className="[&_svg]:transition-transform [&_svg]:duration-200 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=open]:[&_svg]:rotate-12 motion-reduce:[&_svg]:transition-none"
+          className="[&_svg]:transition-transform [&_svg]:duration-200 [&_svg]:ease-[cubic-bezier(0.16,1,0.3,1)] hover:[&_svg]:rotate-20 data-[state=open]:[&_svg]:rotate-20 motion-reduce:[&_svg]:transition-none"
         >
           <PaletteIcon />
         </Button>
@@ -35,7 +35,7 @@ function ThemeToggle() {
               <DropdownMenu.RadioItem
                 key={option.id}
                 value={option.id}
-                className="flex cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none data-[highlighted]:bg-muted"
+                className="flex cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none data-highlighted:bg-muted"
               >
                 {option.id === "system" ? (
                   <MonitorIcon
