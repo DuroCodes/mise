@@ -12,7 +12,8 @@ export const storeLayout = z
   .max(aisles.length)
   .refine(
     (sections) =>
-      new Set(sections.map((section) => section.aisle)).size === sections.length,
+      new Set(sections.map((section) => section.aisle)).size ===
+      sections.length,
     "Each section can appear once"
   );
 

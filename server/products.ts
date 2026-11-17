@@ -10,7 +10,9 @@ const cache = new Map<string, Product | null>();
 const maxCached = 2000;
 
 const clean = (value: unknown) =>
-  typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, 120) : "";
+  typeof value === "string"
+    ? value.replace(/\s+/g, " ").trim().slice(0, 120)
+    : "";
 
 const remember = (code: string, product: Product | null) => {
   if (cache.size >= maxCached) {

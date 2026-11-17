@@ -51,11 +51,14 @@ export const sharedLink = (params: URLSearchParams) => {
 
 /** A same-site path to return to after signing in, or "/". */
 export const safeNext = (raw: string | null) =>
-  raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login")
+  raw &&
+  raw.startsWith("/") &&
+  !raw.startsWith("//") &&
+  !raw.startsWith("/login")
     ? raw
     : "/";
 
-export const isMeasure =(value: string | null): value is Measure =>
+export const isMeasure = (value: string | null): value is Measure =>
   value === "original" || value === "metric" || value === "imperial";
 
 /** Today's date in the viewer's time zone, as YYYY-MM-DD. */

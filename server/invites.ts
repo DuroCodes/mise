@@ -8,12 +8,19 @@ export const inviteTokenShape = linkTokenShape;
 
 const inviteTokenTaken = (token: string) =>
   Boolean(
-    db.select({ id: invites.id }).from(invites).where(eq(invites.token, token)).get()
+    db
+      .select({ id: invites.id })
+      .from(invites)
+      .where(eq(invites.token, token))
+      .get()
   );
 
 /** Links created before the short codes are swapped the next time the server starts. */
 export const shortenInviteTokens = () => {
-  const rows = db.select({ id: invites.id, token: invites.token }).from(invites).all();
+  const rows = db
+    .select({ id: invites.id, token: invites.token })
+    .from(invites)
+    .all();
   for (const row of rows) {
     if (row.token.length === 8) continue;
     db.update(invites)
@@ -68,7 +75,11 @@ export const createInvite = (createdBy: string, note: string, days: number) => {
 };
 
 export const revokeInvite = (id: string) => {
-  const row = db.select({ id: invites.id }).from(invites).where(eq(invites.id, id)).get();
+  const row = db
+    .select({ id: invites.id })
+    .from(invites)
+    .where(eq(invites.id, id))
+    .get();
   if (!row) return false;
   db.delete(invites).where(eq(invites.id, id)).run();
   return true;
@@ -85,7 +96,11 @@ const openInvite = (token: string) =>
 export const describeInvite = (token: string) => {
   if (!inviteTokenShape.test(token)) return null;
   const row = db
-    .select({ note: invites.note, inviterName: user.name, expiresAt: invites.expiresAt })
+    .select({
+      note: invites.note,
+      inviterName: user.name,
+      expiresAt: invites.expiresAt,
+    })
     .from(invites)
     .leftJoin(user, eq(user.id, invites.createdBy))
     .where(openInvite(token))
@@ -98,8 +113,7 @@ export const describeInvite = (token: string) => {
 };
 
 export type AcceptResult =
-  | { ok: true }
-  | { ok: false; status: 400 | 404; error: string };
+  { ok: true } | { ok: false; status: 400 | 404; error: string };
 
 /**
  * Creates a member account from an invite. The invite is claimed first, so
@@ -112,7 +126,11 @@ export const acceptInvite = async (
   if (!inviteTokenShape.test(token))
     return { ok: false, status: 404, error: "This invite link doesn't work" };
   if (emailTaken(input.email))
-    return { ok: false, status: 400, error: "That email already has an account. Sign in instead." };
+    return {
+      ok: false,
+      status: 400,
+      error: "That email already has an account. Sign in instead.",
+    };
 
   const claimed = db
     .update(invites)
@@ -131,7 +149,10 @@ export const acceptInvite = async (
   try {
     await withSignup(() => auth.api.signUpEmail({ body: input }));
   } catch (error) {
-    db.update(invites).set({ usedAt: null }).where(eq(invites.id, invite.id)).run();
+    db.update(invites)
+      .set({ usedAt: null })
+      .where(eq(invites.id, invite.id))
+      .run();
     const code =
       error &&
       typeof error === "object" &&
@@ -142,7 +163,11 @@ export const acceptInvite = async (
         ? String(error.body.code)
         : "";
     if (code.includes("USER_ALREADY_EXISTS"))
-      return { ok: false, status: 400, error: "That email already has an account. Sign in instead." };
+      return {
+        ok: false,
+        status: 400,
+        error: "That email already has an account. Sign in instead.",
+      };
     return { ok: false, status: 400, error: "Could not create the account" };
   }
 
@@ -150,6 +175,9 @@ export const acceptInvite = async (
     (entry) => entry.email.toLowerCase() === input.email.trim().toLowerCase()
   );
   if (person)
-    db.update(invites).set({ usedBy: person.id }).where(eq(invites.id, invite.id)).run();
+    db.update(invites)
+      .set({ usedBy: person.id })
+      .where(eq(invites.id, invite.id))
+      .run();
   return { ok: true };
 };

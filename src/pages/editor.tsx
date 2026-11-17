@@ -102,7 +102,8 @@ const draftFromInput = (imported: RecipeInput): Draft => ({
 
 /** A recipe handed over by "Send to Mise", used once and then cleared. */
 const receivedDraft = (): Draft | null => {
-  if (new URLSearchParams(window.location.search).get("received") !== "1") return null;
+  if (new URLSearchParams(window.location.search).get("received") !== "1")
+    return null;
   try {
     const raw = sessionStorage.getItem(receivedKey);
     if (!raw) return null;
@@ -197,7 +198,9 @@ function CountField({
 function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(() => (recipe ? null : receivedDraft()) ?? draftFrom(recipe));
+  const [draft, setDraft] = useState(
+    () => (recipe ? null : receivedDraft()) ?? draftFrom(recipe)
+  );
   const { ai } = useSession();
   const [params, setParams] = useSearchParams();
   const [tagDraft, setTagDraft] = useState("");

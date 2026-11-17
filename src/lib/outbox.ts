@@ -9,7 +9,13 @@ import { matchListItem } from "@/shared/pantry";
 export type Op =
   | { kind: "check"; id: string; checked: boolean }
   | { kind: "remove"; id: string }
-  | { kind: "add"; tempId: string; name: string; amount: string; checked: boolean };
+  | {
+      kind: "add";
+      tempId: string;
+      name: string;
+      amount: string;
+      checked: boolean;
+    };
 
 let account = "";
 export const outboxFor = (userId: string) => {
@@ -60,7 +66,9 @@ const enqueue = (op: Op) => {
       return [{ ...entry, checked: op.checked }];
     });
   } else {
-    ops = ops.filter((entry) => !(entry.kind === "check" && entry.id === op.id));
+    ops = ops.filter(
+      (entry) => !(entry.kind === "check" && entry.id === op.id)
+    );
     ops.push(op);
   }
   write(ops);
@@ -71,8 +79,11 @@ export const withOutbox = (items: ShoppingItem[]) => {
   let list = [...items];
   for (const op of read()) {
     if (op.kind === "check")
-      list = list.map((item) => (item.id === op.id ? { ...item, checked: op.checked } : item));
-    else if (op.kind === "remove") list = list.filter((item) => item.id !== op.id);
+      list = list.map((item) =>
+        item.id === op.id ? { ...item, checked: op.checked } : item
+      );
+    else if (op.kind === "remove")
+      list = list.filter((item) => item.id !== op.id);
     else
       list.push({
         id: op.tempId,
@@ -87,14 +98,21 @@ export const withOutbox = (items: ShoppingItem[]) => {
   return list;
 };
 
-type Sent = { network: false } | { network: true; ok: boolean; list: ShoppingItem[] | null };
+type Sent =
+  | { network: false }
+  | { network: true; ok: boolean; list: ShoppingItem[] | null };
 
-const request = async (method: string, path: string, body?: unknown): Promise<Sent> => {
+const request = async (
+  method: string,
+  path: string,
+  body?: unknown
+): Promise<Sent> => {
   let response: Response;
   try {
     response = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      headers:
+        body === undefined ? undefined : { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
@@ -103,17 +121,30 @@ const request = async (method: string, path: string, body?: unknown): Promise<Se
   // The service worker answers 503 when there's no connection.
   if (response.status === 503) return { network: false };
   const data = (await response.json().catch(() => null)) as unknown;
-  return { network: true, ok: response.ok, list: Array.isArray(data) ? (data as ShoppingItem[]) : null };
+  return {
+    network: true,
+    ok: response.ok,
+    list: Array.isArray(data) ? (data as ShoppingItem[]) : null,
+  };
 };
 
 const perform = async (op: Op): Promise<Sent> => {
-  if (op.kind === "check") return request("PATCH", `/api/shopping/${op.id}`, { checked: op.checked });
+  if (op.kind === "check")
+    return request("PATCH", `/api/shopping/${op.id}`, { checked: op.checked });
   if (op.kind === "remove") return request("DELETE", `/api/shopping/${op.id}`);
   const amount = op.amount.trim();
-  const added = await request("POST", "/api/shopping", amount ? { name: op.name, amount } : { name: op.name });
+  const added = await request(
+    "POST",
+    "/api/shopping",
+    amount ? { name: op.name, amount } : { name: op.name }
+  );
   if (!added.network || !added.ok || !op.checked || !added.list) return added;
-  const match = matchListItem(op.name, added.list) ?? added.list.find((item) => !item.checked && item.name === op.name);
-  return match ? request("PATCH", `/api/shopping/${match.id}`, { checked: true }) : added;
+  const match =
+    matchListItem(op.name, added.list) ??
+    added.list.find((item) => !item.checked && item.name === op.name);
+  return match
+    ? request("PATCH", `/api/shopping/${match.id}`, { checked: true })
+    : added;
 };
 
 let flushing: Promise<boolean> | null = null;
@@ -152,7 +183,11 @@ export const flush = async (): Promise<boolean> => {
  * Sends one change, or saves it for later when offline. Returns the fresh
  * list when the server answered with one.
  */
-export const send = async (op: Op): Promise<{ queued: true } | { queued: false; ok: boolean; list: ShoppingItem[] | null }> => {
+export const send = async (
+  op: Op
+): Promise<
+  { queued: true } | { queued: false; ok: boolean; list: ShoppingItem[] | null }
+> => {
   if (op.kind !== "add" && isTemp(op.id)) {
     enqueue(op);
     void flush();

@@ -1,7 +1,13 @@
 import { UtensilsCrossedIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState, type ReactNode, type SubmitEvent } from "react";
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
+import {
+  Link,
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -223,7 +229,9 @@ function InvitePage() {
     let active = true;
     describeInvite(token).then((result) => {
       if (!active) return;
-      setInvite(result.ok ? { inviterName: result.value.inviterName } : "invalid");
+      setInvite(
+        result.ok ? { inviterName: result.value.inviterName } : "invalid"
+      );
     });
     return () => {
       active = false;
@@ -346,7 +354,9 @@ function InvitePage() {
             autoComplete="new-password"
             onChange={(event) => setPassword(event.target.value)}
           />
-          <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+          <p className="text-xs text-muted-foreground">
+            At least 8 characters.
+          </p>
         </div>
         {error && (
           <p className="text-sm text-destructive" role="alert">

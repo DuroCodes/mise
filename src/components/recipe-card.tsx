@@ -67,7 +67,10 @@ function RecipeCard({
             </h2>
             <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
               <span>
-                {[minutes, recipe.servings ? `${recipe.servings} servings` : null]
+                {[
+                  minutes,
+                  recipe.servings ? `${recipe.servings} servings` : null,
+                ]
                   .filter(Boolean)
                   .join(" · ") || "No time set"}
               </span>

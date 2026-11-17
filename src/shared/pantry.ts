@@ -2,11 +2,23 @@ import { matchFood, tokens } from "./nutrition";
 
 /** Things nearly every kitchen has; they never count as "missing". */
 const staples = new Set(
-  ["salt", "kosher salt", "sea salt", "flaky salt", "black pepper", "pepper",
-    "ground pepper", "salt and pepper", "salt and black pepper", "water", "ice",
-    "ice water", "hot water", "cold water", "warm water"].map((name) =>
-    tokens(name).join(" ")
-  )
+  [
+    "salt",
+    "kosher salt",
+    "sea salt",
+    "flaky salt",
+    "black pepper",
+    "pepper",
+    "ground pepper",
+    "salt and pepper",
+    "salt and black pepper",
+    "water",
+    "ice",
+    "ice water",
+    "hot water",
+    "cold water",
+    "warm water",
+  ].map((name) => tokens(name).join(" "))
 );
 
 export const isStaple = (name: string) => staples.has(tokens(name).join(" "));
@@ -42,7 +54,8 @@ export const covers = (pantryName: string, ingredientName: string) => {
 export const matchListItem = <T extends { name: string; checked: boolean }>(
   productName: string,
   items: T[]
-) => items.find((item) => !item.checked && covers(item.name, productName)) ?? null;
+) =>
+  items.find((item) => !item.checked && covers(item.name, productName)) ?? null;
 
 export type Match<R> = {
   recipe: R;

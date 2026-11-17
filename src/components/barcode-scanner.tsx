@@ -13,7 +13,9 @@ type Scan = {
   productName?: string;
 };
 
-type Detector = { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
+type Detector = {
+  detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
+};
 type DetectorClass = {
   new (options: { formats: string[] }): Detector;
   getSupportedFormats?: () => Promise<string[]>;
@@ -51,7 +53,9 @@ function BarcodeScanner({
 
     const update = (code: string, patch: Partial<Scan>) =>
       setScans((current) =>
-        current.map((scan) => (scan.code === code ? { ...scan, ...patch } : scan))
+        current.map((scan) =>
+          scan.code === code ? { ...scan, ...patch } : scan
+        )
       );
 
     // Each barcode is handled once per session (the camera sees it many times
@@ -59,7 +63,8 @@ function BarcodeScanner({
     const handle = async (code: string) => {
       if (!/^\d{8,14}$/.test(code)) return;
       const last = recent.current.get(code);
-      if (last === Infinity || (last !== undefined && Date.now() - last < 3000)) return;
+      if (last === Infinity || (last !== undefined && Date.now() - last < 3000))
+        return;
       recent.current.set(code, Infinity);
       setScans((current) => [
         { code, label: "Looking it up…", state: "looking" },
@@ -74,7 +79,10 @@ function BarcodeScanner({
       }
       const product = result.value;
       if (!product) {
-        update(code, { label: "Unknown product. Tap it on your list.", state: "unknown" });
+        update(code, {
+          label: "Unknown product. Tap it on your list.",
+          state: "unknown",
+        });
         return;
       }
       const item = matchListItem(product.name, latestItems.current);
@@ -85,15 +93,30 @@ function BarcodeScanner({
         } catch {
           // Not every device vibrates.
         }
-        update(code, { label: product.name, state: "checked", itemName: item.name });
+        update(code, {
+          label: product.name,
+          state: "checked",
+          itemName: item.name,
+        });
         return;
       }
       const already = latestItems.current.find(
-        (entry) => entry.checked && matchListItem(product.name, [{ ...entry, checked: false }])
+        (entry) =>
+          entry.checked &&
+          matchListItem(product.name, [{ ...entry, checked: false }])
       );
       if (already)
-        update(code, { label: product.name, state: "checked", itemName: already.name });
-      else update(code, { label: product.name, state: "missing", productName: product.name });
+        update(code, {
+          label: product.name,
+          state: "checked",
+          itemName: already.name,
+        });
+      else
+        update(code, {
+          label: product.name,
+          state: "missing",
+          productName: product.name,
+        });
     };
 
     const start = async () => {
@@ -103,7 +126,8 @@ function BarcodeScanner({
         setError("This browser can't use the camera here.");
         return;
       }
-      const Native = (window as unknown as { BarcodeDetector?: DetectorClass }).BarcodeDetector;
+      const Native = (window as unknown as { BarcodeDetector?: DetectorClass })
+        .BarcodeDetector;
       const supported = Native?.getSupportedFormats
         ? await Native.getSupportedFormats().catch(() => [] as string[])
         : [];
@@ -120,7 +144,9 @@ function BarcodeScanner({
           element.srcObject = stream;
           await element.play();
           setReady(true);
-          const detector = new Native({ formats: formats.filter((format) => supported.includes(format)) });
+          const detector = new Native({
+            formats: formats.filter((format) => supported.includes(format)),
+          });
           let busy = false;
           const timer = window.setInterval(async () => {
             if (busy || element.readyState < 2) return;
@@ -175,9 +201,18 @@ function BarcodeScanner({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black text-white" role="dialog" aria-label="Scan barcodes">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black text-white"
+      role="dialog"
+      aria-label="Scan barcodes"
+    >
       <div className="relative flex-1 overflow-hidden">
-        <video ref={video} className="size-full object-cover" playsInline muted />
+        <video
+          ref={video}
+          className="size-full object-cover"
+          playsInline
+          muted
+        />
         {!error && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="h-36 w-72 max-w-[80vw] rounded-2xl ring-2 ring-white/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.35)]" />
@@ -186,7 +221,11 @@ function BarcodeScanner({
         <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <p className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-sm font-medium">
             <ScanLineIcon className="size-4" aria-hidden="true" />
-            {error ? "Camera off" : ready ? "Point at a barcode" : "Starting camera…"}
+            {error
+              ? "Camera off"
+              : ready
+                ? "Point at a barcode"
+                : "Starting camera…"}
           </p>
           <Button
             type="button"
@@ -204,7 +243,10 @@ function BarcodeScanner({
           </div>
         )}
       </div>
-      <div className="max-h-[40svh] space-y-2 overflow-y-auto bg-neutral-950 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]" aria-live="polite">
+      <div
+        className="max-h-[40svh] space-y-2 overflow-y-auto bg-neutral-950 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        aria-live="polite"
+      >
         {scans.length === 0 ? (
           <p className="py-2 text-center text-sm text-white/60">
             Scanned items get checked off your list.
@@ -219,14 +261,28 @@ function BarcodeScanner({
               )}
             >
               {scan.state === "checked" ? (
-                <CheckIcon className="size-4 shrink-0 text-emerald-400" aria-hidden="true" />
+                <CheckIcon
+                  className="size-4 shrink-0 text-emerald-400"
+                  aria-hidden="true"
+                />
               ) : (
-                <ScanLineIcon className="size-4 shrink-0 text-white/50" aria-hidden="true" />
+                <ScanLineIcon
+                  className="size-4 shrink-0 text-white/50"
+                  aria-hidden="true"
+                />
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate">{scan.state === "checked" ? `Checked off ${scan.itemName}` : scan.label}</p>
-                {scan.state === "checked" && <p className="truncate text-xs text-white/50">{scan.label}</p>}
-                {scan.state === "missing" && <p className="text-xs text-white/50">Not on your list</p>}
+                <p className="truncate">
+                  {scan.state === "checked"
+                    ? `Checked off ${scan.itemName}`
+                    : scan.label}
+                </p>
+                {scan.state === "checked" && (
+                  <p className="truncate text-xs text-white/50">{scan.label}</p>
+                )}
+                {scan.state === "missing" && (
+                  <p className="text-xs text-white/50">Not on your list</p>
+                )}
               </div>
               {scan.state === "missing" && scan.productName && (
                 <Button
@@ -252,7 +308,11 @@ function BarcodeScanner({
             </div>
           ))
         )}
-        <Button type="button" className="w-full bg-white text-black hover:bg-white/90" onClick={onClose}>
+        <Button
+          type="button"
+          className="w-full bg-white text-black hover:bg-white/90"
+          onClick={onClose}
+        >
           Done scanning
         </Button>
       </div>

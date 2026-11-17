@@ -33,7 +33,10 @@ export const pushOn = () => {
 };
 
 const fromBase64Url = (value: string) => {
-  const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const padded = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
   const raw = atob(padded);
   return Uint8Array.from(raw, (char) => char.charCodeAt(0));
 };
@@ -63,7 +66,9 @@ export const loadPushPrefs = async (): Promise<PushPrefs | null> => {
     setFlag(false);
     return null;
   }
-  const response = await post("/api/push/status", "POST", { endpoint: subscription.endpoint }).catch(() => null);
+  const response = await post("/api/push/status", "POST", {
+    endpoint: subscription.endpoint,
+  }).catch(() => null);
   if (!response?.ok) return null;
   const body = (await response.json()) as { prefs: PushPrefs | null };
   setFlag(Boolean(body.prefs));
@@ -73,9 +78,11 @@ export const loadPushPrefs = async (): Promise<PushPrefs | null> => {
 export const enablePush = async (prefs: PushPrefs): Promise<string | null> => {
   if (!pushSupported()) return "This browser can't show notifications.";
   const reg = await registration();
-  if (!reg) return "Notifications need the installed app. Reload and try again.";
+  if (!reg)
+    return "Notifications need the installed app. Reload and try again.";
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") return "Notifications are blocked. Allow them in your browser settings.";
+  if (permission !== "granted")
+    return "Notifications are blocked. Allow them in your browser settings.";
   const keyResponse = await fetch("/api/push/key").catch(() => null);
   if (!keyResponse?.ok) return "Couldn't reach the server.";
   const { publicKey } = (await keyResponse.json()) as { publicKey: string };
@@ -92,7 +99,9 @@ export const enablePush = async (prefs: PushPrefs): Promise<string | null> => {
     ...prefs,
   }).catch(() => null);
   if (!response?.ok) {
-    const body = (await response?.json().catch(() => null)) as { error?: string } | null;
+    const body = (await response?.json().catch(() => null)) as {
+      error?: string;
+    } | null;
     return body?.error ?? "Couldn't turn on notifications.";
   }
   setFlag(true);
@@ -102,7 +111,10 @@ export const enablePush = async (prefs: PushPrefs): Promise<string | null> => {
 export const updatePushPrefs = async (prefs: Partial<PushPrefs>) => {
   const subscription = await currentSubscription();
   if (!subscription) return false;
-  const response = await post("/api/push/subscribe", "PATCH", { endpoint: subscription.endpoint, ...prefs }).catch(() => null);
+  const response = await post("/api/push/subscribe", "PATCH", {
+    endpoint: subscription.endpoint,
+    ...prefs,
+  }).catch(() => null);
   return Boolean(response?.ok);
 };
 
@@ -111,14 +123,20 @@ export const disablePush = async () => {
   setFlag(false);
   const subscription = await currentSubscription().catch(() => null);
   if (!subscription) return;
-  await post("/api/push/subscribe", "DELETE", { endpoint: subscription.endpoint }).catch(() => null);
+  await post("/api/push/subscribe", "DELETE", {
+    endpoint: subscription.endpoint,
+  }).catch(() => null);
   await subscription.unsubscribe().catch(() => false);
 };
 
 export const sendTestPush = async () => {
-  const response = await fetch("/api/push/test", { method: "POST" }).catch(() => null);
+  const response = await fetch("/api/push/test", { method: "POST" }).catch(
+    () => null
+  );
   if (response?.ok) return null;
-  const body = (await response?.json().catch(() => null)) as { error?: string } | null;
+  const body = (await response?.json().catch(() => null)) as {
+    error?: string;
+  } | null;
   return body?.error ?? "Couldn't send a test.";
 };
 
@@ -136,6 +154,8 @@ export const syncTimer = (
           recipe: timer.recipe ?? "",
           seconds: Math.max(1, Math.round(timer.seconds ?? 1)),
         })
-      : fetch(`/api/push/timers/${encodeURIComponent(timer.id)}`, { method: "DELETE" });
+      : fetch(`/api/push/timers/${encodeURIComponent(timer.id)}`, {
+          method: "DELETE",
+        });
   void request.catch(() => undefined);
 };

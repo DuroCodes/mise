@@ -94,7 +94,10 @@ function AddToPlan({
             </div>
             <div className="space-y-2">
               <Label htmlFor="plan-slot">Meal</Label>
-              <Select value={slot} onValueChange={(value) => setSlot(value as MealSlot)}>
+              <Select
+                value={slot}
+                onValueChange={(value) => setSlot(value as MealSlot)}
+              >
                 <SelectTrigger id="plan-slot" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

@@ -100,8 +100,8 @@ function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
           ))}
         </dl>
         <p className="text-xs leading-5 text-muted-foreground">
-          Estimate from {estimate.counted.length} of{" "}
-          {recipe.ingredients.length} ingredients.
+          Estimate from {estimate.counted.length} of {recipe.ingredients.length}{" "}
+          ingredients.
           {missing.length > 0 && ` Skipped: ${missing.join(", ")}.`}
         </p>
       </div>
@@ -230,7 +230,9 @@ function RecipeView({
         )}
         {aside}
         {toolbar && (
-          <div className="flex flex-wrap gap-2 pt-1 print:hidden">{toolbar}</div>
+          <div className="flex flex-wrap gap-2 pt-1 print:hidden">
+            {toolbar}
+          </div>
         )}
       </header>
 

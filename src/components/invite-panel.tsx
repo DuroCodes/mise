@@ -1,4 +1,10 @@
-import { CopyIcon, LinkIcon, QrCodeIcon, Share2Icon, TrashIcon } from "lucide-react";
+import {
+  CopyIcon,
+  LinkIcon,
+  QrCodeIcon,
+  Share2Icon,
+  TrashIcon,
+} from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { QrCode } from "@/components/qr-code";
@@ -22,7 +28,10 @@ import {
 const linkFor = (token: string) => `${window.location.origin}/invite/${token}`;
 
 const when = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 
 const copy = async (text: string) => {
   try {
@@ -88,7 +97,10 @@ function InvitePanel() {
         <p className="leading-6 text-muted-foreground">
           One-time links for new accounts.
         </p>
-        <form onSubmit={create} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <form
+          onSubmit={create}
+          className="flex flex-col gap-2 sm:flex-row sm:items-end"
+        >
           <div className="flex-1 space-y-2">
             <Label htmlFor="invite-note">Who is it for? (optional)</Label>
             <Input
@@ -105,7 +117,11 @@ function InvitePanel() {
               value={String(days)}
               onValueChange={(value) => setDays(Number(value) as 1 | 7 | 30)}
             >
-              <SelectTrigger id="invite-days" aria-label="Expires in" className="w-full sm:w-32">
+              <SelectTrigger
+                id="invite-days"
+                aria-label="Expires in"
+                className="w-full sm:w-32"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -124,12 +140,17 @@ function InvitePanel() {
         {open.length > 0 && (
           <ul className="divide-y rounded-lg ring-1 ring-foreground/10">
             {open.map((invite) => (
-              <li key={invite.id} className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+              <li
+                key={invite.id}
+                className="flex flex-wrap items-center gap-2 px-3 py-2.5"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">
                     {invite.note || "Invite"}
                     {fresh === invite.id && (
-                      <span className="ml-2 text-xs font-normal text-brand">copied</span>
+                      <span className="ml-2 text-xs font-normal text-brand">
+                        copied
+                      </span>
                     )}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
@@ -154,7 +175,10 @@ function InvitePanel() {
                       aria-label={`Share the invite${invite.note ? ` for ${invite.note}` : ""}`}
                       onClick={() =>
                         void navigator
-                          .share({ title: "Join me on Mise", url: linkFor(invite.token) })
+                          .share({
+                            title: "Join me on Mise",
+                            url: linkFor(invite.token),
+                          })
                           .catch(() => undefined)
                       }
                     >
@@ -167,7 +191,9 @@ function InvitePanel() {
                     size="icon-sm"
                     aria-pressed={showing === invite.id}
                     aria-label={`QR code for the invite${invite.note ? ` for ${invite.note}` : ""}`}
-                    onClick={() => setShowing(showing === invite.id ? null : invite.id)}
+                    onClick={() =>
+                      setShowing(showing === invite.id ? null : invite.id)
+                    }
                   >
                     <QrCodeIcon />
                   </Button>
@@ -183,7 +209,10 @@ function InvitePanel() {
                 </div>
                 {showing === invite.id && (
                   <div className="w-full pt-2">
-                    <QrCode value={linkFor(invite.token)} label="Invite QR code" />
+                    <QrCode
+                      value={linkFor(invite.token)}
+                      label="Invite QR code"
+                    />
                   </div>
                 )}
               </li>
@@ -193,7 +222,9 @@ function InvitePanel() {
 
         {used.length > 0 && (
           <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Recently used</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              Recently used
+            </p>
             <ul className="space-y-1 text-muted-foreground">
               {used.map((invite) => (
                 <li key={invite.id}>

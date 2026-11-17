@@ -99,7 +99,10 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   const system = isMeasure(units) ? units : storedMeasure();
   const requested = Number(params.get("servings"));
   const servings =
-    recipe.servings && Number.isFinite(requested) && requested >= 0.5 && requested <= 999
+    recipe.servings &&
+    Number.isFinite(requested) &&
+    requested >= 0.5 &&
+    requested <= 999
       ? requested
       : recipe.servings;
   const factor = recipe.servings && servings ? servings / recipe.servings : 1;
@@ -113,7 +116,9 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   const [step, setStep] = useState(() => {
     try {
       const saved = Number(sessionStorage.getItem(stepKey));
-      return Number.isInteger(saved) && saved >= 0 && saved < recipe.instructions.length
+      return Number.isInteger(saved) &&
+        saved >= 0 &&
+        saved < recipe.instructions.length
         ? saved
         : 0;
     } catch {
@@ -137,12 +142,22 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   };
 
   const openTiming = () => {
-    if (!plan) choosePlan({ mode: "start", time: nextFiveMinutes(new Date(now)), gap: 5 });
+    if (!plan)
+      choosePlan({
+        mode: "start",
+        time: nextFiveMinutes(new Date(now)),
+        gap: 5,
+      });
     setView("timing");
   };
 
   const plannedAt = plan
-    ? buildTimeline(recipe.instructions, anchorFor(plan, now), plan.mode, plan.gap).steps
+    ? buildTimeline(
+        recipe.instructions,
+        anchorFor(plan, now),
+        plan.mode,
+        plan.gap
+      ).steps
     : null;
   const [direction, setDirection] = useState(1);
   const wake = useWakeLock();
@@ -191,7 +206,12 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background pb-[env(safe-area-inset-bottom)]">
       <header className="flex items-center gap-2 border-b px-3 py-2 sm:px-6">
-        <Button asChild variant="ghost" size="icon" aria-label="Leave cook mode">
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          aria-label="Leave cook mode"
+        >
           <Link to={`/recipes/${recipe.id}`}>
             <XIcon />
           </Link>
@@ -302,7 +322,9 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
             })}
           </ul>
           {ingredients.length === 0 && (
-            <p className="text-center text-muted-foreground">No ingredients listed.</p>
+            <p className="text-center text-muted-foreground">
+              No ingredients listed.
+            </p>
           )}
         </div>
       ) : (
@@ -334,7 +356,10 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
                   <p className="text-sm font-medium text-muted-foreground tabular-nums">
                     Step {step + 1} of {total}
                     {plannedAt?.[step] && (
-                      <span className="text-brand"> · {clock(plannedAt[step].start)}</span>
+                      <span className="text-brand">
+                        {" "}
+                        · {clock(plannedAt[step].start)}
+                      </span>
                     )}
                   </p>
                   <p className="text-2xl leading-relaxed text-balance sm:text-3xl sm:leading-relaxed">
@@ -357,7 +382,9 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
                   key={index}
                   className={cn(
                     "h-1.5 rounded-full transition-all",
-                    index === step ? "w-6 bg-brand" : "w-1.5 bg-muted-foreground/30"
+                    index === step
+                      ? "w-6 bg-brand"
+                      : "w-1.5 bg-muted-foreground/30"
                   )}
                 />
               ))}

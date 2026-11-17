@@ -1,4 +1,10 @@
-import { BellRingIcon, PauseIcon, PlayIcon, TimerIcon, XIcon } from "lucide-react";
+import {
+  BellRingIcon,
+  PauseIcon,
+  PlayIcon,
+  TimerIcon,
+  XIcon,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -155,7 +161,8 @@ function TimerProvider({ children }: { children: ReactNode }) {
     },
     remove: (id: string) => {
       const timer = latest.current.find((entry) => entry.id === id);
-      if (timer && !timer.done) syncTimer("stop", { id, label: "", recipe: null });
+      if (timer && !timer.done)
+        syncTimer("stop", { id, label: "", recipe: null });
       setTimers((current) => current.filter((entry) => entry.id !== id));
     },
   };
@@ -185,7 +192,10 @@ function TimerProvider({ children }: { children: ReactNode }) {
                 )}
               >
                 {timer.done ? (
-                  <BellRingIcon className="size-4 shrink-0" aria-hidden="true" />
+                  <BellRingIcon
+                    className="size-4 shrink-0"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <TimerIcon
                     className="size-4 shrink-0 text-muted-foreground"
@@ -211,7 +221,9 @@ function TimerProvider({ children }: { children: ReactNode }) {
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={paused ? `Resume ${timer.label}` : `Pause ${timer.label}`}
+                    aria-label={
+                      paused ? `Resume ${timer.label}` : `Pause ${timer.label}`
+                    }
                     onClick={() =>
                       paused ? api.resume(timer.id) : api.pause(timer.id)
                     }
@@ -223,8 +235,16 @@ function TimerProvider({ children }: { children: ReactNode }) {
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  className={timer.done ? "hover:bg-background/20 hover:text-background" : undefined}
-                  aria-label={timer.done ? `Dismiss ${timer.label}` : `Cancel ${timer.label}`}
+                  className={
+                    timer.done
+                      ? "hover:bg-background/20 hover:text-background"
+                      : undefined
+                  }
+                  aria-label={
+                    timer.done
+                      ? `Dismiss ${timer.label}`
+                      : `Cancel ${timer.label}`
+                  }
                   onClick={() => api.remove(timer.id)}
                 >
                   <XIcon />

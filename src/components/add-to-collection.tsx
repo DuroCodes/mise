@@ -122,13 +122,16 @@ function AddToCollection({ recipeId }: { recipeId: string }) {
                     <span
                       className={cn(
                         "flex size-5 shrink-0 items-center justify-center rounded-md border",
-                        inside && "border-primary bg-primary text-primary-foreground"
+                        inside &&
+                          "border-primary bg-primary text-primary-foreground"
                       )}
                       aria-hidden="true"
                     >
                       {inside && <CheckIcon className="size-3.5" />}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">{collection.name}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {collection.name}
+                    </span>
                     <span className="text-xs text-muted-foreground tabular-nums">
                       {collection.count}
                     </span>
@@ -146,7 +149,11 @@ function AddToCollection({ recipeId }: { recipeId: string }) {
             aria-label="New collection name"
             onChange={(event) => setName(event.target.value)}
           />
-          <Button type="submit" variant="outline" disabled={!name.trim() || busy !== null}>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={!name.trim() || busy !== null}
+          >
             <PlusIcon data-icon="inline-start" />
             Add
           </Button>

@@ -46,7 +46,9 @@ const toNumber = (raw: string) => {
   const mixed = value.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (mixed) {
     const denominator = Number(mixed[3]);
-    return denominator ? Number(mixed[1]) + Number(mixed[2]) / denominator : null;
+    return denominator
+      ? Number(mixed[1]) + Number(mixed[2]) / denominator
+      : null;
   }
   const fraction = value.match(/^(\d+)\/(\d+)$/);
   if (fraction) {
@@ -83,7 +85,12 @@ export const findTimers = (text: string): StepTimer[] => {
     const high = match[2] ? toNumber(match[2]) : null;
     const upperSeconds =
       high !== null && high > low
-        ? Math.min(24 * 3600, Math.round(high * unitSeconds(unit) + (seconds - low * unitSeconds(unit))))
+        ? Math.min(
+            24 * 3600,
+            Math.round(
+              high * unitSeconds(unit) + (seconds - low * unitSeconds(unit))
+            )
+          )
         : seconds;
     const start = match.index ?? 0;
     found.push({

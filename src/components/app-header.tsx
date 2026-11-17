@@ -39,7 +39,13 @@ const signOut = async () => {
   await authClient.signOut();
 };
 
-function AppHeader({ account, offline }: { account: Account; offline: boolean }) {
+function AppHeader({
+  account,
+  offline,
+}: {
+  account: Account;
+  offline: boolean;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md print:hidden">
       {offline && (
@@ -83,7 +89,12 @@ function AppHeader({ account, offline }: { account: Account; offline: boolean })
               <SettingsIcon />
             </NavLink>
           </Button>
-          <Button asChild size="icon-sm" className="sm:hidden" aria-label="New recipe">
+          <Button
+            asChild
+            size="icon-sm"
+            className="sm:hidden"
+            aria-label="New recipe"
+          >
             <NavLink to="/recipes/new">
               <PlusIcon />
             </NavLink>

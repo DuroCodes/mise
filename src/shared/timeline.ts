@@ -20,7 +20,10 @@ export type Timeline = {
 export const stepMinutes = (text: string) => {
   const timers = findTimers(text);
   if (timers.length === 0) return null;
-  const seconds = timers.reduce((total, timer) => total + timer.upperSeconds, 0);
+  const seconds = timers.reduce(
+    (total, timer) => total + timer.upperSeconds,
+    0
+  );
   return Math.max(1, Math.round(seconds / 60));
 };
 
@@ -43,7 +46,12 @@ export const buildTimeline = (
   const start = mode === "start" ? anchor : anchor - total * 60_000;
   let cursor = start;
   const planned = durations.map((step, index) => {
-    const entry = { index, start: cursor, minutes: step.minutes, timed: step.timed };
+    const entry = {
+      index,
+      start: cursor,
+      minutes: step.minutes,
+      timed: step.timed,
+    };
     cursor += step.minutes * 60_000;
     return entry;
   });
@@ -69,7 +77,8 @@ export const findTemperatures = (text: string): Temperature[] => {
     const value = Number(match[1]);
     const scale = (match[2] ?? "").toUpperCase().startsWith("F") ? "F" : "C";
     // Skip things that can't be cooking temperatures.
-    if (scale === "F" ? value < 80 || value > 600 : value < 25 || value > 320) continue;
+    if (scale === "F" ? value < 80 || value > 600 : value < 25 || value > 320)
+      continue;
     const start = match.index ?? 0;
     found.push({ start, end: start + match[0].length, value, scale });
   }
@@ -80,5 +89,8 @@ export const findTemperatures = (text: string): Temperature[] => {
 export const convertTemperature = (value: number, from: "F" | "C") => {
   const raw = from === "F" ? ((value - 32) * 5) / 9 : (value * 9) / 5 + 32;
   const rounded = raw >= 100 ? Math.round(raw / 5) * 5 : Math.round(raw);
-  return { value: rounded, scale: from === "F" ? ("C" as const) : ("F" as const) };
+  return {
+    value: rounded,
+    scale: from === "F" ? ("C" as const) : ("F" as const),
+  };
 };

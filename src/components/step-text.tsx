@@ -7,8 +7,20 @@ import { convertTemperature, findTemperatures } from "@/shared/timeline";
 import { findTimers } from "@/shared/timers";
 
 type Piece =
-  | { kind: "timer"; start: number; end: number; label: string; seconds: number }
-  | { kind: "temp"; start: number; end: number; value: number; scale: "F" | "C" };
+  | {
+      kind: "timer";
+      start: number;
+      end: number;
+      label: string;
+      seconds: number;
+    }
+  | {
+      kind: "temp";
+      start: number;
+      end: number;
+      value: number;
+      scale: "F" | "C";
+    };
 
 /**
  * A step's text, with each duration turned into a start-timer button and,
@@ -66,7 +78,9 @@ function StepText({
             large ? "py-0.5" : "py-0"
           )}
           aria-label={`Start a ${piece.label} timer`}
-          onClick={() => start(`Step ${step}: ${piece.label}`, piece.seconds, recipe)}
+          onClick={() =>
+            start(`Step ${step}: ${piece.label}`, piece.seconds, recipe)
+          }
         >
           <TimerIcon
             className={cn(

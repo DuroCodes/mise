@@ -37,7 +37,9 @@ function DoneShopping({
   onSave: (keep: { id: string; amount: string; unit: string }[]) => void;
 }) {
   const [choices, setChoices] = useState<Record<string, Choice>>(() =>
-    Object.fromEntries(items.map((item) => [item.id, { amount: item.amount, keep: true }]))
+    Object.fromEntries(
+      items.map((item) => [item.id, { amount: item.amount, keep: true }])
+    )
   );
 
   const set = (id: string, patch: Partial<Choice>) =>
@@ -65,7 +67,9 @@ function DoneShopping({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Done shopping</DialogTitle>
-          <DialogDescription>How much goes in the pantry? Set tonight's dinner to 0.</DialogDescription>
+          <DialogDescription>
+            How much goes in the pantry? Set tonight's dinner to 0.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-1 text-xs">
           <Button
@@ -73,7 +77,14 @@ function DoneShopping({
             variant="ghost"
             size="xs"
             onClick={() =>
-              setChoices(Object.fromEntries(items.map((item) => [item.id, { amount: item.amount, keep: true }])))
+              setChoices(
+                Object.fromEntries(
+                  items.map((item) => [
+                    item.id,
+                    { amount: item.amount, keep: true },
+                  ])
+                )
+              )
             }
           >
             All
@@ -83,7 +94,14 @@ function DoneShopping({
             variant="ghost"
             size="xs"
             onClick={() =>
-              setChoices(Object.fromEntries(items.map((item) => [item.id, { amount: item.amount, keep: false }])))
+              setChoices(
+                Object.fromEntries(
+                  items.map((item) => [
+                    item.id,
+                    { amount: item.amount, keep: false },
+                  ])
+                )
+              )
             }
           >
             None
@@ -91,12 +109,20 @@ function DoneShopping({
         </div>
         <ul className="-mt-2 divide-y rounded-xl ring-1 ring-foreground/10">
           {items.map((item) => {
-            const choice = choices[item.id] ?? { amount: item.amount, keep: true };
+            const choice = choices[item.id] ?? {
+              amount: item.amount,
+              keep: true,
+            };
             const value = numeric(choice.amount);
             const off = !choice.keep || value === 0;
             return (
               <li key={item.id} className="flex items-center gap-2 px-3 py-2">
-                <span className={cn("min-w-0 flex-1 truncate text-sm", off && "text-muted-foreground line-through")}>
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-sm",
+                    off && "text-muted-foreground line-through"
+                  )}
+                >
                   {item.name}
                 </span>
                 {value !== null ? (
@@ -107,13 +133,26 @@ function DoneShopping({
                       size="icon-sm"
                       aria-label={`Less ${item.name}`}
                       disabled={off}
-                      onClick={() => set(item.id, { amount: step(choice.amount, -1), keep: true })}
+                      onClick={() =>
+                        set(item.id, {
+                          amount: step(choice.amount, -1),
+                          keep: true,
+                        })
+                      }
                     >
                       <MinusIcon />
                     </Button>
-                    <span className="w-16 text-center text-sm tabular-nums" aria-live="polite">
+                    <span
+                      className="w-16 text-center text-sm tabular-nums"
+                      aria-live="polite"
+                    >
                       {choice.keep ? choice.amount : "0"}
-                      {item.unit && <span className="text-muted-foreground"> {item.unit}</span>}
+                      {item.unit && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          {item.unit}
+                        </span>
+                      )}
                     </span>
                     <Button
                       type="button"
@@ -121,7 +160,12 @@ function DoneShopping({
                       size="icon-sm"
                       aria-label={`More ${item.name}`}
                       onClick={() =>
-                        set(item.id, { amount: choice.keep ? step(choice.amount, 1) : step("0", 1), keep: true })
+                        set(item.id, {
+                          amount: choice.keep
+                            ? step(choice.amount, 1)
+                            : step("0", 1),
+                          keep: true,
+                        })
                       }
                     >
                       <PlusIcon />
@@ -135,7 +179,9 @@ function DoneShopping({
                     aria-pressed={choice.keep}
                     onClick={() => set(item.id, { keep: !choice.keep })}
                   >
-                    {choice.keep ? `Keep${item.amount || item.unit ? ` ${[item.amount, item.unit].filter(Boolean).join(" ")}` : ""}` : "Skip"}
+                    {choice.keep
+                      ? `Keep${item.amount || item.unit ? ` ${[item.amount, item.unit].filter(Boolean).join(" ")}` : ""}`
+                      : "Skip"}
                   </Button>
                 )}
               </li>
@@ -143,7 +189,12 @@ function DoneShopping({
           })}
         </ul>
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={onCancel}
+          >
             Cancel
           </Button>
           <Button type="button" disabled={pending} onClick={save}>

@@ -18,7 +18,8 @@ export const readPageMessage = (data: unknown): ReceivedPage | null => {
   if (!data || typeof data !== "object") return null;
   const value = data as Record<string, unknown>;
   if (value.type !== "mise-page") return null;
-  if (typeof value.url !== "string" || typeof value.html !== "string") return null;
+  if (typeof value.url !== "string" || typeof value.html !== "string")
+    return null;
   if (!/^https?:\/\//i.test(value.url) || value.url.length > 2000) return null;
   if (value.html.length === 0 || value.html.length > 5_000_000) return null;
   return { url: value.url, html: value.html };

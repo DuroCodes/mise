@@ -1,6 +1,10 @@
 import { Gunzip, strFromU8, unzipSync, type Unzipped } from "fflate";
 import { formatAmount } from "../src/lib/units";
-import { recipeInput, type Ingredient, type RecipeInput } from "../src/shared/recipe";
+import {
+  recipeInput,
+  type Ingredient,
+  type RecipeInput,
+} from "../src/shared/recipe";
 import {
   collectRecipes,
   minutesOf,
@@ -10,7 +14,10 @@ import {
 } from "./recipe-page";
 
 export type ImportedImage = { bytes: Uint8Array; extension: string };
-export type ImportedRecipe = { recipe: RecipeInput; image: ImportedImage | null };
+export type ImportedRecipe = {
+  recipe: RecipeInput;
+  image: ImportedImage | null;
+};
 export type ImportResult = { recipes: ImportedRecipe[]; skipped: string[] };
 
 export const maxImportRecipes = 500;
@@ -241,10 +248,7 @@ const fromMealie = (value: Record<string, unknown>) =>
     servings: servingsFromText(
       value.recipeServings ?? value.recipeYield ?? value.recipe_yield
     ),
-    tags: cleanTags([
-      ...namesOf(value.tags),
-      ...namesOf(value.recipeCategory),
-    ]),
+    tags: cleanTags([...namesOf(value.tags), ...namesOf(value.recipeCategory)]),
     ingredients: (value.recipeIngredient as unknown[])
       .map(mealieIngredient)
       .filter((item): item is Ingredient => Boolean(item))
@@ -313,7 +317,11 @@ const fromMealieDatabase = (database: Row) => {
   const stepsFor = byRecipe(rowsOf(database, "recipe_instructions"), (row) =>
     text(row.text)
   );
-  const linksFor = (table: string, column: string, names: Map<string, string>) => {
+  const linksFor = (
+    table: string,
+    column: string,
+    names: Map<string, string>
+  ) => {
     const grouped = new Map<string, string[]>();
     for (const row of rowsOf(database, table)) {
       const key = String(row.recipe_id);
@@ -422,11 +430,17 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
   );
 
   for (const object of objects) {
-    if (Array.isArray(object.recipes) && Array.isArray(object.recipes_ingredients)) {
+    if (
+      Array.isArray(object.recipes) &&
+      Array.isArray(object.recipes_ingredients)
+    ) {
       for (const entry of fromMealieDatabase(object)) {
         if (entry.recipe)
           out.push({ recipe: entry.recipe, slug: entry.slug, id: entry.id });
-        else result.skipped.push(`${entry.name || label}: no ingredients or steps`);
+        else
+          result.skipped.push(
+            `${entry.name || label}: no ingredients or steps`
+          );
       }
       continue;
     }
@@ -434,7 +448,10 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
       const recipe = fromMealie(object);
       if (recipe)
         out.push({ recipe, slug: text(object.slug), id: text(object.id) });
-      else result.skipped.push(`${text(object.name) || label}: no ingredients or steps`);
+      else
+        result.skipped.push(
+          `${text(object.name) || label}: no ingredients or steps`
+        );
       continue;
     }
     if (isPaprika(object)) {
@@ -442,7 +459,10 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
       if (imported) {
         if (imported.image) result.recipes.push(imported);
         else out.push({ recipe: imported.recipe, slug: "", id: "" });
-      } else result.skipped.push(`${text(object.name) || label}: no ingredients or steps`);
+      } else
+        result.skipped.push(
+          `${text(object.name) || label}: no ingredients or steps`
+        );
       continue;
     }
     const found: Record<string, unknown>[] = [];
@@ -455,7 +475,10 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
     for (const item of found) {
       const recipe = recipeFromJsonLd(item);
       if (recipe) out.push({ recipe, slug: "", id: "" });
-      else result.skipped.push(`${text(item.name) || label}: no ingredients or steps`);
+      else
+        result.skipped.push(
+          `${text(item.name) || label}: no ingredients or steps`
+        );
     }
   }
   return out;
@@ -481,7 +504,10 @@ const isGzip = (bytes: Uint8Array) =>
  * (.paprikarecipes / .paprikarecipe), Mealie recipe exports and backups (.zip
  * or .json), schema.org JSON-LD (.json), and saved recipe pages (.html).
  */
-export const readImportFile = (name: string, bytes: Uint8Array): ImportResult => {
+export const readImportFile = (
+  name: string,
+  bytes: Uint8Array
+): ImportResult => {
   const result: ImportResult = { recipes: [], skipped: [] };
   const lower = name.toLowerCase();
 
@@ -521,7 +547,8 @@ export const readImportFile = (name: string, bytes: Uint8Array): ImportResult =>
         addAll(fromJsonValue(parseJson(strFromU8(data)), path, result), files);
       } else if (entry.endsWith(".html") || entry.endsWith(".htm")) {
         const parsed = parseRecipeHtml(strFromU8(data));
-        if (parsed.ok) result.recipes.push({ recipe: parsed.recipe, image: null });
+        if (parsed.ok)
+          result.recipes.push({ recipe: parsed.recipe, image: null });
         else result.skipped.push(`${path}: ${parsed.error}`);
       }
     }

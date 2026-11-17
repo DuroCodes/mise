@@ -19,7 +19,11 @@ import type { RecipeInput } from "@/shared/recipe";
 const accepted = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 /** Turns pasted text or a photo of a recipe card into a filled-in form. */
-function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void }) {
+function AiRecipe({
+  onImported,
+}: {
+  onImported: (recipe: RecipeInput) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [image, setImage] = useState<File | null>(null);
@@ -106,7 +110,12 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+            >
               <ImageIcon data-icon="inline-start" />
               {image ? "Change photo" : "Add a photo"}
             </Button>

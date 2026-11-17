@@ -16,8 +16,13 @@ describe("parseRecipeHtml on real-world markup", () => {
 
   test("keeps escaped quotes inside JSON strings", () => {
     // JSON.stringify escapes the inner quotes; pages often also contain &quot;.
-    const json = JSON.stringify({ ...recipe, description: "Say &quot;hi&quot; to soup" });
-    const result = parseRecipeHtml(`<script type="application/ld+json">${json}</script>`);
+    const json = JSON.stringify({
+      ...recipe,
+      description: "Say &quot;hi&quot; to soup",
+    });
+    const result = parseRecipeHtml(
+      `<script type="application/ld+json">${json}</script>`
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -31,7 +36,9 @@ describe("parseRecipeHtml on real-world markup", () => {
 
   test("still decodes entity-encoded JSON when that's how the page ships it", () => {
     const encoded = JSON.stringify(recipe).replace(/"/g, "&quot;");
-    const result = parseRecipeHtml(`<script type="application/ld+json">${encoded}</script>`);
+    const result = parseRecipeHtml(
+      `<script type="application/ld+json">${encoded}</script>`
+    );
     expect(result.ok).toBe(true);
   });
 });

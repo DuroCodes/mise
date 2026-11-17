@@ -11,7 +11,11 @@ export const shrinkPhoto = async (file: File, max = 1600, quality = 0.85) => {
     return file;
   }
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
-  if (scale === 1 && file.size <= 4 * 1024 * 1024 && file.type === "image/jpeg") {
+  if (
+    scale === 1 &&
+    file.size <= 4 * 1024 * 1024 &&
+    file.type === "image/jpeg"
+  ) {
     bitmap.close();
     return file;
   }
@@ -29,5 +33,7 @@ export const shrinkPhoto = async (file: File, max = 1600, quality = 0.85) => {
     canvas.toBlob(resolve, "image/jpeg", quality)
   );
   if (!blob) return file;
-  return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", {
+    type: "image/jpeg",
+  });
 };

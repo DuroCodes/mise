@@ -44,14 +44,21 @@ import { dayFromKey, localDay, storedMeasure } from "@/lib/view";
 import { aisleFor, aisles } from "@/shared/aisles";
 
 const daysUntil = (day: string, today: string) =>
-  Math.round((dayFromKey(day).getTime() - dayFromKey(today).getTime()) / 86_400_000);
+  Math.round(
+    (dayFromKey(day).getTime() - dayFromKey(today).getTime()) / 86_400_000
+  );
 
 const expiryLabel = (day: string, today: string) => {
   const days = daysUntil(day, today);
-  if (days < 0) return { text: days === -1 ? "expired yesterday" : `expired ${-days} days ago`, tone: "bad" as const };
+  if (days < 0)
+    return {
+      text: days === -1 ? "expired yesterday" : `expired ${-days} days ago`,
+      tone: "bad" as const,
+    };
   if (days === 0) return { text: "use today", tone: "bad" as const };
   if (days === 1) return { text: "use by tomorrow", tone: "soon" as const };
-  if (days <= 3) return { text: `use within ${days} days`, tone: "soon" as const };
+  if (days <= 3)
+    return { text: `use within ${days} days`, tone: "soon" as const };
   return {
     text: `use by ${dayFromKey(day).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`,
     tone: "ok" as const,
@@ -109,28 +116,60 @@ function EditItem({
         <form onSubmit={save} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="pantry-name">Item</Label>
-            <Input id="pantry-name" value={name} maxLength={200} onChange={(event) => setName(event.target.value)} />
+            <Input
+              id="pantry-name"
+              value={name}
+              maxLength={200}
+              onChange={(event) => setName(event.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="pantry-amount">Amount</Label>
-              <Input id="pantry-amount" value={amount} maxLength={40} placeholder="2" onChange={(event) => setAmount(event.target.value)} />
+              <Input
+                id="pantry-amount"
+                value={amount}
+                maxLength={40}
+                placeholder="2"
+                onChange={(event) => setAmount(event.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pantry-unit">Unit</Label>
-              <Input id="pantry-unit" value={unit} maxLength={40} placeholder="cups" onChange={(event) => setUnit(event.target.value)} />
+              <Input
+                id="pantry-unit"
+                value={unit}
+                maxLength={40}
+                placeholder="cups"
+                onChange={(event) => setUnit(event.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="pantry-note">Note</Label>
-            <Input id="pantry-note" value={note} maxLength={200} placeholder="opened, top shelf…" onChange={(event) => setNote(event.target.value)} />
+            <Input
+              id="pantry-note"
+              value={note}
+              maxLength={200}
+              placeholder="opened, top shelf…"
+              onChange={(event) => setNote(event.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="pantry-expires">Use by</Label>
             <div className="flex gap-2">
-              <Input id="pantry-expires" type="date" value={expiresOn} onChange={(event) => setExpiresOn(event.target.value)} />
+              <Input
+                id="pantry-expires"
+                type="date"
+                value={expiresOn}
+                onChange={(event) => setExpiresOn(event.target.value)}
+              />
               {expiresOn && (
-                <Button type="button" variant="ghost" onClick={() => setExpiresOn("")}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setExpiresOn("")}
+                >
                   Clear
                 </Button>
               )}
@@ -169,7 +208,9 @@ function PantryList({
     setAdding(true);
     const match = text.match(/^(\d+(?:[./]\d+)?)\s+(.+)$/);
     const result = await addPantryItem({
-      ...(match ? { amount: match[1] ?? "", name: match[2] ?? text } : { name: text }),
+      ...(match
+        ? { amount: match[1] ?? "", name: match[2] ?? text }
+        : { name: text }),
       expiresOn: expires || null,
     });
     setAdding(false);
@@ -243,7 +284,12 @@ function PantryList({
             className="h-10 w-full sm:w-40"
             onChange={(event) => setExpires(event.target.value)}
           />
-          <Button type="submit" size="lg" className="h-10" disabled={adding || !draft.trim()}>
+          <Button
+            type="submit"
+            size="lg"
+            className="h-10"
+            disabled={adding || !draft.trim()}
+          >
             <PlusIcon data-icon="inline-start" />
             Add
           </Button>
@@ -255,7 +301,10 @@ function PantryList({
           <p className="font-medium">Use soon</p>
           <p className="mt-0.5 text-muted-foreground">
             {soon
-              .map((item) => `${item.name} (${expiryLabel(item.expiresOn ?? today, today).text})`)
+              .map(
+                (item) =>
+                  `${item.name} (${expiryLabel(item.expiresOn ?? today, today).text})`
+              )
               .join(", ")}
           </p>
         </div>
@@ -263,7 +312,10 @@ function PantryList({
 
       {items.length === 0 ? (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
-          <PackageOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <PackageOpenIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">Your pantry is empty</h2>
           <p className="text-sm text-muted-foreground">
             Add items above, or tap Done shopping on your list.
@@ -274,36 +326,68 @@ function PantryList({
           <section key={group.aisle} className="space-y-1.5">
             <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {group.aisle}
-              <span className="font-normal tabular-nums">{group.items.length}</span>
+              <span className="font-normal tabular-nums">
+                {group.items.length}
+              </span>
             </h2>
             <ul className="divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
               {group.items.map((item) => {
-                const expiry = item.expiresOn ? expiryLabel(item.expiresOn, today) : null;
+                const expiry = item.expiresOn
+                  ? expiryLabel(item.expiresOn, today)
+                  : null;
                 return (
-                  <li key={item.id} className="flex items-center gap-1 py-1.5 pr-1.5 pl-4">
+                  <li
+                    key={item.id}
+                    className="flex items-center gap-1 py-1.5 pr-1.5 pl-4"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-6">
-                        {quantity(item) && <span className="font-medium tabular-nums">{quantity(item)}</span>}
+                        {quantity(item) && (
+                          <span className="font-medium tabular-nums">
+                            {quantity(item)}
+                          </span>
+                        )}
                         <span>{item.name}</span>
                         {expiry && (
                           <span
                             className={cn(
                               "rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
-                              expiry.tone === "bad" && "bg-destructive/15 text-destructive",
-                              expiry.tone === "soon" && "bg-brand/15 text-foreground",
-                              expiry.tone === "ok" && "bg-muted text-muted-foreground"
+                              expiry.tone === "bad" &&
+                                "bg-destructive/15 text-destructive",
+                              expiry.tone === "soon" &&
+                                "bg-brand/15 text-foreground",
+                              expiry.tone === "ok" &&
+                                "bg-muted text-muted-foreground"
                             )}
                           >
                             {expiry.text}
                           </span>
                         )}
                       </p>
-                      {item.note && <p className="truncate text-xs text-muted-foreground">{item.note}</p>}
+                      {item.note && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {item.note}
+                        </p>
+                      )}
                     </div>
-                    <Button type="button" variant="ghost" size="icon" className="text-muted-foreground" aria-label={`Edit ${item.name}`} onClick={() => setEditing(item)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground"
+                      aria-label={`Edit ${item.name}`}
+                      onClick={() => setEditing(item)}
+                    >
                       <PencilIcon />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="text-muted-foreground" aria-label={`Remove ${item.name}`} onClick={() => void remove(item)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground"
+                      aria-label={`Remove ${item.name}`}
+                      onClick={() => void remove(item)}
+                    >
                       <XIcon />
                     </Button>
                   </li>
@@ -315,7 +399,11 @@ function PantryList({
       )}
 
       {editing && (
-        <EditItem item={editing} onClose={() => setEditing(null)} onSaved={onItems} />
+        <EditItem
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSaved={onItems}
+        />
       )}
     </div>
   );
@@ -331,7 +419,9 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
   const search = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!hasPantry && !focus.trim()) {
-      setError("Add a few things to your pantry, or say what you're in the mood for");
+      setError(
+        "Add a few things to your pantry, or say what you're in the mood for"
+      );
       return;
     }
     setPending(true);
@@ -351,8 +441,8 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
           Find new recipes
         </h2>
         <p className="text-xs leading-5 text-muted-foreground">
-          Searches the web using your pantry. Sent only when you use this.
-          Takes about 30 seconds.
+          Searches the web using your pantry. Sent only when you use this. Takes
+          about 30 seconds.
         </p>
       </div>
       <form onSubmit={search} className="flex flex-col gap-2 sm:flex-row">
@@ -375,14 +465,20 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
       {pending && (
         <div className="space-y-2" aria-label="Searching the web">
           {[0, 1, 2].map((index) => (
-            <div key={index} className="h-16 animate-pulse rounded-lg bg-muted" />
+            <div
+              key={index}
+              className="h-16 animate-pulse rounded-lg bg-muted"
+            />
           ))}
         </div>
       )}
       {results && (
         <ul className="space-y-2" aria-live="polite">
           {results.map((found) => (
-            <li key={found.url} className="flex flex-col gap-2 rounded-lg bg-background/60 p-3 ring-1 ring-foreground/10 sm:flex-row sm:items-center">
+            <li
+              key={found.url}
+              className="flex flex-col gap-2 rounded-lg bg-background/60 p-3 ring-1 ring-foreground/10 sm:flex-row sm:items-center"
+            >
               <div className="min-w-0 flex-1 space-y-1">
                 <a
                   href={found.url}
@@ -391,10 +487,17 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
                   className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
                 >
                   {found.title}
-                  <ExternalLinkIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                  <ExternalLinkIcon
+                    className="size-3.5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 </a>
                 <p className="text-xs text-muted-foreground">{found.site}</p>
-                {found.why && <p className="text-sm leading-5 text-muted-foreground">{found.why}</p>}
+                {found.why && (
+                  <p className="text-sm leading-5 text-muted-foreground">
+                    {found.why}
+                  </p>
+                )}
                 {found.uses.length > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Uses your {found.uses.join(", ")}
@@ -405,7 +508,11 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/recipes/new?import=${encodeURIComponent(found.url)}`)}
+                onClick={() =>
+                  navigate(
+                    `/recipes/new?import=${encodeURIComponent(found.url)}`
+                  )
+                }
               >
                 Import
               </Button>
@@ -417,10 +524,18 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
   );
 }
 
-function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }) {
+function Suggestions({
+  today,
+  hasPantry,
+}: {
+  today: string;
+  hasPantry: boolean;
+}) {
   const { ai } = useSession();
   const navigate = useNavigate();
-  const [suggestions, setSuggestions] = useState<PantrySuggestion[] | null>(null);
+  const [suggestions, setSuggestions] = useState<PantrySuggestion[] | null>(
+    null
+  );
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -453,9 +568,14 @@ function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }
     <div className="space-y-5">
       {suggestions && suggestions.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-8 text-center ring-1 ring-foreground/10">
-          <UtensilsCrossedIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <UtensilsCrossedIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">
-            {hasPantry ? "Nothing in your recipes matches yet" : "Add what you have first"}
+            {hasPantry
+              ? "Nothing in your recipes matches yet"
+              : "Add what you have first"}
           </h2>
           <p className="text-sm text-muted-foreground">
             {hasPantry
@@ -468,30 +588,53 @@ function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }
         <ul className="space-y-2">
           {suggestions.map((suggestion, index) => {
             const needed = suggestion.have.length + suggestion.missing.length;
-            const minutes = formatMinutes(totalMinutes(suggestion.prepMinutes, suggestion.cookMinutes));
+            const minutes = formatMinutes(
+              totalMinutes(suggestion.prepMinutes, suggestion.cookMinutes)
+            );
             return (
               <motion.li
                 key={suggestion.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, ease: easeOut, delay: Math.min(index, 6) * 0.03 }}
+                transition={{
+                  duration: 0.22,
+                  ease: easeOut,
+                  delay: Math.min(index, 6) * 0.03,
+                }}
                 className="flex gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
               >
                 {suggestion.image ? (
-                  <img src={suggestion.image} alt="" className="size-16 shrink-0 rounded-lg object-cover" />
+                  <img
+                    src={suggestion.image}
+                    alt=""
+                    className="size-16 shrink-0 rounded-lg object-cover"
+                  />
                 ) : (
-                  <span className="size-16 shrink-0 rounded-lg bg-muted" aria-hidden="true" />
+                  <span
+                    className="size-16 shrink-0 rounded-lg bg-muted"
+                    aria-hidden="true"
+                  />
                 )}
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                    <Link to={`/recipes/${suggestion.id}`} className="truncate font-medium hover:underline">
+                    <Link
+                      to={`/recipes/${suggestion.id}`}
+                      className="truncate font-medium hover:underline"
+                    >
                       {suggestion.title}
                     </Link>
-                    {minutes && <span className="text-xs text-muted-foreground">{minutes}</span>}
+                    {minutes && (
+                      <span className="text-xs text-muted-foreground">
+                        {minutes}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-brand" style={{ width: `${suggestion.coverage * 100}%` }} />
+                      <div
+                        className="h-full rounded-full bg-brand"
+                        style={{ width: `${suggestion.coverage * 100}%` }}
+                      />
                     </div>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       You have {suggestion.have.length} of {needed}
@@ -519,7 +662,9 @@ function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-xs font-medium text-brand">You have everything</p>
+                    <p className="text-xs font-medium text-brand">
+                      You have everything
+                    </p>
                   )}
                 </div>
               </motion.li>
@@ -569,7 +714,11 @@ function PantryPage() {
               : `${items.length} ${items.length === 1 ? "thing" : "things"} on hand`}
           </p>
         </div>
-        <div className="flex rounded-lg bg-muted p-0.5" role="tablist" aria-label="Pantry">
+        <div
+          className="flex rounded-lg bg-muted p-0.5"
+          role="tablist"
+          aria-label="Pantry"
+        >
           {(
             [
               ["have", "In my pantry"],
@@ -584,7 +733,9 @@ function PantryPage() {
               onClick={() => setTab(value)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
-                tab === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                tab === value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
               )}
             >
               {text}

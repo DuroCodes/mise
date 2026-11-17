@@ -2,7 +2,11 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
-import { recipeInput, type Recipe, type RecipeInput } from "../src/shared/recipe";
+import {
+  recipeInput,
+  type Recipe,
+  type RecipeInput,
+} from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
@@ -192,7 +196,8 @@ export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
 }): Promise<AiResult<RecipeInput>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
   const content: Part[] = [];
   if (input.image) {
     content.push({
@@ -210,7 +215,8 @@ export const extractRecipe = async (input: {
 
   try {
     const output = await objectFrom(extracted, extractionPrompt, content);
-    if (!output) return { ok: false, error: "The model's answer could not be read" };
+    if (!output)
+      return { ok: false, error: "The model's answer could not be read" };
     const recipe = toRecipeInput(output);
     if (!recipe) return { ok: false, error: "No recipe was found in that" };
     return { ok: true, value: recipe };
@@ -245,7 +251,9 @@ export const readPublicPage = async (raw: string) => {
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location");
         if (!location) return null;
-        const next = await publicRecipeUrl(new URL(location, current).toString());
+        const next = await publicRecipeUrl(
+          new URL(location, current).toString()
+        );
         if (!next) return null;
         current = next;
         continue;
@@ -263,13 +271,17 @@ export const readPublicPage = async (raw: string) => {
 };
 
 /** Reads a recipe page the direct importer could not parse. */
-export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+export const recipeFromUrl = async (
+  url: string
+): Promise<AiResult<RecipeInput>> => {
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
   const page = await readPublicPage(url);
   if (!page)
     return {
       ok: false,
-      error: "That site blocked the download. Save the page and import the file instead.",
+      error:
+        "That site blocked the download. Save the page and import the file instead.",
     };
   try {
     const output = await objectFrom(
@@ -277,9 +289,11 @@ export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>>
       extractionPrompt,
       `<page url="${url}">\n${page}\n</page>`
     );
-    if (!output) return { ok: false, error: "The model's answer could not be read" };
+    if (!output)
+      return { ok: false, error: "The model's answer could not be read" };
     const recipe = toRecipeInput(output);
-    if (!recipe) return { ok: false, error: "No recipe was found on that page" };
+    if (!recipe)
+      return { ok: false, error: "No recipe was found on that page" };
     return { ok: true, value: { ...recipe, sourceUrl: url } };
   } catch (error) {
     return failure(error);
@@ -287,20 +301,28 @@ export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>>
 };
 
 const photoItems = z.object({
-  items: z.array(z.object({ name: z.string(), amount: z.string(), unit: z.string() })),
+  items: z.array(
+    z.object({ name: z.string(), amount: z.string(), unit: z.string() })
+  ),
 });
 
 export type PhotoItem = { name: string; amount: string; unit: string };
 
 /** Fits model output to pantry limits. Exported for tests. */
-export const toPhotoItems = (value: z.infer<typeof photoItems>): PhotoItem[] => {
+export const toPhotoItems = (
+  value: z.infer<typeof photoItems>
+): PhotoItem[] => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
   for (const item of value.items) {
     const name = clip(item.name, 200).toLowerCase();
     if (!name || seen.has(name)) continue;
     seen.add(name);
-    out.push({ name, amount: clip(item.amount, 40), unit: clip(item.unit, 40) });
+    out.push({
+      name,
+      amount: clip(item.amount, 40),
+      unit: clip(item.unit, 40),
+    });
     if (out.length >= 80) break;
   }
   return out;
@@ -321,16 +343,25 @@ export const readPantryPhoto = async (input: {
   image: { data: string; mediaType: AiImageType };
   kind: "receipt" | "fridge";
 }): Promise<AiResult<PhotoItem[]>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
   try {
     const output = await objectFrom(photoItems, photoPrompts[input.kind], [
-      { type: "image", image: input.image.data, mediaType: input.image.mediaType },
+      {
+        type: "image",
+        image: input.image.data,
+        mediaType: input.image.mediaType,
+      },
       {
         type: "text",
-        text: input.kind === "receipt" ? "Here's my receipt." : "Here's what I have.",
+        text:
+          input.kind === "receipt"
+            ? "Here's my receipt."
+            : "Here's what I have.",
       },
     ]);
-    if (!output) return { ok: false, error: "The model's answer could not be read" };
+    if (!output)
+      return { ok: false, error: "The model's answer could not be read" };
     const items = toPhotoItems(output);
     if (items.length === 0)
       return {
@@ -375,7 +406,10 @@ const normalizeUrl = (raw: string) => {
 };
 
 /** Pulls the JSON array out of the model's final text (a ```json block or a bare array). */
-export const parseFound = (text: string, searched: Set<string>): FoundRecipe[] => {
+export const parseFound = (
+  text: string,
+  searched: Set<string>
+): FoundRecipe[] => {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
   let raw: unknown;
@@ -398,7 +432,10 @@ export const parseFound = (text: string, searched: Set<string>): FoundRecipe[] =
       url,
       site: new URL(url).hostname.replace(/^www\./, ""),
       why: clip(item.why, 300),
-      uses: item.uses.map((use) => clip(use, 60)).filter(Boolean).slice(0, 12),
+      uses: item.uses
+        .map((use) => clip(use, 60))
+        .filter(Boolean)
+        .slice(0, 12),
     });
     if (out.length >= 6) break;
   }
@@ -410,13 +447,19 @@ export const linksFromSearchHtml = (html: string) => {
   const out: { title: string; url: string }[] = [];
   const seen = new Set<string>();
   for (const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
-    const href = (match[1].match(/href="([^"]+)"/i)?.[1] ?? "").replace(/&amp;/g, "&");
+    const href = (match[1].match(/href="([^"]+)"/i)?.[1] ?? "").replace(
+      /&amp;/g,
+      "&"
+    );
     const uddg = href.match(/[?&]uddg=([^&]+)/);
     const raw = uddg ? decodeURIComponent(uddg[1]) : href;
     if (!/^https?:\/\//i.test(raw) || /duckduckgo\.com/i.test(raw)) continue;
     const url = normalizeUrl(raw);
     if (!url || seen.has(url)) continue;
-    const title = match[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    const title = match[2]
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!title) continue;
     seen.add(url);
     out.push({ title: title.slice(0, 200), url });
@@ -433,7 +476,10 @@ const searchWeb = async (query: string) => {
   try {
     const response = await fetch(target, {
       signal: AbortSignal.timeout(12_000),
-      headers: { "user-agent": "Mise/0.1 (recipe search)", accept: "text/html" },
+      headers: {
+        "user-agent": "Mise/0.1 (recipe search)",
+        accept: "text/html",
+      },
     });
     if (!response.ok) return [];
     return linksFromSearchHtml(await response.text());
@@ -453,8 +499,12 @@ export const findRecipes = async (
   pantry: string[],
   focus: string
 ): Promise<AiResult<FoundRecipe[]>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
-  const list = pantry.slice(0, 80).map((name) => `- ${name}`).join("\n");
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
+  const list = pantry
+    .slice(0, 80)
+    .map((name) => `- ${name}`)
+    .join("\n");
   const searched = new Set<string>();
   let searches = 0;
 
@@ -497,7 +547,8 @@ export const askAboutRecipe = async (
   recipe: Pick<Recipe, "title" | "servings" | "ingredients" | "instructions">,
   question: string
 ): Promise<AiResult<string>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  if (!aiEnabled())
+    return { ok: false, error: "AI is not set up on this server" };
   const ingredients = recipe.ingredients
     .map((item) =>
       [item.amount, item.unit, item.name, item.note ? `(${item.note})` : ""]

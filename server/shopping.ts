@@ -46,10 +46,7 @@ export const mergeLines = (userId: string, lines: ShoppingLine[]) => {
       .select()
       .from(shoppingItems)
       .where(
-        and(
-          eq(shoppingItems.userId, userId),
-          eq(shoppingItems.checked, false)
-        )
+        and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, false))
       )
       .all();
     const top = tx
@@ -169,10 +166,7 @@ export const clearItems = (userId: string, which: "checked" | "all") => {
     .where(
       which === "all"
         ? eq(shoppingItems.userId, userId)
-        : and(
-            eq(shoppingItems.userId, userId),
-            eq(shoppingItems.checked, true)
-          )
+        : and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
     )
     .run();
 };

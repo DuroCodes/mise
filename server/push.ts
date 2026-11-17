@@ -54,7 +54,9 @@ export const allowedEndpoint = (raw: string) => {
     const url = new URL(raw);
     if (url.protocol !== "https:") return false;
     const host = url.hostname.toLowerCase();
-    return pushHosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+    return pushHosts.some(
+      (allowed) => host === allowed || host.endsWith(`.${allowed}`)
+    );
   } catch {
     return false;
   }
@@ -68,7 +70,12 @@ export const subscriptionFor = (userId: string, endpoint: string) => {
   const row = db
     .select()
     .from(pushSubscriptions)
-    .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.userId, userId)))
+    .where(
+      and(
+        eq(pushSubscriptions.endpoint, endpoint),
+        eq(pushSubscriptions.userId, userId)
+      )
+    )
     .get();
   return row ? { useSoon: row.useSoon, tomorrow: row.tomorrow } : null;
 };
@@ -103,18 +110,32 @@ export const saveSubscription = (
     .run();
 };
 
-export const updatePrefs = (userId: string, endpoint: string, prefs: Partial<Prefs>) => {
+export const updatePrefs = (
+  userId: string,
+  endpoint: string,
+  prefs: Partial<Prefs>
+) => {
   if (!subscriptionFor(userId, endpoint)) return false;
   db.update(pushSubscriptions)
     .set(prefs)
-    .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.userId, userId)))
+    .where(
+      and(
+        eq(pushSubscriptions.endpoint, endpoint),
+        eq(pushSubscriptions.userId, userId)
+      )
+    )
     .run();
   return true;
 };
 
 export const removeSubscription = (userId: string, endpoint: string) => {
   db.delete(pushSubscriptions)
-    .where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.userId, userId)))
+    .where(
+      and(
+        eq(pushSubscriptions.endpoint, endpoint),
+        eq(pushSubscriptions.userId, userId)
+      )
+    )
     .run();
 };
 
@@ -128,19 +149,27 @@ export type Note = {
   kind: "timer" | "use-soon" | "tomorrow" | "test";
 };
 
-const deliver = async (row: typeof pushSubscriptions.$inferSelect, note: Note) => {
+const deliver = async (
+  row: typeof pushSubscriptions.$inferSelect,
+  note: Note
+) => {
   try {
     await webpush.sendNotification(
       { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
       JSON.stringify(note),
-      { TTL: note.kind === "timer" ? 600 : 6 * 3600, urgency: note.kind === "timer" ? "high" : "normal" }
+      {
+        TTL: note.kind === "timer" ? 600 : 6 * 3600,
+        urgency: note.kind === "timer" ? "high" : "normal",
+      }
     );
     return true;
   } catch (error) {
     const status = (error as { statusCode?: number }).statusCode;
     // The browser dropped this subscription; forget it.
     if (status === 404 || status === 410)
-      db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, row.id)).run();
+      db.delete(pushSubscriptions)
+        .where(eq(pushSubscriptions.id, row.id))
+        .run();
     else console.error("push failed", status ?? error);
     return false;
   }
@@ -163,7 +192,11 @@ export const sendToUser = async (
 
 export const hasSubscription = (userId: string) =>
   Boolean(
-    db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId)).get()
+    db
+      .select({ id: pushSubscriptions.id })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId))
+      .get()
   );
 
 // Timers -------------------------------------------------------------------------------
@@ -221,13 +254,21 @@ const plusDays = (day: string, count: number) => {
 export const soonNote = (userId: string, today: string): Note | null => {
   const tomorrow = plusDays(today, 1);
   const soon = listPantry(userId)
-    .filter((item) => item.expiresOn && item.expiresOn <= tomorrow && item.expiresOn >= plusDays(today, -2))
+    .filter(
+      (item) =>
+        item.expiresOn &&
+        item.expiresOn <= tomorrow &&
+        item.expiresOn >= plusDays(today, -2)
+    )
     .sort((a, b) => (a.expiresOn ?? "").localeCompare(b.expiresOn ?? ""));
   if (soon.length === 0) return null;
   const describe = (item: (typeof soon)[number]) =>
     `${item.name} (${item.expiresOn === today ? "today" : item.expiresOn === tomorrow ? "tomorrow" : "expired"})`;
   return {
-    title: soon.length === 1 ? `Use your ${soon[0]?.name} soon` : `Use soon: ${soon.length} items`,
+    title:
+      soon.length === 1
+        ? `Use your ${soon[0]?.name} soon`
+        : `Use soon: ${soon.length} items`,
     body: soon.slice(0, 6).map(describe).join(", "),
     url: "/pantry?tab=make",
     tag: `use-soon-${today}`,
@@ -266,21 +307,37 @@ const runDaily = async (now = new Date()) => {
   for (const userId of users) {
     const mine = rows.filter((row) => row.userId === userId);
     if (hour >= 9) {
-      const due = mine.filter((row) => row.useSoon && row.lastUseSoon !== today);
+      const due = mine.filter(
+        (row) => row.useSoon && row.lastUseSoon !== today
+      );
       if (due.length) {
         const note = soonNote(userId, today);
-        if (note) await sendToUser(userId, note, (row) => due.some((entry) => entry.id === row.id));
+        if (note)
+          await sendToUser(userId, note, (row) =>
+            due.some((entry) => entry.id === row.id)
+          );
         for (const row of due)
-          db.update(pushSubscriptions).set({ lastUseSoon: today }).where(eq(pushSubscriptions.id, row.id)).run();
+          db.update(pushSubscriptions)
+            .set({ lastUseSoon: today })
+            .where(eq(pushSubscriptions.id, row.id))
+            .run();
       }
     }
     if (hour >= 18) {
-      const due = mine.filter((row) => row.tomorrow && row.lastTomorrow !== today);
+      const due = mine.filter(
+        (row) => row.tomorrow && row.lastTomorrow !== today
+      );
       if (due.length) {
         const note = tomorrowNote(userId, today);
-        if (note) await sendToUser(userId, note, (row) => due.some((entry) => entry.id === row.id));
+        if (note)
+          await sendToUser(userId, note, (row) =>
+            due.some((entry) => entry.id === row.id)
+          );
         for (const row of due)
-          db.update(pushSubscriptions).set({ lastTomorrow: today }).where(eq(pushSubscriptions.id, row.id)).run();
+          db.update(pushSubscriptions)
+            .set({ lastTomorrow: today })
+            .where(eq(pushSubscriptions.id, row.id))
+            .run();
       }
     }
   }
@@ -288,7 +345,8 @@ const runDaily = async (now = new Date()) => {
 
 /** Checks every few minutes; each reminder goes out at most once a day per device. */
 export const startReminders = () => {
-  const tick = () => void runDaily().catch((error) => console.error("reminders failed", error));
+  const tick = () =>
+    void runDaily().catch((error) => console.error("reminders failed", error));
   setTimeout(tick, 30_000);
   return setInterval(tick, 5 * 60_000);
 };

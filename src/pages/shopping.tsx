@@ -141,7 +141,11 @@ const groupItems = (
   }
   return [...byRecipe.entries()]
     .sort(([a], [b]) =>
-      a === "Added by hand" ? 1 : b === "Added by hand" ? -1 : a.localeCompare(b)
+      a === "Added by hand"
+        ? 1
+        : b === "Added by hand"
+          ? -1
+          : a.localeCompare(b)
     )
     .map(([name, list]) => ({ name, items: list }));
 };
@@ -329,7 +333,10 @@ function ShoppingPage() {
   };
 
   /** Applies a change here right away, then sends it (or keeps it for later). */
-  const change = async (op: Op, local: (list: ShoppingItem[]) => ShoppingItem[]) => {
+  const change = async (
+    op: Op,
+    local: (list: ShoppingItem[]) => ShoppingItem[]
+  ) => {
     setItems((current) => (current ? local(current) : current));
     const result = await send(op);
     if (result.queued) return true;
@@ -351,21 +358,36 @@ function ShoppingPage() {
     const name = (match ? match[2] : text)?.trim() ?? text;
     const amount = match?.[1] ?? "";
     const tempId = `local-${crypto.randomUUID()}`;
-    const ok = await change({ kind: "add", tempId, name, amount, checked: false }, (list) => [
-      ...list,
-      { id: tempId, name, amount, unit: "", note: "", sources: [], checked: false },
-    ]);
+    const ok = await change(
+      { kind: "add", tempId, name, amount, checked: false },
+      (list) => [
+        ...list,
+        {
+          id: tempId,
+          name,
+          amount,
+          unit: "",
+          note: "",
+          sources: [],
+          checked: false,
+        },
+      ]
+    );
     setAdding(false);
     if (ok) setDraft("");
   };
 
   const toggle = (item: ShoppingItem) =>
     change({ kind: "check", id: item.id, checked: !item.checked }, (list) =>
-      list.map((entry) => (entry.id === item.id ? { ...entry, checked: !item.checked } : entry))
+      list.map((entry) =>
+        entry.id === item.id ? { ...entry, checked: !item.checked } : entry
+      )
     );
 
   const remove = (item: ShoppingItem) => {
-    setItems((current) => current?.filter((entry) => entry.id !== item.id) ?? current);
+    setItems(
+      (current) => current?.filter((entry) => entry.id !== item.id) ?? current
+    );
     const timer = window.setTimeout(() => {
       pendingRemovals.delete(item.id);
       void send({ kind: "remove", id: item.id });
@@ -390,7 +412,9 @@ function ShoppingPage() {
     });
   };
 
-  const finish = async (keep: { id: string; amount: string; unit: string }[]) => {
+  const finish = async (
+    keep: { id: string; amount: string; unit: string }[]
+  ) => {
     setSavingDone(true);
     const result = await finishShopping(keep);
     setSavingDone(false);
@@ -399,7 +423,9 @@ function ShoppingPage() {
       return;
     }
     setFinishing(false);
-    setItems(result.value.shopping.filter((item) => !pendingRemovals.has(item.id)));
+    setItems(
+      result.value.shopping.filter((item) => !pendingRemovals.has(item.id))
+    );
     if (result.value.kept > 0)
       toast.success(
         `Added ${result.value.kept} ${result.value.kept === 1 ? "item" : "items"} to your pantry`,
@@ -416,10 +442,21 @@ function ShoppingPage() {
 
   const addScanned = async (name: string) => {
     const tempId = `local-${crypto.randomUUID()}`;
-    await change({ kind: "add", tempId, name, amount: "", checked: true }, (list) => [
-      ...list,
-      { id: tempId, name, amount: "", unit: "", note: "", sources: [], checked: true },
-    ]);
+    await change(
+      { kind: "add", tempId, name, amount: "", checked: true },
+      (list) => [
+        ...list,
+        {
+          id: tempId,
+          name,
+          amount: "",
+          unit: "",
+          note: "",
+          sources: [],
+          checked: true,
+        },
+      ]
+    );
     if (pendingCount() === 0) await load();
   };
 
@@ -462,7 +499,8 @@ function ShoppingPage() {
         await navigator.share({ title: "Shopping list", text });
         return;
       } catch (cause) {
-        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        if (cause instanceof DOMException && cause.name === "AbortError")
+          return;
       }
     }
     try {
@@ -478,7 +516,9 @@ function ShoppingPage() {
       <div className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-medium tracking-tight">Shopping list</h1>
+            <h1 className="text-2xl font-medium tracking-tight">
+              Shopping list
+            </h1>
             <p className="text-sm text-muted-foreground">
               {items === null
                 ? "Loading"
@@ -492,13 +532,23 @@ function ShoppingPage() {
           {total > 0 && (
             <div className="flex flex-wrap gap-2">
               {open.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => setScanning(true)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setScanning(true)}
+                >
                   <ScanLineIcon data-icon="inline-start" />
                   Scan
                 </Button>
               )}
               {open.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => void shareList()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void shareList()}
+                >
                   {canShare ? (
                     <Share2Icon data-icon="inline-start" />
                   ) : (
@@ -508,7 +558,11 @@ function ShoppingPage() {
                 </Button>
               )}
               {done.length > 0 && (
-                <Button type="button" size="sm" onClick={() => void openFinish()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void openFinish()}
+                >
                   <CheckIcon data-icon="inline-start" />
                   Done shopping
                 </Button>
@@ -545,7 +599,10 @@ function ShoppingPage() {
       </div>
 
       {(offline || waiting > 0) && (
-        <p className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground" aria-live="polite">
+        <p
+          className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground"
+          aria-live="polite"
+        >
           <CloudOffIcon className="size-4 shrink-0" aria-hidden="true" />
           {offline ? "Offline. Changes save here" : "Waiting to sync"}
           {waiting > 0 && ` · ${waiting} waiting`}
@@ -561,7 +618,12 @@ function ShoppingPage() {
           className="h-10 text-base"
           onChange={(event) => setDraft(event.target.value)}
         />
-        <Button type="submit" size="lg" className="h-10" disabled={adding || !draft.trim()}>
+        <Button
+          type="submit"
+          size="lg"
+          className="h-10"
+          disabled={adding || !draft.trim()}
+        >
           <PlusIcon data-icon="inline-start" />
           Add
         </Button>
@@ -575,7 +637,10 @@ function ShoppingPage() {
 
       {items && total === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
-          <ShoppingBasketIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <ShoppingBasketIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">Your list is empty</h2>
           <p className="text-sm text-muted-foreground">
             Add items above, or send them from a recipe or the meal plan.
@@ -595,7 +660,9 @@ function ShoppingPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Select
             value={store ? store.id : "usual"}
-            onValueChange={(value) => chooseStore(value === "usual" ? "" : value)}
+            onValueChange={(value) =>
+              chooseStore(value === "usual" ? "" : value)
+            }
           >
             <SelectTrigger aria-label="Store" className="max-w-56">
               <StoreIcon className="size-4 text-muted-foreground" />
@@ -613,7 +680,11 @@ function ShoppingPage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Group by">
+          <div
+            className="flex rounded-lg bg-muted p-0.5"
+            role="radiogroup"
+            aria-label="Group by"
+          >
             {(
               [
                 ["aisle", "Aisle"],
@@ -644,7 +715,9 @@ function ShoppingPage() {
         <section key={group.name} className="space-y-1.5">
           <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             {group.name}
-            <span className="font-normal tabular-nums">{group.items.length}</span>
+            <span className="font-normal tabular-nums">
+              {group.items.length}
+            </span>
           </h2>
           <ul className="divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
             <AnimatePresence initial={false}>
@@ -669,7 +742,12 @@ function ShoppingPage() {
               In the basket
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void openFinish()}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void openFinish()}
+            >
               <PackageOpenIcon data-icon="inline-start" />
               Done shopping
             </Button>
@@ -717,7 +795,11 @@ function ShoppingPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmClear(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmClear(false)}
+            >
               Cancel
             </Button>
             <Button

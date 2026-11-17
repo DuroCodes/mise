@@ -20,14 +20,23 @@ function CookTimeline({
   onPlan: (plan: CookPlan) => void;
   onJump: (index: number) => void;
 }) {
-  const timeline = buildTimeline(steps, anchorFor(plan, now), plan.mode, plan.gap);
+  const timeline = buildTimeline(
+    steps,
+    anchorFor(plan, now),
+    plan.mode,
+    plan.gap
+  );
   const late = timeline.start < now - 60_000;
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4">
       <div className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Plan from">
+          <div
+            className="flex rounded-lg bg-muted p-0.5"
+            role="radiogroup"
+            aria-label="Plan from"
+          >
             {(
               [
                 ["start", "Start at"],
@@ -42,7 +51,9 @@ function CookTimeline({
                 onClick={() => onPlan({ ...plan, mode: value })}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
-                  plan.mode === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  plan.mode === value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
                 )}
               >
                 {label}
@@ -54,16 +65,24 @@ function CookTimeline({
             value={plan.time}
             aria-label={plan.mode === "start" ? "Start time" : "Ready time"}
             className="h-9 w-32"
-            onChange={(event) => event.target.value && onPlan({ ...plan, time: event.target.value })}
+            onChange={(event) =>
+              event.target.value &&
+              onPlan({ ...plan, time: event.target.value })
+            }
           />
         </div>
         <p className="text-sm">
           Start <b className="tabular-nums">{clock(timeline.start)}</b> · ready{" "}
           <b className="tabular-nums">{clock(timeline.end)}</b>
-          <span className="text-muted-foreground"> · {timeline.minutes} min</span>
+          <span className="text-muted-foreground">
+            {" "}
+            · {timeline.minutes} min
+          </span>
         </p>
         {late && plan.mode === "ready" && (
-          <p className="text-sm text-destructive">That start time has passed. Pick a later ready time.</p>
+          <p className="text-sm text-destructive">
+            That start time has passed. Pick a later ready time.
+          </p>
         )}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Steps without a time take</span>
@@ -77,7 +96,9 @@ function CookTimeline({
           >
             <MinusIcon />
           </Button>
-          <span className="w-12 text-center text-foreground tabular-nums">{plan.gap} min</span>
+          <span className="w-12 text-center text-foreground tabular-nums">
+            {plan.gap} min
+          </span>
           <Button
             type="button"
             variant="outline"
@@ -102,10 +123,14 @@ function CookTimeline({
                 entry.index === current && "bg-brand/10 ring-1 ring-brand/40"
               )}
             >
-              <span className="w-16 shrink-0 text-sm font-medium tabular-nums">{clock(entry.start)}</span>
+              <span className="w-16 shrink-0 text-sm font-medium tabular-nums">
+                {clock(entry.start)}
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="line-clamp-2 text-sm leading-5">
-                  <span className="text-muted-foreground">{entry.index + 1}. </span>
+                  <span className="text-muted-foreground">
+                    {entry.index + 1}.{" "}
+                  </span>
                   {steps[entry.index]?.text}
                 </span>
               </span>
@@ -123,7 +148,9 @@ function CookTimeline({
           </li>
         ))}
         <li className="flex items-center gap-3 px-3 py-2 text-sm">
-          <span className="w-16 shrink-0 font-medium tabular-nums">{clock(timeline.end)}</span>
+          <span className="w-16 shrink-0 font-medium tabular-nums">
+            {clock(timeline.end)}
+          </span>
           <span className="font-medium text-brand">Ready</span>
         </li>
       </ol>

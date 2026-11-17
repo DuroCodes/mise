@@ -636,23 +636,34 @@ export const lookupProduct = async (code: string) => {
     return Ok(null);
   }
   if (!response.ok) return Err("Couldn't look that up right now");
-  const parsed = productSchema.safeParse(await response.json().catch(() => null));
+  const parsed = productSchema.safeParse(
+    await response.json().catch(() => null)
+  );
   if (!parsed.success) return Err("Couldn't look that up right now");
   products.set(code, parsed.data);
   return Ok(parsed.data);
 };
 
-const photoItemSchema = z.object({ name: z.string(), amount: z.string(), unit: z.string() });
+const photoItemSchema = z.object({
+  name: z.string(),
+  amount: z.string(),
+  unit: z.string(),
+});
 export type PhotoItem = z.infer<typeof photoItemSchema>;
 
 export const readPantryPhoto = (image: File, kind: "receipt" | "fridge") => {
   const body = new FormData();
   body.append("image", image);
   body.append("kind", kind);
-  return zodFetch(z.array(photoItemSchema), "Could not read that photo", "/api/ai/pantry-photo", {
-    method: "POST",
-    body,
-  });
+  return zodFetch(
+    z.array(photoItemSchema),
+    "Could not read that photo",
+    "/api/ai/pantry-photo",
+    {
+      method: "POST",
+      body,
+    }
+  );
 };
 
 export const addPantryBatch = (items: PhotoItem[]) =>
@@ -763,15 +774,25 @@ export const listInvites = () =>
   zodFetch(z.array(inviteSchema), "Could not load invites", "/api/invites");
 
 export const createInvite = (input: { note: string; days: 1 | 7 | 30 }) =>
-  zodFetch(z.array(inviteSchema), "Could not create the invite", "/api/invites", {
-    method: "POST",
-    ...json(input),
-  });
+  zodFetch(
+    z.array(inviteSchema),
+    "Could not create the invite",
+    "/api/invites",
+    {
+      method: "POST",
+      ...json(input),
+    }
+  );
 
 export const revokeInvite = (id: string) =>
-  zodFetch(z.array(inviteSchema), "Could not revoke the invite", `/api/invites/${id}`, {
-    method: "DELETE",
-  });
+  zodFetch(
+    z.array(inviteSchema),
+    "Could not revoke the invite",
+    `/api/invites/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
 
 export const describeInvite = (token: string) =>
   zodFetch(
@@ -784,10 +805,15 @@ export const acceptInvite = (
   token: string,
   input: { name: string; email: string; password: string }
 ) =>
-  zodFetch(z.null(), "Could not create the account", `/api/invite/${encodeURIComponent(token)}`, {
-    method: "POST",
-    ...json(input),
-  });
+  zodFetch(
+    z.null(),
+    "Could not create the account",
+    `/api/invite/${encodeURIComponent(token)}`,
+    {
+      method: "POST",
+      ...json(input),
+    }
+  );
 
 // Claude ----------------------------------------------------------------------
 
@@ -802,16 +828,26 @@ export const aiRecipe = (text: string, image: File | null) => {
 };
 
 export const importPage = (url: string, html: string) =>
-  zodFetch(recipeInput, "Could not read a recipe from that page", "/api/import/page", {
-    method: "POST",
-    ...json({ url, html }),
-  });
+  zodFetch(
+    recipeInput,
+    "Could not read a recipe from that page",
+    "/api/import/page",
+    {
+      method: "POST",
+      ...json({ url, html }),
+    }
+  );
 
 export const aiRecipeFromUrl = (url: string) =>
-  zodFetch(recipeInput, "Claude couldn't read that page", "/api/ai/recipe-from-url", {
-    method: "POST",
-    ...json({ url }),
-  });
+  zodFetch(
+    recipeInput,
+    "Claude couldn't read that page",
+    "/api/ai/recipe-from-url",
+    {
+      method: "POST",
+      ...json({ url }),
+    }
+  );
 
 export const askClaude = (recipeId: string, question: string) =>
   zodFetch(

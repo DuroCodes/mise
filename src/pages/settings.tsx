@@ -1,5 +1,18 @@
-import { BellIcon, BookmarkIcon, DownloadIcon, KeyRoundIcon, Share2Icon, SquarePlusIcon } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode, type SubmitEvent } from "react";
+import {
+  BellIcon,
+  BookmarkIcon,
+  DownloadIcon,
+  KeyRoundIcon,
+  Share2Icon,
+  SquarePlusIcon,
+} from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SubmitEvent,
+} from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -26,7 +39,15 @@ import {
 import { bookmarkletFor } from "@/lib/bookmarklet";
 import { useTitle } from "@/lib/use-title";
 
-function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
       <h2 className="flex items-center gap-2 text-base font-medium">
@@ -87,9 +108,14 @@ function InstallSection() {
   useEffect(() => onInstallChange(() => setVersion((value) => value + 1)), []);
 
   return (
-    <Section icon={<DownloadIcon className="size-4 text-brand" aria-hidden="true" />} title="Install the app">
+    <Section
+      icon={<DownloadIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="Install the app"
+    >
       {installed() ? (
-        <p className="text-sm text-muted-foreground">Installed. Open Mise from your home screen.</p>
+        <p className="text-sm text-muted-foreground">
+          Installed. Open Mise from your home screen.
+        </p>
       ) : canPromptInstall() ? (
         <Button type="button" onClick={() => void promptInstall()}>
           <DownloadIcon data-icon="inline-start" />
@@ -97,9 +123,11 @@ function InstallSection() {
         </Button>
       ) : isIos() ? (
         <p className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          In Safari, tap <Share2Icon className="size-4" aria-label="Share" /> then
+          In Safari, tap <Share2Icon className="size-4" aria-label="Share" />{" "}
+          then
           <span className="inline-flex items-center gap-1 font-medium text-foreground">
-            <SquarePlusIcon className="size-4" aria-hidden="true" /> Add to Home Screen
+            <SquarePlusIcon className="size-4" aria-hidden="true" /> Add to Home
+            Screen
           </span>
         </p>
       ) : (
@@ -119,10 +147,13 @@ function SendToMiseSection() {
   }, []);
 
   return (
-    <Section icon={<BookmarkIcon className="size-4 text-brand" aria-hidden="true" />} title="Send to Mise button">
+    <Section
+      icon={<BookmarkIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="Send to Mise button"
+    >
       <p className="text-sm text-muted-foreground">
-        Drag this to your bookmarks bar. On any recipe page, click it to bring the recipe here. Works on
-        sites that block imports.
+        Drag this to your bookmarks bar. On any recipe page, click it to bring
+        the recipe here. Works on sites that block imports.
       </p>
       <a
         ref={link}
@@ -188,7 +219,10 @@ function NotificationsSection() {
   };
 
   return (
-    <Section icon={<BellIcon className="size-4 text-brand" aria-hidden="true" />} title="Notifications">
+    <Section
+      icon={<BellIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="Notifications"
+    >
       {!supported ? (
         <p className="text-sm text-muted-foreground">
           {needsInstallForPush()
@@ -199,7 +233,9 @@ function NotificationsSection() {
         <p className="text-sm text-muted-foreground">Checking…</p>
       ) : prefs ? (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">On for this device. Timers always ring.</p>
+          <p className="text-xs text-muted-foreground">
+            On for this device. Timers always ring.
+          </p>
           <Toggle
             label="Use soon"
             hint="9am, when pantry items are about to expire"
@@ -224,7 +260,13 @@ function NotificationsSection() {
             >
               Send a test
             </Button>
-            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void turnOff()}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => void turnOff()}
+            >
               Turn off
             </Button>
           </div>
@@ -232,7 +274,8 @@ function NotificationsSection() {
       ) : (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Timers when your phone is locked, food about to expire, and tomorrow's meals.
+            Timers when your phone is locked, food about to expire, and
+            tomorrow's meals.
           </p>
           <Button type="button" disabled={busy} onClick={() => void turnOn()}>
             <BellIcon data-icon="inline-start" />
@@ -274,7 +317,10 @@ function PasswordSection() {
   };
 
   return (
-    <Section icon={<KeyRoundIcon className="size-4 text-brand" aria-hidden="true" />} title="Password">
+    <Section
+      icon={<KeyRoundIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="Password"
+    >
       <form onSubmit={save} className="space-y-3" noValidate>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
@@ -303,7 +349,11 @@ function PasswordSection() {
             {error}
           </p>
         )}
-        <Button type="submit" variant="outline" disabled={pending || !current || !next}>
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={pending || !current || !next}
+        >
           {pending ? "Saving" : "Change password"}
         </Button>
       </form>

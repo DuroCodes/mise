@@ -6,7 +6,11 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+  return (
+    <div className="relative [&_select]:absolute [&_select]:size-px [&_select]:overflow-hidden [&_select]:opacity-0">
+      <SelectPrimitive.Root data-slot="select" {...props} />
+    </div>
+  );
 }
 
 function SelectGroup({

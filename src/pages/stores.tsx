@@ -55,15 +55,22 @@ function SectionRow({
   onLabel: (label: string) => void;
   onMove: (to: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: section.aisle });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.aisle });
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "flex items-center gap-2 bg-card px-2 py-1.5 sm:px-3",
-        isDragging && "relative z-10 rounded-lg shadow-md ring-1 ring-foreground/10"
+        isDragging &&
+          "relative z-10 rounded-lg shadow-md ring-1 ring-foreground/10"
       )}
     >
       <button
@@ -78,7 +85,9 @@ function SectionRow({
       <span className="w-6 shrink-0 text-xs text-muted-foreground tabular-nums">
         {index + 1}
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{section.aisle}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+        {section.aisle}
+      </span>
       <Input
         value={section.label}
         maxLength={24}
@@ -123,16 +132,23 @@ function StoreEditor({
   onDeleted: (stores: Store[]) => void;
 }) {
   const [name, setName] = useState(store.name);
-  const [layout, setLayout] = useState<StoreSection[]>(() => fullLayout(store.layout));
+  const [layout, setLayout] = useState<StoreSection[]>(() =>
+    fullLayout(store.layout)
+  );
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const saved = JSON.stringify({ name: store.name, layout: fullLayout(store.layout) });
+  const saved = JSON.stringify({
+    name: store.name,
+    layout: fullLayout(store.layout),
+  });
   const dirty = JSON.stringify({ name: name.trim(), layout }) !== saved;
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -152,7 +168,10 @@ function StoreEditor({
     setSaving(true);
     const result = await updateStore(store.id, {
       name: name.trim(),
-      layout: layout.map((section) => ({ ...section, label: section.label.trim() })),
+      layout: layout.map((section) => ({
+        ...section,
+        label: section.label.trim(),
+      })),
     });
     setSaving(false);
     if (!result.ok) {
@@ -174,7 +193,10 @@ function StoreEditor({
   };
 
   return (
-    <form onSubmit={save} className="space-y-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
+    <form
+      onSubmit={save}
+      className="space-y-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4"
+    >
       <div className="flex items-center gap-2">
         <StoreIcon className="size-4 shrink-0 text-brand" aria-hidden="true" />
         <Input
@@ -197,7 +219,11 @@ function StoreEditor({
       <p className="text-xs text-muted-foreground">
         Drag into walking order. Aisle labels are optional.
       </p>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
         <SortableContext
           items={layout.map((section) => section.aisle)}
           strategy={verticalListSortingStrategy}
@@ -244,13 +270,23 @@ function StoreEditor({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {store.name}?</DialogTitle>
-            <DialogDescription>Your shopping list isn't affected.</DialogDescription>
+            <DialogDescription>
+              Your shopping list isn't affected.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirming(false)}
+            >
               Cancel
             </Button>
-            <Button type="button" variant="destructive" onClick={() => void remove()}>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void remove()}
+            >
               Delete
             </Button>
           </DialogFooter>
@@ -317,7 +353,12 @@ function StoresPage() {
           className="h-10 text-base"
           onChange={(event) => setName(event.target.value)}
         />
-        <Button type="submit" size="lg" className="h-10" disabled={adding || !name.trim()}>
+        <Button
+          type="submit"
+          size="lg"
+          className="h-10"
+          disabled={adding || !name.trim()}
+        >
           <PlusIcon data-icon="inline-start" />
           Add
         </Button>
@@ -325,7 +366,10 @@ function StoresPage() {
 
       {stores && stores.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
-          <StoreIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <StoreIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">No stores yet</h2>
           <p className="text-sm text-muted-foreground">
             Add the one you shop at most.

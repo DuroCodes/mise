@@ -58,7 +58,11 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
     if (items.length === 0) return;
     setSaving(true);
     const result = await addPantryBatch(
-      items.map(({ name, amount, unit }) => ({ name: name.trim(), amount: amount.trim(), unit: unit.trim() }))
+      items.map(({ name, amount, unit }) => ({
+        name: name.trim(),
+        amount: amount.trim(),
+        unit: unit.trim(),
+      }))
     );
     setSaving(false);
     if (!result.ok) {
@@ -66,7 +70,9 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
       return;
     }
     onAdded(result.value);
-    toast.success(`Added ${items.length} ${items.length === 1 ? "item" : "items"}`);
+    toast.success(
+      `Added ${items.length} ${items.length === 1 ? "item" : "items"}`
+    );
     setOpen(false);
     reset();
   };
@@ -98,7 +104,11 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
 
         {rows === null ? (
           <div className="space-y-4">
-            <div className="flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Photo of">
+            <div
+              className="flex rounded-lg bg-muted p-0.5"
+              role="radiogroup"
+              aria-label="Photo of"
+            >
               {(
                 [
                   ["receipt", "Receipt"],
@@ -113,7 +123,9 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
                   onClick={() => setKind(value)}
                   className={cn(
                     "flex-1 rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
-                    kind === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                    kind === value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
                   )}
                 >
                   {label}
@@ -150,23 +162,39 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
         ) : (
           <ul className="max-h-[50svh] divide-y overflow-y-auto rounded-xl ring-1 ring-foreground/10">
             {rows.map((row, index) => (
-              <li key={`${row.name}-${index}`} className="flex items-center gap-2 px-2 py-1.5">
+              <li
+                key={`${row.name}-${index}`}
+                className="flex items-center gap-2 px-2 py-1.5"
+              >
                 <button
                   type="button"
                   role="checkbox"
                   aria-checked={row.keep}
                   aria-label={`Add ${row.name}`}
                   onClick={() =>
-                    setRows(rows.map((entry, at) => (at === index ? { ...entry, keep: !entry.keep } : entry)))
+                    setRows(
+                      rows.map((entry, at) =>
+                        at === index ? { ...entry, keep: !entry.keep } : entry
+                      )
+                    )
                   }
                   className={cn(
                     "flex size-5 shrink-0 items-center justify-center rounded-md border-2",
-                    row.keep ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                    row.keep
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input"
                   )}
                 >
-                  {row.keep && <CheckIcon className="size-3.5" strokeWidth={3} />}
+                  {row.keep && (
+                    <CheckIcon className="size-3.5" strokeWidth={3} />
+                  )}
                 </button>
-                <span className={cn("min-w-0 flex-1 truncate text-sm", !row.keep && "text-muted-foreground line-through")}>
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-sm",
+                    !row.keep && "text-muted-foreground line-through"
+                  )}
+                >
                   {row.name}
                 </span>
                 <Input
@@ -175,10 +203,18 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
                   placeholder="amt"
                   className="h-7 w-14 text-sm"
                   onChange={(event) =>
-                    setRows(rows.map((entry, at) => (at === index ? { ...entry, amount: event.target.value } : entry)))
+                    setRows(
+                      rows.map((entry, at) =>
+                        at === index
+                          ? { ...entry, amount: event.target.value }
+                          : entry
+                      )
+                    )
                   }
                 />
-                <span className="w-12 truncate text-xs text-muted-foreground">{row.unit}</span>
+                <span className="w-12 truncate text-xs text-muted-foreground">
+                  {row.unit}
+                </span>
               </li>
             ))}
           </ul>
@@ -186,10 +222,19 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
 
         {rows !== null && (
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={saving} onClick={reset}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving}
+              onClick={reset}
+            >
               Retake
             </Button>
-            <Button type="button" disabled={saving || keeping === 0} onClick={() => void save()}>
+            <Button
+              type="button"
+              disabled={saving || keeping === 0}
+              onClick={() => void save()}
+            >
               {saving ? "Adding" : `Add ${keeping} to pantry`}
             </Button>
           </DialogFooter>

@@ -1,5 +1,9 @@
 import { and, asc, eq } from "drizzle-orm";
-import { defaultLayout, parseLayout, type StoreSection } from "../src/shared/stores";
+import {
+  defaultLayout,
+  parseLayout,
+  type StoreSection,
+} from "../src/shared/stores";
 import { db } from "./db";
 import { stores } from "./db/schema";
 

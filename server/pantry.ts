@@ -64,7 +64,12 @@ export const addToPantry = (userId: string, lines: PantryLine[]) => {
         row.unit = sum.unit.slice(0, 40);
         row.expiresOn = expiresOn;
         tx.update(pantryItems)
-          .set({ amount: row.amount, unit: row.unit, expiresOn, updatedAt: now })
+          .set({
+            amount: row.amount,
+            unit: row.unit,
+            expiresOn,
+            updatedAt: now,
+          })
           .where(eq(pantryItems.id, row.id))
           .run();
         merged = true;
@@ -96,7 +101,13 @@ export const updatePantryItem = (
   id: string,
   patch: Partial<Omit<PantryLine, "expiresOn"> & { expiresOn: string | null }>
 ) => {
-  if (!db.select({ id: pantryItems.id }).from(pantryItems).where(mine(userId, id)).get())
+  if (
+    !db
+      .select({ id: pantryItems.id })
+      .from(pantryItems)
+      .where(mine(userId, id))
+      .get()
+  )
     return false;
   db.update(pantryItems)
     .set({ ...patch, updatedAt: new Date() })
@@ -106,7 +117,13 @@ export const updatePantryItem = (
 };
 
 export const removePantryItem = (userId: string, id: string) => {
-  if (!db.select({ id: pantryItems.id }).from(pantryItems).where(mine(userId, id)).get())
+  if (
+    !db
+      .select({ id: pantryItems.id })
+      .from(pantryItems)
+      .where(mine(userId, id))
+      .get()
+  )
     return false;
   db.delete(pantryItems).where(mine(userId, id)).run();
   return true;
@@ -117,7 +134,9 @@ export const moveCheckedToPantry = (userId: string) => {
   const checked = db
     .select()
     .from(shoppingItems)
-    .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+    .where(
+      and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
+    )
     .all();
   if (checked.length === 0) return 0;
   addToPantry(
@@ -130,7 +149,9 @@ export const moveCheckedToPantry = (userId: string) => {
     }))
   );
   db.delete(shoppingItems)
-    .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+    .where(
+      and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
+    )
     .run();
   return checked.length;
 };
@@ -146,7 +167,9 @@ export const finishShopping = (
   const checked = db
     .select()
     .from(shoppingItems)
-    .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+    .where(
+      and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
+    )
     .all();
   const byId = new Map(checked.map((item) => [item.id, item]));
   const lines: PantryLine[] = [];
@@ -154,12 +177,19 @@ export const finishShopping = (
     const item = byId.get(entry.id);
     if (!item) continue;
     if (/^0+(?:\.0+)?$/.test(entry.amount.trim())) continue;
-    lines.push({ name: item.name, amount: entry.amount, unit: entry.unit, note: "" });
+    lines.push({
+      name: item.name,
+      amount: entry.amount,
+      unit: entry.unit,
+      note: "",
+    });
   }
   if (lines.length) addToPantry(userId, lines);
   if (checked.length)
     db.delete(shoppingItems)
-      .where(and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true)))
+      .where(
+        and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
+      )
       .run();
   return { kept: lines.length, cleared: checked.length };
 };

@@ -332,9 +332,7 @@ const ingredientLines = (value: unknown) => {
   return lines;
 };
 
-export const isRecipe = (
-  value: unknown
-): value is Record<string, unknown> => {
+export const isRecipe = (value: unknown): value is Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const type = (value as { "@type"?: unknown })["@type"];
   const types = Array.isArray(type) ? type : [type];

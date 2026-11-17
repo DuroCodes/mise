@@ -1,11 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from "fflate";
 import { z } from "zod";
-import {
-  recipeInput,
-  isoDay,
-  type RecipeInput,
-} from "../src/shared/recipe";
+import { recipeInput, isoDay, type RecipeInput } from "../src/shared/recipe";
 import { dataDir, db, setFavorite, uploadDir, writeRecipe } from "./db";
 import {
   collectionRecipes,
@@ -214,7 +210,9 @@ export const createBackupZip = () => {
   return zipSync(files, { level: 6 });
 };
 
-const when = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
+const when = z.iso
+  .datetime({ offset: true })
+  .transform((value) => new Date(value));
 const email = z.string().nullable();
 
 const backupSchema = z.object({
@@ -390,7 +388,10 @@ export const restoreBackup = (
   }
   const parsed = backupSchema.safeParse(raw);
   if (!parsed.success)
-    return { ok: false, error: "That is not a mise backup this version can read" };
+    return {
+      ok: false,
+      error: "That is not a mise backup this version can read",
+    };
   const backup = parsed.data;
 
   const people = db.select({ id: user.id, email: user.email }).from(user).all();
@@ -441,13 +442,18 @@ export const restoreBackup = (
   } else {
     for (const entry of backup.recipes) {
       if (!entry.favorite) continue;
-      const ownerId = personFor(entry.ownerEmail) ?? (entry.ownerEmail ? adminId : null);
+      const ownerId =
+        personFor(entry.ownerEmail) ?? (entry.ownerEmail ? adminId : null);
       if (ownerId) setFavorite(ownerId, entry.id, true);
     }
   }
 
   const recipeIds = new Set(
-    db.select({ id: recipes.id }).from(recipes).all().map((row) => row.id)
+    db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .all()
+      .map((row) => row.id)
   );
 
   db.transaction((tx) => {

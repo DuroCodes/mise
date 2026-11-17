@@ -27,7 +27,11 @@ function ReceivePage() {
     try {
       sessionStorage.setItem(receivedKey, JSON.stringify(recipe));
     } catch {
-      setState({ kind: "failed", error: "Couldn't hand the recipe to the editor", url: null });
+      setState({
+        kind: "failed",
+        error: "Couldn't hand the recipe to the editor",
+        url: null,
+      });
       return;
     }
     navigate("/recipes/new?received=1", { replace: true });
@@ -62,7 +66,11 @@ function ReceivePage() {
     const giveUp = window.setTimeout(() => {
       window.clearInterval(timer);
       if (!done)
-        setState({ kind: "failed", error: "Nothing arrived. Click the button on the recipe page again.", url: null });
+        setState({
+          kind: "failed",
+          error: "Nothing arrived. Click the button on the recipe page again.",
+          url: null,
+        });
     }, 20_000);
     return () => {
       window.removeEventListener("message", onMessage);
@@ -83,8 +91,14 @@ function ReceivePage() {
   return (
     <div className="mx-auto max-w-md space-y-3 py-10 text-center">
       <h1 className="text-2xl font-medium tracking-tight">Send to Mise</h1>
-      {state.kind === "waiting" && <p className="text-sm text-muted-foreground">Waiting for the recipe page…</p>}
-      {state.kind === "reading" && <p className="text-sm text-muted-foreground">Reading the recipe…</p>}
+      {state.kind === "waiting" && (
+        <p className="text-sm text-muted-foreground">
+          Waiting for the recipe page…
+        </p>
+      )}
+      {state.kind === "reading" && (
+        <p className="text-sm text-muted-foreground">Reading the recipe…</p>
+      )}
       {state.kind === "alone" && (
         <p className="text-sm text-muted-foreground">
           Open a recipe page and click the Send to Mise button.{" "}
@@ -100,7 +114,10 @@ function ReceivePage() {
           </p>
           <div className="flex justify-center gap-2">
             {ai && state.url && (
-              <Button type="button" onClick={() => state.url && void tryClaude(state.url)}>
+              <Button
+                type="button"
+                onClick={() => state.url && void tryClaude(state.url)}
+              >
                 <SparklesIcon data-icon="inline-start" />
                 Try with AI
               </Button>

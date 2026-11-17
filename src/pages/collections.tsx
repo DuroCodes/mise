@@ -1,4 +1,11 @@
-import { FolderIcon, FolderOpenIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import {
+  FolderIcon,
+  FolderOpenIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -41,7 +48,10 @@ function CollectionForm({
   initial: { name: string; description: string };
   submitLabel: string;
   onClose: () => void;
-  onSubmit: (value: { name: string; description: string }) => Promise<string | null>;
+  onSubmit: (value: {
+    name: string;
+    description: string;
+  }) => Promise<string | null>;
 }) {
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description);
@@ -55,7 +65,10 @@ function CollectionForm({
       return;
     }
     setPending(true);
-    const failure = await onSubmit({ name: name.trim(), description: description.trim() });
+    const failure = await onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+    });
     setPending(false);
     if (failure) setError(failure);
   };
@@ -104,7 +117,9 @@ function CollectionForm({
 
 function CollectionsPage() {
   const navigate = useNavigate();
-  const [collections, setCollections] = useState<CollectionSummary[] | null>(null);
+  const [collections, setCollections] = useState<CollectionSummary[] | null>(
+    null
+  );
   const [creating, setCreating] = useState(false);
   useTitle("Collections · Mise");
 
@@ -137,7 +152,10 @@ function CollectionsPage() {
 
       {collections && collections.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
-          <FolderIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <FolderIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">No collections yet</h2>
           <p className="text-sm text-muted-foreground">
             Make one here, or use “Collect” on any recipe.
@@ -155,7 +173,10 @@ function CollectionsPage() {
               <div className="grid aspect-[2/1] grid-cols-2 grid-rows-2 gap-0.5 bg-muted">
                 {collection.images.length === 0 ? (
                   <div className="col-span-2 row-span-2 flex items-center justify-center">
-                    <FolderIcon className="size-8 text-muted-foreground/50" aria-hidden="true" />
+                    <FolderIcon
+                      className="size-8 text-muted-foreground/50"
+                      aria-hidden="true"
+                    />
                   </div>
                 ) : (
                   collection.images.map((image, index) => (
@@ -177,9 +198,12 @@ function CollectionsPage() {
                 )}
               </div>
               <div className="space-y-1 p-4">
-                <h2 className="truncate text-base font-medium tracking-tight">{collection.name}</h2>
+                <h2 className="truncate text-base font-medium tracking-tight">
+                  {collection.name}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  {collection.count} {collection.count === 1 ? "recipe" : "recipes"}
+                  {collection.count}{" "}
+                  {collection.count === 1 ? "recipe" : "recipes"}
                   {collection.description && ` · ${collection.description}`}
                 </p>
               </div>
@@ -253,16 +277,32 @@ function CollectionPage() {
               Collections
             </Link>
           </p>
-          <h1 className="text-2xl font-medium tracking-tight">{collection.name}</h1>
+          <h1 className="text-2xl font-medium tracking-tight">
+            {collection.name}
+          </h1>
           {collection.description && (
-            <p className="text-sm leading-6 text-muted-foreground">{collection.description}</p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {collection.description}
+            </p>
           )}
         </div>
         <div className="flex gap-1">
-          <Button type="button" variant="outline" size="icon" aria-label="Rename collection" onClick={() => setEditing(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Rename collection"
+            onClick={() => setEditing(true)}
+          >
             <PencilIcon />
           </Button>
-          <Button type="button" variant="outline" size="icon" aria-label="Delete collection" onClick={() => setDeleting(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="Delete collection"
+            onClick={() => setDeleting(true)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -270,7 +310,10 @@ function CollectionPage() {
 
       {collection.recipes.length === 0 ? (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
-          <FolderOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          <FolderOpenIcon
+            className="mx-auto size-6 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="text-base font-medium">This collection is empty</h2>
           <p className="text-sm text-muted-foreground">
             Open a recipe and use “Collect” to add it here.
@@ -313,7 +356,10 @@ function CollectionPage() {
         <CollectionForm
           open
           title="Edit collection"
-          initial={{ name: collection.name, description: collection.description }}
+          initial={{
+            name: collection.name,
+            description: collection.description,
+          }}
           submitLabel="Save"
           onClose={() => setEditing(false)}
           onSubmit={async (value) => {
@@ -330,10 +376,16 @@ function CollectionPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {collection.name}?</DialogTitle>
-            <DialogDescription>The recipes stay in your library.</DialogDescription>
+            <DialogDescription>
+              The recipes stay in your library.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setDeleting(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleting(false)}
+            >
               Cancel
             </Button>
             <Button

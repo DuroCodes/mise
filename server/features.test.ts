@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { gzipSync, strToU8, zipSync } from "fflate";
 import { formatAmount, parseAmount, scaleIngredient } from "../src/lib/units";
 import { aisleFor } from "../src/shared/aisles";
-import { estimateNutrition, gramsFor, matchFood } from "../src/shared/nutrition";
+import {
+  estimateNutrition,
+  gramsFor,
+  matchFood,
+} from "../src/shared/nutrition";
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
 import {
@@ -11,9 +15,19 @@ import {
   findTemperatures,
   stepMinutes,
 } from "../src/shared/timeline";
-import { covers, isStaple, matchListItem, rankRecipes } from "../src/shared/pantry";
+import {
+  covers,
+  isStaple,
+  matchListItem,
+  rankRecipes,
+} from "../src/shared/pantry";
 import { safeNext, sharedLink } from "../src/lib/view";
-import { linksFromSearchHtml, parseFound, toPhotoItems, toRecipeInput } from "./ai";
+import {
+  linksFromSearchHtml,
+  parseFound,
+  toPhotoItems,
+  toRecipeInput,
+} from "./ai";
 import { linkToken, linkTokenShape } from "./link-token";
 import {
   gunzipLimited,
@@ -39,11 +53,17 @@ describe("units", () => {
   });
 
   test("scales and converts", () => {
-    expect(scaleIngredient({ amount: "200", unit: "g" }, 2, "original")).toEqual({
+    expect(
+      scaleIngredient({ amount: "200", unit: "g" }, 2, "original")
+    ).toEqual({
       amount: "400",
       unit: "g",
     });
-    const imperial = scaleIngredient({ amount: "454", unit: "g" }, 1, "imperial");
+    const imperial = scaleIngredient(
+      { amount: "454", unit: "g" },
+      1,
+      "imperial"
+    );
     expect(imperial.unit).toBe("lb");
     expect(imperial.amount).toBe("1");
     const metric = scaleIngredient({ amount: "1", unit: "cup" }, 1, "metric");
@@ -62,10 +82,16 @@ describe("shopping list merging", () => {
 
   test("adds the same unit", () => {
     expect(
-      combineQuantities({ amount: "200", unit: "g" }, { amount: "100", unit: "g" })
+      combineQuantities(
+        { amount: "200", unit: "g" },
+        { amount: "100", unit: "g" }
+      )
     ).toEqual({ amount: "300", unit: "g" });
     expect(
-      combineQuantities({ amount: "1", unit: "can" }, { amount: "2", unit: "cans" })
+      combineQuantities(
+        { amount: "1", unit: "can" },
+        { amount: "2", unit: "cans" }
+      )
     ).toEqual({ amount: "3", unit: "can" });
     expect(
       combineQuantities({ amount: "2", unit: "" }, { amount: "4", unit: "" })
@@ -74,22 +100,37 @@ describe("shopping list merging", () => {
 
   test("converts compatible units", () => {
     expect(
-      combineQuantities({ amount: "1", unit: "kg" }, { amount: "500", unit: "g" })
+      combineQuantities(
+        { amount: "1", unit: "kg" },
+        { amount: "500", unit: "g" }
+      )
     ).toEqual({ amount: "1 1/2", unit: "kg" });
     expect(
-      combineQuantities({ amount: "1", unit: "cup" }, { amount: "1", unit: "cup" })
+      combineQuantities(
+        { amount: "1", unit: "cup" },
+        { amount: "1", unit: "cup" }
+      )
     ).toEqual({ amount: "2", unit: "cups" });
     expect(
-      combineQuantities({ amount: "1/2", unit: "cup" }, { amount: "4", unit: "tbsp" })
+      combineQuantities(
+        { amount: "1/2", unit: "cup" },
+        { amount: "4", unit: "tbsp" }
+      )
     ).toEqual({ amount: "3/4", unit: "cups" });
   });
 
   test("refuses to add things that do not add up", () => {
     expect(
-      combineQuantities({ amount: "2", unit: "cloves" }, { amount: "1", unit: "head" })
+      combineQuantities(
+        { amount: "2", unit: "cloves" },
+        { amount: "1", unit: "head" }
+      )
     ).toBeNull();
     expect(
-      combineQuantities({ amount: "200", unit: "g" }, { amount: "1", unit: "cup" })
+      combineQuantities(
+        { amount: "200", unit: "g" },
+        { amount: "1", unit: "cup" }
+      )
     ).toBeNull();
     expect(
       combineQuantities({ amount: "2-3", unit: "" }, { amount: "1", unit: "" })
@@ -200,8 +241,12 @@ describe("scanning", () => {
   ];
 
   test("matches branded products to list items", () => {
-    expect(matchListItem("Tillamook Medium Cheddar Cheese", list)?.name).toBe("cheddar cheese");
-    expect(matchListItem("Heavy Whipping Cream", list)?.name).toBe("heavy cream");
+    expect(matchListItem("Tillamook Medium Cheddar Cheese", list)?.name).toBe(
+      "cheddar cheese"
+    );
+    expect(matchListItem("Heavy Whipping Cream", list)?.name).toBe(
+      "heavy cream"
+    );
     expect(matchListItem("Barilla Spaghetti n.5", list)).toBe(list[3]);
     expect(matchListItem("Swanson Chicken Broth", list)).toBeNull();
     expect(matchListItem("Nutella", list)).toBeNull();
@@ -219,12 +264,22 @@ describe("share links", () => {
 
 describe("share target and sign-in redirects", () => {
   test("finds the link in whatever an app shared", () => {
-    expect(sharedLink(new URLSearchParams({ url: "https://example.com/soup" }))).toBe("https://example.com/soup");
     expect(
-      sharedLink(new URLSearchParams({ text: "Try this! https://cooking.test/r/123?x=1). So good" }))
+      sharedLink(new URLSearchParams({ url: "https://example.com/soup" }))
+    ).toBe("https://example.com/soup");
+    expect(
+      sharedLink(
+        new URLSearchParams({
+          text: "Try this! https://cooking.test/r/123?x=1). So good",
+        })
+      )
     ).toBe("https://cooking.test/r/123?x=1");
-    expect(sharedLink(new URLSearchParams({ title: "Soup", text: "no link here" }))).toBeNull();
-    expect(sharedLink(new URLSearchParams({ text: "javascript:alert(1)" }))).toBeNull();
+    expect(
+      sharedLink(new URLSearchParams({ title: "Soup", text: "no link here" }))
+    ).toBeNull();
+    expect(
+      sharedLink(new URLSearchParams({ text: "javascript:alert(1)" }))
+    ).toBeNull();
   });
 
   test("only returns to pages on this site", () => {
@@ -251,18 +306,45 @@ describe("offline outbox", () => {
 
   test("queues changes offline, folds them together, and shows them", async () => {
     Object.assign(globalThis, { localStorage: fakeStorage });
-    globalThis.fetch = (() => Promise.reject(new TypeError("offline"))) as unknown as typeof fetch;
+    globalThis.fetch = (() =>
+      Promise.reject(new TypeError("offline"))) as unknown as typeof fetch;
     const outbox = await import("../src/lib/outbox");
     outbox.outboxFor("u1");
     const server = [
-      { id: "a", name: "milk", amount: "1", unit: "", note: "", sources: [], checked: false },
-      { id: "b", name: "eggs", amount: "12", unit: "", note: "", sources: [], checked: false },
+      {
+        id: "a",
+        name: "milk",
+        amount: "1",
+        unit: "",
+        note: "",
+        sources: [],
+        checked: false,
+      },
+      {
+        id: "b",
+        name: "eggs",
+        amount: "12",
+        unit: "",
+        note: "",
+        sources: [],
+        checked: false,
+      },
     ];
-    expect((await outbox.send({ kind: "check", id: "a", checked: true })).queued).toBe(true);
-    expect((await outbox.send({ kind: "check", id: "a", checked: false })).queued).toBe(true);
+    expect(
+      (await outbox.send({ kind: "check", id: "a", checked: true })).queued
+    ).toBe(true);
+    expect(
+      (await outbox.send({ kind: "check", id: "a", checked: false })).queued
+    ).toBe(true);
     expect(outbox.pendingCount()).toBe(1);
     await outbox.send({ kind: "remove", id: "b" });
-    await outbox.send({ kind: "add", tempId: "local-1", name: "lemons", amount: "2", checked: false });
+    await outbox.send({
+      kind: "add",
+      tempId: "local-1",
+      name: "lemons",
+      amount: "2",
+      checked: false,
+    });
     await outbox.send({ kind: "check", id: "local-1", checked: true });
     expect(outbox.pendingCount()).toBe(3);
     const shown = outbox.withOutbox(server);
@@ -277,7 +359,12 @@ describe("offline outbox", () => {
     const calls: string[] = [];
     globalThis.fetch = ((url: string, init?: RequestInit) => {
       calls.push(`${init?.method ?? "GET"} ${url}`);
-      return Promise.resolve(new Response("[]", { status: 200, headers: { "content-type": "application/json" } }));
+      return Promise.resolve(
+        new Response("[]", {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      );
     }) as unknown as typeof fetch;
     expect(await outbox.flush()).toBe(true);
     expect(calls).toEqual(["PATCH /api/shopping/a", "DELETE /api/shopping/b"]);
@@ -312,7 +399,8 @@ describe("recipe search results", () => {
   ]);
 
   test("keeps only links that came from the search", () => {
-    const text = 'Here you go:\n```json\n[{"title":"Soup","url":"https://example.com/soup/#top","why":"Uses potatoes","uses":["potatoes"]},{"title":"Made up","url":"https://invented.test/x","why":"","uses":[]},{"title":"Soup again","url":"https://example.com/soup","why":"","uses":[]},{"title":"Toast","url":"https://www.recipes.test/toast","uses":["bread"]}]\n```';
+    const text =
+      'Here you go:\n```json\n[{"title":"Soup","url":"https://example.com/soup/#top","why":"Uses potatoes","uses":["potatoes"]},{"title":"Made up","url":"https://invented.test/x","why":"","uses":[]},{"title":"Soup again","url":"https://example.com/soup","why":"","uses":[]},{"title":"Toast","url":"https://www.recipes.test/toast","uses":["bread"]}]\n```';
     const found = parseFound(text, searched);
     expect(found.map((item) => item.url)).toEqual([
       "https://example.com/soup",
@@ -323,7 +411,9 @@ describe("recipe search results", () => {
   });
 
   test("handles a bare array, bad JSON, and unsafe links", () => {
-    expect(parseFound('[{"title":"T","url":"https://example.com/soup"}]', searched)).toHaveLength(1);
+    expect(
+      parseFound('[{"title":"T","url":"https://example.com/soup"}]', searched)
+    ).toHaveLength(1);
     expect(parseFound("no json here", searched)).toEqual([]);
     const html =
       '<a href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fsoup&amp;rut=1">Tomato soup</a>' +
@@ -331,7 +421,12 @@ describe("recipe search results", () => {
     expect(linksFromSearchHtml(html)).toEqual([
       { title: "Tomato soup", url: "https://example.com/soup" },
     ]);
-    expect(parseFound('[{"title":"x","url":"javascript:alert(1)"}]', new Set(["javascript:alert(1)"]))).toEqual([]);
+    expect(
+      parseFound(
+        '[{"title":"x","url":"javascript:alert(1)"}]',
+        new Set(["javascript:alert(1)"])
+      )
+    ).toEqual([]);
   });
 });
 
@@ -348,11 +443,9 @@ describe("cooking timeline", () => {
     const start = new Date(2026, 10, 16, 17, 0).getTime();
     const plan = buildTimeline(steps, start, "start", 5);
     expect(plan.minutes).toBe(8 + 5 + 17);
-    expect(plan.steps.map((step) => new Date(step.start).toTimeString().slice(0, 5))).toEqual([
-      "17:00",
-      "17:08",
-      "17:13",
-    ]);
+    expect(
+      plan.steps.map((step) => new Date(step.start).toTimeString().slice(0, 5))
+    ).toEqual(["17:00", "17:08", "17:13"]);
     expect(plan.steps.map((step) => step.timed)).toEqual([true, false, true]);
     expect(new Date(plan.end).toTimeString().slice(0, 5)).toBe("17:30");
   });
@@ -365,7 +458,9 @@ describe("cooking timeline", () => {
   });
 
   test("finds and converts oven temperatures", () => {
-    const found = findTemperatures("Bake at 400°F for 20 minutes, or 200 °C in a fan oven. Use 425F for crisp. Add 2 C flour.");
+    const found = findTemperatures(
+      "Bake at 400°F for 20 minutes, or 200 °C in a fan oven. Use 425F for crisp. Add 2 C flour."
+    );
     expect(found.map((temp) => [temp.value, temp.scale])).toEqual([
       [400, "F"],
       [200, "C"],
@@ -430,7 +525,9 @@ describe("nutrition estimates", () => {
     expect(gramsFor({ amount: "3", unit: "cloves" }, garlic)).toBe(9);
     const tomatoes = matchFood("crushed tomatoes");
     if (!tomatoes) throw new Error("tomatoes missing");
-    expect(gramsFor({ amount: "1", unit: "can (28 oz)" }, tomatoes)).toBeCloseTo(793.8, 0);
+    expect(
+      gramsFor({ amount: "1", unit: "can (28 oz)" }, tomatoes)
+    ).toBeCloseTo(793.8, 0);
     const salt = matchFood("salt");
     if (!salt) throw new Error("salt missing");
     expect(gramsFor({ amount: "", unit: "" }, salt)).toBeNull();
@@ -447,7 +544,11 @@ describe("nutrition estimates", () => {
       ],
       4
     );
-    expect(estimate.counted).toEqual(["spaghetti", "Pecorino Romano", "black pepper"]);
+    expect(estimate.counted).toEqual([
+      "spaghetti",
+      "Pecorino Romano",
+      "black pepper",
+    ]);
     expect(estimate.unmeasured).toEqual(["kosher salt"]);
     expect(estimate.unknown).toEqual(["dragon fruit"]);
     // 400 g pasta (1484) + 200 g pecorino (774) + ~4.5 g pepper (~11)
@@ -524,13 +625,24 @@ describe("file imports", () => {
       tags: [{ name: "Soup" }],
       recipeCategory: [{ name: "Dinner" }],
       recipeIngredient: [
-        { quantity: 2, unit: { name: "tablespoon" }, food: { name: "olive oil" }, note: "" },
+        {
+          quantity: 2,
+          unit: { name: "tablespoon" },
+          food: { name: "olive oil" },
+          note: "",
+        },
         { quantity: 0.5, unit: null, food: { name: "onion" }, note: "diced" },
         { quantity: 0, food: null, note: "salt to taste", originalText: "" },
       ],
-      recipeInstructions: [{ text: "Warm the oil." }, { text: "Simmer 20 minutes." }],
+      recipeInstructions: [
+        { text: "Warm the oil." },
+        { text: "Simmer 20 minutes." },
+      ],
     };
-    const result = readImportFile("tomato-soup.json", strToU8(JSON.stringify(mealie)));
+    const result = readImportFile(
+      "tomato-soup.json",
+      strToU8(JSON.stringify(mealie))
+    );
     expect(result.skipped).toEqual([]);
     const recipe = result.recipes[0]?.recipe;
     expect(recipe?.title).toBe("Tomato soup");
@@ -546,7 +658,9 @@ describe("file imports", () => {
   });
 
   test("imports a Mealie backup database with its images", () => {
-    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1]);
+    const jpeg = new Uint8Array([
+      0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1,
+    ]);
     const database = {
       recipes: [
         {
@@ -562,7 +676,14 @@ describe("file imports", () => {
       ingredient_units: [{ id: "u1", name: "slice" }],
       ingredient_foods: [{ id: "f1", name: "bread" }],
       recipes_ingredients: [
-        { recipe_id: "r1", position: 0, quantity: 2, unit_id: "u1", food_id: "f1", note: "" },
+        {
+          recipe_id: "r1",
+          position: 0,
+          quantity: 2,
+          unit_id: "u1",
+          food_id: "f1",
+          note: "",
+        },
       ],
       recipe_instructions: [
         { recipe_id: "r1", position: 1, text: "Butter it." },
@@ -604,9 +725,14 @@ describe("file imports", () => {
         },
       ],
     };
-    const result = readImportFile("lemonade.json", strToU8(JSON.stringify(jsonLd)));
+    const result = readImportFile(
+      "lemonade.json",
+      strToU8(JSON.stringify(jsonLd))
+    );
     expect(result.recipes[0]?.recipe.title).toBe("Lemonade");
-    expect(result.recipes[0]?.recipe.sourceUrl).toBe("https://example.com/lemonade");
+    expect(result.recipes[0]?.recipe.sourceUrl).toBe(
+      "https://example.com/lemonade"
+    );
     expect(result.recipes[0]?.recipe.ingredients).toHaveLength(2);
   });
 
@@ -624,14 +750,18 @@ describe("file imports", () => {
     expect(bomb.length).toBeLessThan(64 * 1024);
     expect(() => gunzipLimited(bomb, 1024 * 1024)).toThrow();
     expect(gunzipLimited(bomb, 6 * 1024 * 1024).length).toBe(5 * 1024 * 1024);
-    const archive = zipSync({ "big.paprikarecipe": gzipSync(new Uint8Array(41 * 1024 * 1024)) });
+    const archive = zipSync({
+      "big.paprikarecipe": gzipSync(new Uint8Array(41 * 1024 * 1024)),
+    });
     expect(readImportFile("big.paprikarecipes", archive).skipped).toEqual([
       "big.paprikarecipe: could not read",
     ]);
   });
 
   test("recognizes image bytes", () => {
-    expect(sniffImage(new Uint8Array([0xff, 0xd8, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0]))).toBe("jpg");
+    expect(
+      sniffImage(new Uint8Array([0xff, 0xd8, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    ).toBe("jpg");
     expect(sniffImage(strToU8("RIFF\0\0\0\0WEBPVP8 "))).toBe("webp");
     expect(sniffImage(strToU8("<svg></svg>  "))).toBeNull();
   });
@@ -666,6 +796,8 @@ describe("Claude output normalization", () => {
 
   test("returns nothing when no recipe was found", () => {
     expect(toRecipeInput({ ...base, found: false })).toBeNull();
-    expect(toRecipeInput({ ...base, ingredients: [], instructions: [] })).toBeNull();
+    expect(
+      toRecipeInput({ ...base, ingredients: [], instructions: [] })
+    ).toBeNull();
   });
 });

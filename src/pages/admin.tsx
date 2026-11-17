@@ -53,6 +53,7 @@ function AdminPage({ selfId }: { selfId: string }) {
   const [pending, setPending] = useState(false);
   const [adding, setAdding] = useState(false);
   const [resetting, setResetting] = useState<Account | null>(null);
+  const [resetAccount, setResetAccount] = useState<Account | null>(null);
   const [nextPassword, setNextPassword] = useState("");
   const [resetError, setResetError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -113,6 +114,7 @@ function AdminPage({ selfId }: { selfId: string }) {
   };
 
   const openReset = (person: Account) => {
+    setResetAccount(person);
     setResetting(person);
     setNextPassword("");
     setResetError(null);
@@ -120,7 +122,7 @@ function AdminPage({ selfId }: { selfId: string }) {
 
   const savePassword = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!resetting) return;
+    if (!resetAccount) return;
     const next = nextPassword.trim();
     if (next.length < 8) {
       setResetError("Use at least 8 characters");
@@ -128,7 +130,7 @@ function AdminPage({ selfId }: { selfId: string }) {
     }
     setSaving(true);
     setResetError(null);
-    const result = await updatePerson(resetting.id, { password: next });
+    const result = await updatePerson(resetAccount.id, { password: next });
     match(
       result,
       (value) => {
@@ -215,10 +217,14 @@ function AdminPage({ selfId }: { selfId: string }) {
                     value={person.role === "admin" ? "admin" : "member"}
                     disabled={person.id === selfId}
                     onValueChange={(next) => {
-                      if (next === "admin" || next === "member") changeRole(person, next);
+                      if (next === "admin" || next === "member")
+                        changeRole(person, next);
                     }}
                   >
-                    <SelectTrigger aria-label={`Role for ${person.name}`} className="w-32">
+                    <SelectTrigger
+                      aria-label={`Role for ${person.name}`}
+                      className="w-32"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -391,9 +397,9 @@ function AdminPage({ selfId }: { selfId: string }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset password for {resetting?.name}</DialogTitle>
+            <DialogTitle>Reset password for {resetAccount?.name}</DialogTitle>
           </DialogHeader>
-          {resetting && (
+          {resetAccount && (
             <form onSubmit={savePassword} className="space-y-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="account-password">New password</Label>

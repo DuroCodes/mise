@@ -5,7 +5,10 @@ import type { RatingSummary } from "@/shared/recipe";
 
 function Stars({ value, className }: { value: number; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-0.5", className)} aria-hidden="true">
+    <span
+      className={cn("inline-flex items-center gap-0.5", className)}
+      aria-hidden="true"
+    >
       {[1, 2, 3, 4, 5].map((star) => (
         <StarIcon
           key={star}
@@ -59,7 +62,9 @@ function StarRating({
             <StarIcon
               className={cn(
                 "size-5 transition-colors",
-                shown >= star ? "fill-brand text-brand" : "text-muted-foreground/60"
+                shown >= star
+                  ? "fill-brand text-brand"
+                  : "text-muted-foreground/60"
               )}
             />
           </button>

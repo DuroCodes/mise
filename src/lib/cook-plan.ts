@@ -1,14 +1,18 @@
 export type CookPlan = { mode: "start" | "ready"; time: string; gap: number };
 
 export const clock = (ms: number) =>
-  new Date(ms).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  new Date(ms).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
 /** Today at HH:MM as epoch ms (tomorrow if a ready-by time has already passed). */
 export const anchorFor = (plan: CookPlan, now = Date.now()) => {
   const [hours, minutes] = plan.time.split(":").map(Number);
   const date = new Date(now);
   date.setHours(hours ?? 0, minutes ?? 0, 0, 0);
-  if (plan.mode === "ready" && date.getTime() < now) date.setDate(date.getDate() + 1);
+  if (plan.mode === "ready" && date.getTime() < now)
+    date.setDate(date.getDate() + 1);
   return date.getTime();
 };
 
@@ -32,7 +36,11 @@ export const readPlan = (recipeId: string): CookPlan | null => {
       /^\d{2}:\d{2}$/.test(value.time) &&
       typeof value.gap === "number"
     )
-      return { mode: value.mode, time: value.time, gap: Math.min(60, Math.max(1, Math.round(value.gap))) };
+      return {
+        mode: value.mode,
+        time: value.time,
+        gap: Math.min(60, Math.max(1, Math.round(value.gap))),
+      };
   } catch {
     // Start fresh.
   }

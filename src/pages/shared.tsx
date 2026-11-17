@@ -26,7 +26,12 @@ function SharedView({ recipe }: { recipe: SharedRecipe }) {
       }}
       byline={recipe.ownerName ? `shared by ${recipe.ownerName}` : null}
       toolbar={
-        <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => window.print()}
+        >
           <PrinterIcon data-icon="inline-start" />
           Print
         </Button>
@@ -38,7 +43,9 @@ function SharedView({ recipe }: { recipe: SharedRecipe }) {
 function SharedPage() {
   const { token } = useParams();
   const [recipe, setRecipe] = useState<SharedRecipe | null>(null);
-  const [error, setError] = useState<string | null>(token ? null : "This link no longer works");
+  const [error, setError] = useState<string | null>(
+    token ? null : "This link no longer works"
+  );
   useTitle(recipe ? `${recipe.title} · Mise` : "Mise");
 
   useEffect(() => {
@@ -59,7 +66,10 @@ function SharedPage() {
       <header className="border-b print:hidden">
         <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4 sm:px-6">
           <span className="flex items-center gap-2 text-lg font-medium tracking-tight">
-            <UtensilsCrossedIcon className="size-5 text-brand" aria-hidden="true" />
+            <UtensilsCrossedIcon
+              className="size-5 text-brand"
+              aria-hidden="true"
+            />
             Mise
           </span>
           <ThemeToggle />

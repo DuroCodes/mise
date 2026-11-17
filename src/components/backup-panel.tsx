@@ -84,7 +84,10 @@ function BackupPanel() {
         )}
       </div>
 
-      <Dialog open={file !== null} onOpenChange={(open) => !open && !pending && setFile(null)}>
+      <Dialog
+        open={file !== null}
+        onOpenChange={(open) => !open && !pending && setFile(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Restore {file?.name}?</DialogTitle>
@@ -93,7 +96,12 @@ function BackupPanel() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => setFile(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setFile(null)}
+            >
               Cancel
             </Button>
             <Button type="button" disabled={pending} onClick={restore}>

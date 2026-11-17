@@ -38,14 +38,20 @@ function ThemeToggle() {
                 className="flex cursor-default items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none data-[highlighted]:bg-muted"
               >
                 {option.id === "system" ? (
-                  <MonitorIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                  <MonitorIcon
+                    className="size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <span
                     className="flex size-4 items-center justify-center rounded-full ring-1 ring-foreground/20"
                     style={{ background: option.swatch[0] }}
                     aria-hidden="true"
                   >
-                    <span className="size-1.5 rounded-full" style={{ background: option.swatch[1] }} />
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ background: option.swatch[1] }}
+                    />
                   </span>
                 )}
                 <span className="flex-1">{option.label}</span>

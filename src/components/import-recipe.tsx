@@ -176,7 +176,8 @@ function ImportDialog({
         <DialogHeader className="pr-8">
           <DialogTitle>Import</DialogTitle>
           <DialogDescription>
-            Paste a link to fill in a new recipe, or upload a file from another app.
+            Paste a link to fill in a new recipe, or upload a file from another
+            app.
           </DialogDescription>
         </DialogHeader>
 
@@ -192,7 +193,9 @@ function ImportDialog({
                 placeholder="https://"
                 autoComplete="off"
                 disabled={pending}
-                aria-invalid={failedUrl !== null || error === "Paste a recipe link"}
+                aria-invalid={
+                  failedUrl !== null || error === "Paste a recipe link"
+                }
                 onChange={(event) => setUrl(event.target.value)}
                 className="min-w-0 flex-1"
               />
@@ -205,7 +208,13 @@ function ImportDialog({
         </form>
 
         {error && failedUrl && ai && (
-          <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => void tryClaude()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() => void tryClaude()}
+          >
             <SparklesIcon data-icon="inline-start" />
             {pending ? "Reading" : "Try with AI"}
           </Button>
@@ -220,7 +229,10 @@ function ImportDialog({
         <div className="space-y-3 border-t pt-4">
           <ul className="grid gap-2 sm:grid-cols-3">
             {sources.map(([name, help]) => (
-              <li key={name} className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
+              <li
+                key={name}
+                className="rounded-lg bg-muted/60 px-3 py-2 text-sm"
+              >
                 <p className="font-medium">{name}</p>
                 <p className="mt-0.5 text-muted-foreground">{help}</p>
               </li>
@@ -242,11 +254,19 @@ function ImportDialog({
               void upload(event.dataTransfer.files[0]);
             }}
           >
-            <FileUpIcon className="size-6 text-muted-foreground" aria-hidden="true" />
+            <FileUpIcon
+              className="size-6 text-muted-foreground"
+              aria-hidden="true"
+            />
             <p className="text-sm text-muted-foreground">
               {fileName ? `Reading ${fileName}…` : "Drop a file here, or"}
             </p>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => input.current?.click()}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => input.current?.click()}
+            >
               Choose a file
             </Button>
             <input
@@ -262,12 +282,21 @@ function ImportDialog({
         {ready && (
           <section className="space-y-3" aria-live="polite">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-medium">{ready.titles.length} recipes ready</h2>
-              <Button type="button" size="sm" disabled={pending} onClick={() => void commitFile()}>
+              <h2 className="text-sm font-medium">
+                {ready.titles.length} recipes ready
+              </h2>
+              <Button
+                type="button"
+                size="sm"
+                disabled={pending}
+                onClick={() => void commitFile()}
+              >
                 {pending ? "Adding" : "Add to library"}
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">Nothing is saved until you add them.</p>
+            <p className="text-sm text-muted-foreground">
+              Nothing is saved until you add them.
+            </p>
             <ul className="divide-y rounded-xl bg-card text-sm ring-1 ring-foreground/10">
               {ready.titles.slice(0, 8).map((title, index) => (
                 <li key={`${title}-${index}`} className="px-4 py-2.5">
@@ -341,7 +370,11 @@ function ImportDialog({
   );
 }
 
-function ImportButton({ onImported }: { onImported: (recipe: RecipeInput) => void }) {
+function ImportButton({
+  onImported,
+}: {
+  onImported: (recipe: RecipeInput) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -350,7 +383,11 @@ function ImportButton({ onImported }: { onImported: (recipe: RecipeInput) => voi
         <FileUpIcon data-icon="inline-start" />
         Import
       </Button>
-      <ImportDialog open={open} onOpenChange={setOpen} onImported={onImported} />
+      <ImportDialog
+        open={open}
+        onOpenChange={setOpen}
+        onImported={onImported}
+      />
     </>
   );
 }
