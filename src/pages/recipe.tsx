@@ -126,23 +126,6 @@ function RecipeBody({
       }
       actions={
         <>
-          {recipe.canEdit && recipe.ownerId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-pressed={recipe.visibility === "public"}
-              aria-label={
-                recipe.visibility === "public"
-                  ? `Make ${recipe.title} private`
-                  : `Make ${recipe.title} public`
-              }
-              disabled={sharing}
-              onClick={toggleVisibility}
-            >
-              {recipe.visibility === "public" ? <GlobeIcon /> : <LockIcon />}
-            </Button>
-          )}
           <Button
             type="button"
             variant="outline"
@@ -166,6 +149,27 @@ function RecipeBody({
           />
           {recipe.canEdit && (
             <>
+              {recipe.ownerId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-pressed={recipe.visibility === "public"}
+                  aria-label={
+                    recipe.visibility === "public"
+                      ? `Make ${recipe.title} private`
+                      : `Make ${recipe.title} public`
+                  }
+                  disabled={sharing}
+                  onClick={toggleVisibility}
+                >
+                  {recipe.visibility === "public" ? (
+                    <GlobeIcon />
+                  ) : (
+                    <LockIcon />
+                  )}
+                </Button>
+              )}
               <Button asChild variant="outline" size="icon">
                 <Link
                   to={`/recipes/${recipe.id}/edit`}
