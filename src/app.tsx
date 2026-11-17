@@ -107,8 +107,8 @@ function SignedInApp() {
         id="content"
         className={
           hideTabs
-            ? "mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10"
-            : "mx-auto w-full max-w-6xl px-4 pt-8 pb-28 sm:px-6 sm:py-10 print:pb-0"
+            ? "isolate mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10"
+            : "isolate mx-auto w-full max-w-6xl px-4 pt-8 pb-28 sm:px-6 sm:py-10 print:pb-0"
         }
       >
         <Routes>
