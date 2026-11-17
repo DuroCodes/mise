@@ -93,6 +93,7 @@ function SignedInApp() {
   if (!account) return <RecipePlaceholder />;
 
   const hideTabs = fullScreen.test(location.pathname);
+  const cooking = /^\/recipes\/[^/]+\/cook\/?$/.test(location.pathname);
 
   return (
     <SessionContext.Provider value={{ account, ai, offline: !online }}>
@@ -102,7 +103,7 @@ function SignedInApp() {
       >
         Skip to content
       </a>
-      <AppHeader account={account} offline={!online} />
+      {!cooking && <AppHeader account={account} offline={!online} />}
       <main
         id="content"
         className={
