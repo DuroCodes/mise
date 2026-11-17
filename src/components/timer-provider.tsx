@@ -171,7 +171,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
     <TimerContext.Provider value={api}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-[calc(8.5rem+env(safe-area-inset-bottom))] left-3 z-[60] flex w-max max-w-[calc(100vw-1.5rem)] flex-col items-stretch gap-2 sm:bottom-40 sm:left-4 print:hidden"
+        className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 z-[60] flex w-max max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2 sm:bottom-6 sm:left-6 print:hidden"
         aria-live="polite"
       >
         <AnimatePresence initial={false}>
