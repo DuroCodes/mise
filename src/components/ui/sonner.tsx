@@ -12,8 +12,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
   const { resolvedTheme } = useTheme();
   const tone: ToasterProps["theme"] =
     resolvedTheme === "dark" ||
-    resolvedTheme === "black" ||
-    resolvedTheme === "espresso"
+    resolvedTheme === "espresso" ||
+    resolvedTheme === "herb"
       ? "dark"
       : "light";
 

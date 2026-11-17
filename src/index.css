@@ -3,7 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *, .espresso *, .black *));
+@custom-variant dark (&:is(.dark *, .espresso *, .herb *));
 
 @theme inline {
   --font-heading: var(--font-sans);
@@ -157,88 +157,51 @@
   --sidebar-ring: oklch(0.6 0 0);
 }
 
-/* True black for OLED screens. */
-.black {
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.17 0 0);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.93 0 0);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.23 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.23 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.25 0 0);
-  --accent-foreground: oklch(0.95 0 0);
-  --destructive: oklch(0.7 0.19 25);
-  --border: oklch(1 0 0 / 13%);
-  --input: oklch(1 0 0 / 17%);
-  --ring: oklch(0.6 0 0);
-  --brand: oklch(0.8 0.13 75);
-  --chart-1: oklch(0.8 0.13 75);
-  --chart-2: oklch(0.7 0.08 60);
-  --chart-3: oklch(0.6 0 0);
-  --chart-4: oklch(0.85 0 0);
-  --chart-5: oklch(0.45 0 0);
-  --sidebar: oklch(0.08 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.8 0.13 75);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.25 0 0);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(1 0 0 / 13%);
-  --sidebar-ring: oklch(0.6 0 0);
-}
-
-/* Neutral light: white and true greys. */
-.paper {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.17 0 0);
-  --card: oklch(0.985 0 0);
-  --card-foreground: oklch(0.17 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0 0);
-  --primary: oklch(0.21 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.21 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.95 0 0);
-  --accent-foreground: oklch(0.21 0 0);
-  --destructive: oklch(0.577 0.22 27);
-  --border: oklch(0.91 0 0);
-  --input: oklch(0.91 0 0);
-  --ring: oklch(0.7 0 0);
-  --brand: oklch(0.58 0.145 58);
-  --chart-1: oklch(0.58 0.145 58);
-  --chart-2: oklch(0.7 0.1 75);
-  --chart-3: oklch(0.45 0 0);
-  --chart-4: oklch(0.75 0 0);
-  --chart-5: oklch(0.35 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.17 0 0);
-  --sidebar-primary: oklch(0.21 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.21 0 0);
-  --sidebar-border: oklch(0.91 0 0);
-  --sidebar-ring: oklch(0.7 0 0);
+/* Deep green, so it doesn't read as another brown or grey dark. */
+.herb {
+  --background: oklch(0.2 0.03 150);
+  --foreground: oklch(0.96 0.02 140);
+  --card: oklch(0.25 0.032 150);
+  --card-foreground: oklch(0.96 0.02 140);
+  --popover: oklch(0.25 0.032 150);
+  --popover-foreground: oklch(0.96 0.02 140);
+  --primary: oklch(0.93 0.03 140);
+  --primary-foreground: oklch(0.22 0.04 150);
+  --secondary: oklch(0.3 0.03 150);
+  --secondary-foreground: oklch(0.96 0.02 140);
+  --muted: oklch(0.3 0.03 150);
+  --muted-foreground: oklch(0.75 0.03 145);
+  --accent: oklch(0.32 0.04 150);
+  --accent-foreground: oklch(0.96 0.02 140);
+  --destructive: oklch(0.7 0.16 25);
+  --border: oklch(0.85 0.04 145 / 14%);
+  --input: oklch(0.85 0.04 145 / 18%);
+  --ring: oklch(0.7 0.08 145);
+  --brand: oklch(0.78 0.14 145);
+  --chart-1: oklch(0.78 0.14 145);
+  --chart-2: oklch(0.68 0.08 150);
+  --chart-3: oklch(0.5 0.04 150);
+  --chart-4: oklch(0.85 0.04 140);
+  --chart-5: oklch(0.38 0.03 150);
+  --sidebar: oklch(0.18 0.03 150);
+  --sidebar-foreground: oklch(0.96 0.02 140);
+  --sidebar-primary: oklch(0.78 0.14 145);
+  --sidebar-primary-foreground: oklch(0.2 0.04 150);
+  --sidebar-accent: oklch(0.32 0.04 150);
+  --sidebar-accent-foreground: oklch(0.96 0.02 140);
+  --sidebar-border: oklch(0.85 0.04 145 / 14%);
+  --sidebar-ring: oklch(0.7 0.08 145);
 }
 
 /* Tell the browser which way each theme leans, so built-in controls
    (select menus, date pickers, scrollbars) are drawn to match. */
 :root,
-.light,
-.paper {
+.light {
   color-scheme: light;
 }
 .dark,
 .espresso,
-.black {
+.herb {
   color-scheme: dark;
 }
 select option,
@@ -275,8 +238,7 @@ select optgroup {
   :root,
   .dark,
   .espresso,
-  .black,
-  .paper {
+  .herb {
     color-scheme: light;
     --background: #fff;
     --foreground: #111;

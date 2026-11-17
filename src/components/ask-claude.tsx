@@ -169,8 +169,8 @@ function AskClaude({ recipeId }: { recipeId: string }) {
           aria-live="polite"
           aria-busy={pending}
         >
-          <div className="flex items-start gap-2.5 border-b bg-muted/40 px-4 py-3">
-            <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand/15">
+          <div className="flex items-center gap-2.5 border-b bg-muted/40 px-4 py-3">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand/15">
               <SparklesIcon
                 className="size-3.5 text-brand"
                 aria-hidden="true"
