@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { SharedRecipe } from "../src/shared/recipe";
 import { db } from "./db";
 import { cookLogs, ratings, recipes, user } from "./db/schema";
+import { freshToken, linkTokenShape } from "./link-token";
 
 export const setRating = (
   recipeId: string,
@@ -64,12 +65,29 @@ export const removeLog = (id: string, userId: string, asAdmin: boolean) => {
   return "deleted" as const;
 };
 
-const newToken = () =>
-  Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString(
-    "base64url"
+const shareTokenTaken = (token: string) =>
+  Boolean(
+    db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(eq(recipes.shareToken, token))
+      .get()
   );
 
-export const tokenShape = /^[A-Za-z0-9_-]{20,64}$/;
+/** Links created before the short codes are swapped the next time the server starts. */
+export const shortenShareTokens = () => {
+  const rows = db
+    .select({ id: recipes.id, shareToken: recipes.shareToken })
+    .from(recipes)
+    .all();
+  for (const row of rows) {
+    if (!row.shareToken || row.shareToken.length === 8) continue;
+    db.update(recipes)
+      .set({ shareToken: freshToken(shareTokenTaken) })
+      .where(eq(recipes.id, row.id))
+      .run();
+  }
+};
 
 export const createShare = (recipeId: string) => {
   const row = db
@@ -78,8 +96,8 @@ export const createShare = (recipeId: string) => {
     .where(eq(recipes.id, recipeId))
     .get();
   if (!row) return null;
-  if (row.shareToken) return row.shareToken;
-  const token = newToken();
+  if (row.shareToken?.length === 8) return row.shareToken;
+  const token = freshToken(shareTokenTaken);
   db.update(recipes)
     .set({ shareToken: token })
     .where(eq(recipes.id, recipeId))
@@ -95,7 +113,7 @@ export const removeShare = (recipeId: string) => {
 };
 
 export const sharedRecipe = (token: string): SharedRecipe | null => {
-  if (!tokenShape.test(token)) return null;
+  if (!linkTokenShape.test(token)) return null;
   const row = db.query.recipes
     .findFirst({
       where: (table, operators) => operators.eq(table.shareToken, token),

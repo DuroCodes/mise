@@ -2,13 +2,26 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { auth, withSignup } from "./auth";
 import { db, emailTaken, listUsers } from "./db";
 import { invites, user } from "./db/schema";
+import { freshToken, linkTokenShape } from "./link-token";
 
-export const inviteTokenShape = /^[A-Za-z0-9_-]{30,64}$/;
+export const inviteTokenShape = linkTokenShape;
 
-const newToken = () =>
-  Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString(
-    "base64url"
+const inviteTokenTaken = (token: string) =>
+  Boolean(
+    db.select({ id: invites.id }).from(invites).where(eq(invites.token, token)).get()
   );
+
+/** Links created before the short codes are swapped the next time the server starts. */
+export const shortenInviteTokens = () => {
+  const rows = db.select({ id: invites.id, token: invites.token }).from(invites).all();
+  for (const row of rows) {
+    if (row.token.length === 8) continue;
+    db.update(invites)
+      .set({ token: freshToken(inviteTokenTaken) })
+      .where(eq(invites.id, row.id))
+      .run();
+  }
+};
 
 export const listInvites = () =>
   db
@@ -44,7 +57,7 @@ export const createInvite = (createdBy: string, note: string, days: number) => {
   db.insert(invites)
     .values({
       id,
-      token: newToken(),
+      token: freshToken(inviteTokenTaken),
       note,
       createdBy,
       createdAt: now,

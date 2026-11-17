@@ -14,6 +14,7 @@ import {
 import { covers, isStaple, matchListItem, rankRecipes } from "../src/shared/pantry";
 import { safeNext, sharedLink } from "../src/lib/view";
 import { linksFromSearchHtml, parseFound, toPhotoItems, toRecipeInput } from "./ai";
+import { linkToken, linkTokenShape } from "./link-token";
 import {
   gunzipLimited,
   minutesFromText,
@@ -204,6 +205,15 @@ describe("scanning", () => {
     expect(matchListItem("Barilla Spaghetti n.5", list)).toBe(list[3]);
     expect(matchListItem("Swanson Chicken Broth", list)).toBeNull();
     expect(matchListItem("Nutella", list)).toBeNull();
+  });
+});
+
+describe("share links", () => {
+  test("codes are short and still unguessable", () => {
+    const token = linkToken();
+    expect(token).toHaveLength(8);
+    expect(linkTokenShape.test(token)).toBe(true);
+    expect(linkTokenShape.test("short")).toBe(false);
   });
 });
 

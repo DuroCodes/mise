@@ -32,14 +32,17 @@ import {
   describeInvite,
   listInvites,
   revokeInvite,
+  shortenInviteTokens,
 } from "./invites";
 import { startReminders } from "./push";
 import { registerRoutes } from "./routes";
 import { seedIfEmpty } from "./seed";
-import { sharedRecipe } from "./social";
+import { sharedRecipe, shortenShareTokens } from "./social";
 import { imageExtension } from "./uploads";
 
 seedIfEmpty();
+shortenShareTokens();
+shortenInviteTokens();
 startReminders();
 
 const app = new Hono();
