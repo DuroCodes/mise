@@ -1,25 +1,73 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenAI } from "@ai-sdk/openai";
+import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
 import { recipeInput, type Recipe, type RecipeInput } from "../src/shared/recipe";
+import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
- * Optional Claude features. They stay off unless the server has
- * ANTHROPIC_API_KEY (or ANTHROPIC_AUTH_TOKEN) set, so recipes never leave the
- * machine unless the person running mise opts in.
+ * Optional model features. They stay off unless the server has a key, so
+ * recipes never leave the machine unless the person running mise opts in.
+ *
+ * ANTHROPIC_API_KEY still turns on Claude. For anything else set
+ * MISE_AI_API_KEY and MISE_AI_MODEL as `provider:model`, for example
+ * `openrouter:openai/gpt-5` or `anthropic:claude-opus-5-5`.
  */
-export const aiEnabled = () =>
-  Boolean(
+type ProviderId = "anthropic" | "openai" | "openrouter";
+
+type AiSetup = {
+  provider: ProviderId;
+  model: string;
+  apiKey: string;
+  baseURL?: string;
+};
+
+const providers = new Set<ProviderId>(["anthropic", "openai", "openrouter"]);
+
+export const aiSetup = (): AiSetup | null => {
+  const raw = process.env.MISE_AI_MODEL?.trim();
+  let provider: ProviderId = "anthropic";
+  let model = "claude-opus-5-5";
+  if (raw) {
+    const split = raw.indexOf(":");
+    const head = split === -1 ? "" : raw.slice(0, split);
+    if (providers.has(head as ProviderId) && split < raw.length - 1) {
+      provider = head as ProviderId;
+      model = raw.slice(split + 1);
+    } else {
+      model = raw;
+    }
+  }
+  const shared = process.env.MISE_AI_API_KEY?.trim();
+  const anthropic =
     process.env.ANTHROPIC_API_KEY?.trim() ||
-      process.env.ANTHROPIC_AUTH_TOKEN?.trim()
-  );
+    process.env.ANTHROPIC_AUTH_TOKEN?.trim();
+  const apiKey = shared || (provider === "anthropic" ? anthropic : "") || "";
+  if (!apiKey || !model) return null;
+  const baseURL = process.env.MISE_AI_BASE_URL?.trim() || undefined;
+  return { provider, model, apiKey, baseURL };
+};
 
-const model = () => process.env.MISE_AI_MODEL?.trim() || "claude-opus-5-5";
+export const aiEnabled = () => aiSetup() !== null;
 
-let client: Anthropic | null = null;
-const anthropic = () => {
-  client ??= new Anthropic();
-  return client;
+const languageModel = () => {
+  const setup = aiSetup();
+  if (!setup) throw new Error("AI is not set up");
+  if (setup.provider === "anthropic") {
+    return createAnthropic({
+      apiKey: setup.apiKey,
+      baseURL: setup.baseURL,
+    })(setup.model);
+  }
+  const openai = createOpenAI({
+    apiKey: setup.apiKey,
+    baseURL:
+      setup.baseURL ??
+      (setup.provider === "openrouter"
+        ? "https://openrouter.ai/api/v1"
+        : undefined),
+  });
+  return openai.chat(setup.model);
 };
 
 export const aiImageTypes = [
@@ -106,13 +154,38 @@ export type AiResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 const failure = (error: unknown): { ok: false; error: string } => {
   console.error(error);
-  if (error instanceof Anthropic.AuthenticationError)
-    return { ok: false, error: "The Claude API key was rejected" };
-  if (error instanceof Anthropic.RateLimitError)
-    return { ok: false, error: "Claude is busy. Try again in a minute." };
-  if (error instanceof Anthropic.APIError)
-    return { ok: false, error: "Claude could not answer that right now" };
-  return { ok: false, error: "Could not reach Claude" };
+  if (APICallError.isInstance(error)) {
+    if (error.statusCode === 401 || error.statusCode === 403)
+      return { ok: false, error: "The API key was rejected" };
+    if (error.statusCode === 429)
+      return { ok: false, error: "The model is busy. Try again in a minute." };
+    return { ok: false, error: "The model could not answer that right now" };
+  }
+  return { ok: false, error: "Could not reach the model" };
+};
+
+type Part =
+  | { type: "text"; text: string }
+  | { type: "image"; image: string; mediaType: AiImageType };
+
+const objectFrom = async <T>(
+  schema: z.ZodType<T>,
+  system: string,
+  content: Part[] | string
+) => {
+  const result = await generateText({
+    model: languageModel(),
+    system,
+    messages: [
+      {
+        role: "user",
+        content,
+      },
+    ],
+    output: Output.object({ schema }),
+    maxOutputTokens: 8000,
+  });
+  return result.output;
 };
 
 export const extractRecipe = async (input: {
@@ -120,15 +193,12 @@ export const extractRecipe = async (input: {
   image: { data: string; mediaType: AiImageType } | null;
 }): Promise<AiResult<RecipeInput>> => {
   if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
-  const content: Anthropic.Beta.BetaContentBlockParam[] = [];
+  const content: Part[] = [];
   if (input.image) {
     content.push({
       type: "image",
-      source: {
-        type: "base64",
-        media_type: input.image.mediaType,
-        data: input.image.data,
-      },
+      image: input.image.data,
+      mediaType: input.image.mediaType,
     });
   }
   content.push({
@@ -139,21 +209,8 @@ export const extractRecipe = async (input: {
   });
 
   try {
-    const response = await anthropic().beta.messages.parse({
-      model: model(),
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "medium", format: betaZodOutputFormat(extracted) },
-      system: extractionPrompt,
-      messages: [{ role: "user", content }],
-    });
-    if (response.stop_reason === "refusal")
-      return { ok: false, error: "Claude declined to read that" };
-    if (response.stop_reason === "max_tokens")
-      return { ok: false, error: "That recipe was too long to read in one go" };
-    const output = response.parsed_output;
-    if (!output) return { ok: false, error: "Claude's answer could not be read" };
+    const output = await objectFrom(extracted, extractionPrompt, content);
+    if (!output) return { ok: false, error: "The model's answer could not be read" };
     const recipe = toRecipeInput(output);
     if (!recipe) return { ok: false, error: "No recipe was found in that" };
     return { ok: true, value: recipe };
@@ -162,48 +219,68 @@ export const extractRecipe = async (input: {
   }
 };
 
-const urlPrompt = `${extractionPrompt}
-Fetch the page at the URL the user gives you with the web_fetch tool, then reply with only a JSON object in a \`\`\`json code block with exactly these fields: found, title, description, prepMinutes, cookMinutes, servings, tags, ingredients (objects with amount, unit, name, note), instructions (strings).`;
+const pageText = (html: string) =>
+  html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 20_000);
 
-/** Reads a recipe page through Claude, for sites that refuse direct imports. */
-export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>> => {
-  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
-  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: url }];
+/** Downloads a public page as plain text. Exported for the model tools. */
+export const readPublicPage = async (raw: string) => {
+  let current = await publicRecipeUrl(raw);
+  if (!current) return null;
   try {
-    for (let round = 0; round < 4; round += 1) {
-      const response = await anthropic().beta.messages.create({
-        model: model(),
-        max_tokens: 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        output_config: { effort: "medium" },
-        system: urlPrompt,
-        tools: [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: 2 }],
-        messages,
+    for (let hop = 0; hop < 4; hop += 1) {
+      const response = await fetch(current, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(12_000),
+        headers: {
+          accept: "text/html,application/xhtml+xml",
+          "user-agent": "Mise/0.1 (recipe import)",
+        },
       });
-      if (response.stop_reason === "pause_turn") {
-        messages.push({ role: "assistant", content: response.content });
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) return null;
+        const next = await publicRecipeUrl(new URL(location, current).toString());
+        if (!next) return null;
+        current = next;
         continue;
       }
-      if (response.stop_reason === "refusal")
-        return { ok: false, error: "Claude declined to read that page" };
-      const text = response.content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
-        .join("\n");
-      const json = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-      let raw: unknown;
-      try {
-        raw = JSON.parse(json.trim());
-      } catch {
-        return { ok: false, error: "Claude couldn't read a recipe from that page" };
-      }
-      const parsed = extracted.safeParse(raw);
-      const recipe = parsed.success ? toRecipeInput(parsed.data) : null;
-      if (!recipe) return { ok: false, error: "Claude couldn't find a recipe on that page" };
-      return { ok: true, value: { ...recipe, sourceUrl: url } };
+      if (!response.ok) return null;
+      const html = await response.text();
+      if (html.length > 2_000_000) return null;
+      const text = pageText(html);
+      return text.length > 0 ? text : null;
     }
-    return { ok: false, error: "That took too long. Try again." };
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+/** Reads a recipe page the direct importer could not parse. */
+export const recipeFromUrl = async (url: string): Promise<AiResult<RecipeInput>> => {
+  if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
+  const page = await readPublicPage(url);
+  if (!page)
+    return {
+      ok: false,
+      error: "That site blocked the download. Save the page and import the file instead.",
+    };
+  try {
+    const output = await objectFrom(
+      extracted,
+      extractionPrompt,
+      `<page url="${url}">\n${page}\n</page>`
+    );
+    if (!output) return { ok: false, error: "The model's answer could not be read" };
+    const recipe = toRecipeInput(output);
+    if (!recipe) return { ok: false, error: "No recipe was found on that page" };
+    return { ok: true, value: { ...recipe, sourceUrl: url } };
   } catch (error) {
     return failure(error);
   }
@@ -246,33 +323,23 @@ export const readPantryPhoto = async (input: {
 }): Promise<AiResult<PhotoItem[]>> => {
   if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
   try {
-    const response = await anthropic().beta.messages.parse({
-      model: model(),
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "medium", format: betaZodOutputFormat(photoItems) },
-      system: photoPrompts[input.kind],
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: input.image.mediaType, data: input.image.data },
-            },
-            { type: "text", text: input.kind === "receipt" ? "Here's my receipt." : "Here's what I have." },
-          ],
-        },
-      ],
-    });
-    if (response.stop_reason === "refusal")
-      return { ok: false, error: "Claude declined to read that" };
-    const output = response.parsed_output;
-    if (!output) return { ok: false, error: "Claude's answer could not be read" };
+    const output = await objectFrom(photoItems, photoPrompts[input.kind], [
+      { type: "image", image: input.image.data, mediaType: input.image.mediaType },
+      {
+        type: "text",
+        text: input.kind === "receipt" ? "Here's my receipt." : "Here's what I have.",
+      },
+    ]);
+    if (!output) return { ok: false, error: "The model's answer could not be read" };
     const items = toPhotoItems(output);
     if (items.length === 0)
-      return { ok: false, error: input.kind === "receipt" ? "No groceries found on that receipt" : "No food found in that photo" };
+      return {
+        ok: false,
+        error:
+          input.kind === "receipt"
+            ? "No groceries found on that receipt"
+            : "No food found in that photo",
+      };
     return { ok: true, value: items };
   } catch (error) {
     return failure(error);
@@ -338,11 +405,49 @@ export const parseFound = (text: string, searched: Set<string>): FoundRecipe[] =
   return out;
 };
 
+/** Result links from a DuckDuckGo HTML page, including uddg redirects. */
+export const linksFromSearchHtml = (html: string) => {
+  const out: { title: string; url: string }[] = [];
+  const seen = new Set<string>();
+  for (const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    const href = (match[1].match(/href="([^"]+)"/i)?.[1] ?? "").replace(/&amp;/g, "&");
+    const uddg = href.match(/[?&]uddg=([^&]+)/);
+    const raw = uddg ? decodeURIComponent(uddg[1]) : href;
+    if (!/^https?:\/\//i.test(raw) || /duckduckgo\.com/i.test(raw)) continue;
+    const url = normalizeUrl(raw);
+    if (!url || seen.has(url)) continue;
+    const title = match[2].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!title) continue;
+    seen.add(url);
+    out.push({ title: title.slice(0, 200), url });
+    if (out.length >= 8) break;
+  }
+  return out;
+};
+
+const searchWeb = async (query: string) => {
+  const target = await publicRecipeUrl(
+    `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
+  );
+  if (!target) return [];
+  try {
+    const response = await fetch(target, {
+      signal: AbortSignal.timeout(12_000),
+      headers: { "user-agent": "Mise/0.1 (recipe search)", accept: "text/html" },
+    });
+    if (!response.ok) return [];
+    return linksFromSearchHtml(await response.text());
+  } catch {
+    return [];
+  }
+};
+
 const findPrompt = `You find real recipes on the web for a home cook who wants to use what's in their pantry.
-Use web search. Pick individual recipe pages (not roundups or listicles) from sites that publish a full ingredient list, since each one will be imported into a recipe app.
+Call search_web. Pick individual recipe pages (not roundups or listicles) from the results, since each one will be imported into a recipe app.
 Prefer recipes that use several of the pantry items and need few extra ingredients.
+Use only URLs that search_web returned. Do not invent links.
 Finish with only a JSON array in a \`\`\`json code block, 3 to 6 items, each:
-{"title": "...", "url": "the exact page URL from your search results", "why": "one short sentence on why it fits", "uses": ["pantry items it uses"]}`;
+{"title": "...", "url": "the exact page URL from the search results", "why": "one short sentence on why it fits", "uses": ["pantry items it uses"]}`;
 
 export const findRecipes = async (
   pantry: string[],
@@ -350,50 +455,39 @@ export const findRecipes = async (
 ): Promise<AiResult<FoundRecipe[]>> => {
   if (!aiEnabled()) return { ok: false, error: "AI is not set up on this server" };
   const list = pantry.slice(0, 80).map((name) => `- ${name}`).join("\n");
-  const messages: Anthropic.Beta.BetaMessageParam[] = [
-    {
-      role: "user",
-      content: `<pantry>\n${list}\n</pantry>${focus.trim() ? `\n\nWhat I'm in the mood for: ${focus.trim()}` : ""}`,
-    },
-  ];
   const searched = new Set<string>();
+  let searches = 0;
 
   try {
-    for (let round = 0; round < 4; round += 1) {
-      const response = await anthropic().beta.messages.create({
-        model: model(),
-        max_tokens: 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        output_config: { effort: "medium" },
-        system: findPrompt,
-        tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 5 }],
-        messages,
-      });
-      for (const block of response.content) {
-        if (block.type !== "web_search_tool_result" || !Array.isArray(block.content))
-          continue;
-        for (const result of block.content) {
-          const url = normalizeUrl(result.url);
-          if (url) searched.add(url);
-        }
-      }
-      if (response.stop_reason === "pause_turn") {
-        messages.push({ role: "assistant", content: response.content });
-        continue;
-      }
-      if (response.stop_reason === "refusal")
-        return { ok: false, error: "Claude declined to search for that" };
-      const text = response.content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
-        .join("\n");
-      const found = parseFound(text, searched);
-      if (found.length === 0)
-        return { ok: false, error: "Claude couldn't find recipes this time. Try again or change the focus." };
-      return { ok: true, value: found };
-    }
-    return { ok: false, error: "The search took too long. Try again." };
+    const result = await generateText({
+      model: languageModel(),
+      system: findPrompt,
+      prompt: `<pantry>\n${list}\n</pantry>${focus.trim() ? `\n\nWhat I'm in the mood for: ${focus.trim()}` : ""}`,
+      tools: {
+        search_web: tool({
+          description: "Search the web. Returns recipe page titles and URLs.",
+          inputSchema: z.object({ query: z.string().min(1).max(200) }),
+          execute: async ({ query }) => {
+            if (searches >= 5) return [];
+            searches += 1;
+            const links = await searchWeb(query);
+            for (const link of links) searched.add(link.url);
+            return links;
+          },
+        }),
+      },
+      stopWhen: stepCountIs(6),
+      maxOutputTokens: 4000,
+    });
+    if (result.finishReason === "content-filter")
+      return { ok: false, error: "The model declined to search for that" };
+    const found = parseFound(result.text, searched);
+    if (found.length === 0)
+      return {
+        ok: false,
+        error: "No recipes came back this time. Try again or change the focus.",
+      };
+    return { ok: true, value: found };
   } catch (error) {
     return failure(error);
   }
@@ -416,29 +510,17 @@ export const askAboutRecipe = async (
     .join("\n");
 
   try {
-    const response = await anthropic().beta.messages.create({
-      model: model(),
-      max_tokens: 4000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "low" },
+    const result = await generateText({
+      model: languageModel(),
       system:
         "You help a home cook with one recipe: ingredient substitutions, swaps for allergies or diets, and what to do when they are missing something. Answer in short Markdown: one opening sentence, then a bulleted list where each item starts with the swap in bold, followed by how to use it. Use only bold, italics, and lists (no headings, tables, links, or code). For a simple yes/no question, a sentence or two is enough. Say how a swap changes the dish and adjust amounts when that matters. If a swap would not work, say so.",
-      messages: [
-        {
-          role: "user",
-          content: `<recipe title="${recipe.title.replace(/"/g, "'")}" servings="${recipe.servings ?? "unknown"}">\n<ingredients>\n${ingredients}\n</ingredients>\n<steps>\n${steps}\n</steps>\n</recipe>\n\n${question.trim()}`,
-        },
-      ],
+      prompt: `<recipe title="${recipe.title.replace(/"/g, "'")}" servings="${recipe.servings ?? "unknown"}">\n<ingredients>\n${ingredients}\n</ingredients>\n<steps>\n${steps}\n</steps>\n</recipe>\n\n${question.trim()}`,
+      maxOutputTokens: 2000,
     });
-    if (response.stop_reason === "refusal")
-      return { ok: false, error: "Claude declined to answer that" };
-    const answer = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("\n")
-      .trim();
-    if (!answer) return { ok: false, error: "Claude did not answer" };
+    if (result.finishReason === "content-filter")
+      return { ok: false, error: "The model declined to answer that" };
+    const answer = result.text.trim();
+    if (!answer) return { ok: false, error: "The model did not answer" };
     return { ok: true, value: answer };
   } catch (error) {
     return failure(error);

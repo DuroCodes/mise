@@ -13,7 +13,7 @@ import {
 } from "../src/shared/timeline";
 import { covers, isStaple, matchListItem, rankRecipes } from "../src/shared/pantry";
 import { safeNext, sharedLink } from "../src/lib/view";
-import { parseFound, toPhotoItems, toRecipeInput } from "./ai";
+import { linksFromSearchHtml, parseFound, toPhotoItems, toRecipeInput } from "./ai";
 import {
   gunzipLimited,
   minutesFromText,
@@ -295,7 +295,7 @@ describe("photo to pantry", () => {
   });
 });
 
-describe("Claude recipe search results", () => {
+describe("recipe search results", () => {
   const searched = new Set([
     "https://example.com/soup",
     "https://www.recipes.test/toast",
@@ -315,6 +315,12 @@ describe("Claude recipe search results", () => {
   test("handles a bare array, bad JSON, and unsafe links", () => {
     expect(parseFound('[{"title":"T","url":"https://example.com/soup"}]', searched)).toHaveLength(1);
     expect(parseFound("no json here", searched)).toEqual([]);
+    const html =
+      '<a href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fsoup&amp;rut=1">Tomato soup</a>' +
+      '<a href="https://duckduckgo.com/">home</a>';
+    expect(linksFromSearchHtml(html)).toEqual([
+      { title: "Tomato soup", url: "https://example.com/soup" },
+    ]);
     expect(parseFound('[{"title":"x","url":"javascript:alert(1)"}]', new Set(["javascript:alert(1)"]))).toEqual([]);
   });
 });

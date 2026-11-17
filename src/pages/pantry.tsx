@@ -348,11 +348,11 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
       <div className="space-y-1">
         <h2 className="flex items-center gap-1.5 text-sm font-medium">
           <SparklesIcon className="size-4 text-brand" aria-hidden="true" />
-          Find new recipes with Claude
+          Find new recipes
         </h2>
         <p className="text-xs leading-5 text-muted-foreground">
-          Searches the web using your pantry (sent to Anthropic). Takes about
-          30 seconds.
+          Searches the web using your pantry. Sent only when you use this.
+          Takes about 30 seconds.
         </p>
       </div>
       <form onSubmit={search} className="flex flex-col gap-2 sm:flex-row">

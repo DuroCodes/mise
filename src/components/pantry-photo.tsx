@@ -91,7 +91,9 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add from a photo</DialogTitle>
-          <DialogDescription>Claude reads it; you check the list. Sent to Anthropic.</DialogDescription>
+          <DialogDescription>
+            The model reads it; you check the list. Sent only when you use this.
+          </DialogDescription>
         </DialogHeader>
 
         {rows === null ? (

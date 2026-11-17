@@ -55,20 +55,22 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 - **scan & shop**: scan barcodes with the camera to check items off (names come from open food facts). done shopping asks how much of each item goes in the pantry.
 - **share to mise** (android): share a recipe link from any app to import it.
 - **notifications**: timers that ring with the phone locked, a 9am "use soon" heads-up for expiring pantry items, and a 6pm note about tomorrow's meals. turn them on per device in settings. on iphone, install mise first.
-- **claude (optional)**: turn pasted text or a photo of a recipe card into a recipe, ask about substitutions, find new recipes from your pantry, and add to the pantry from a photo of a receipt or your fridge. off unless `ANTHROPIC_API_KEY` is set.
+- **ai (optional)**: turn pasted text or a photo of a recipe card into a recipe, ask about substitutions, find new recipes from your pantry, and add to the pantry from a photo of a receipt or your fridge. off unless an api key is set.
 
 ## settings
 
-| variable | default | what it does |
-| --- | --- | --- |
-| `DATA_DIR` | `./data` | where the database and uploads live |
-| `PORT` | `3000` (`3001` in dev) | port the server listens on |
-| `HOST` | `0.0.0.0` | address to bind; use `127.0.0.1` behind a tunnel or proxy |
-| `BETTER_AUTH_URL` | | the public origin, such as `https://mise.example.com` |
-| `BETTER_AUTH_SECRET` | generated into `DATA_DIR` | session signing secret |
-| `ANTHROPIC_API_KEY` | | turns on the claude features; recipe text and photos are sent to anthropic only when someone uses them |
-| `MISE_AI_MODEL` | `claude-opus-5-5` | the claude model to use |
-| `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR` | keys for push notifications |
+| variable                                           | default                     | what it does                                                                                   |
+| -------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `DATA_DIR`                                         | `./data`                    | where the database and uploads live                                                            |
+| `PORT`                                             | `3000` (`3001` in dev)      | port the server listens on                                                                     |
+| `HOST`                                             | `0.0.0.0`                   | address to bind; use `127.0.0.1` behind a tunnel or proxy                                      |
+| `BETTER_AUTH_URL`                                  |                             | the public origin, such as `https://mise.example.com`                                          |
+| `BETTER_AUTH_SECRET`                               | generated into `DATA_DIR`   | session signing secret                                                                         |
+| `ANTHROPIC_API_KEY`                                |                             | turns on Claude when `MISE_AI_MODEL` is unset or starts with `anthropic:`                      |
+| `MISE_AI_API_KEY`                                  |                             | key for the provider in `MISE_AI_MODEL`. used instead of `ANTHROPIC_API_KEY` when set          |
+| `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, or `openrouter:` plus the model id, such as `openrouter:openai/gpt-5` |
+| `MISE_AI_BASE_URL`                                 |                             | optional base url for an openai-compatible server                                              |
+| `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR`   | keys for push notifications                                                                    |
 
 ## backups
 

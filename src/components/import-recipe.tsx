@@ -207,7 +207,7 @@ function ImportDialog({
         {error && failedUrl && ai && (
           <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => void tryClaude()}>
             <SparklesIcon data-icon="inline-start" />
-            {pending ? "Reading" : "Try with Claude"}
+            {pending ? "Reading" : "Try with AI"}
           </Button>
         )}
 

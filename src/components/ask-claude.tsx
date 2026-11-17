@@ -133,7 +133,7 @@ function AskClaude({ recipeId }: { recipeId: string }) {
           onChange={(event) => setQuestion(event.target.value)}
         />
         <Button type="submit" disabled={pending}>
-          {pending ? "Thinking" : "Ask Claude"}
+          {pending ? "Thinking" : "Ask"}
         </Button>
       </form>
       {!answer && !pending && !error && (
@@ -183,7 +183,7 @@ function AskClaude({ recipeId }: { recipeId: string }) {
           </div>
           <div className="px-4 py-4 text-sm text-muted-foreground">
             {pending ? (
-              <div className="space-y-2.5" aria-label="Asking Claude">
+              <div className="space-y-2.5" aria-label="Asking">
                 {["w-11/12", "w-4/5", "w-2/3", "w-3/4"].map((width) => (
                   <div
                     key={width}
@@ -207,7 +207,7 @@ function AskClaude({ recipeId }: { recipeId: string }) {
           {answer && !pending && (
             <div className="flex items-center justify-between gap-3 border-t px-4 py-2.5">
               <p className="text-xs text-muted-foreground">
-                Suggestions from Claude. Taste as you go.
+                Suggestions. Taste as you go.
               </p>
               <Button type="button" variant="ghost" size="sm" onClick={reset}>
                 Ask another

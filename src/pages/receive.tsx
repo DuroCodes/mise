@@ -102,7 +102,7 @@ function ReceivePage() {
             {ai && state.url && (
               <Button type="button" onClick={() => state.url && void tryClaude(state.url)}>
                 <SparklesIcon data-icon="inline-start" />
-                Try with Claude
+                Try with AI
               </Button>
             )}
             <Button asChild variant="outline">

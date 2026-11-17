@@ -260,7 +260,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
           duration: 10_000,
           action: aiRef.current
             ? {
-                label: "Try with Claude",
+                label: "Try with AI",
                 onClick: () => {
                   setImporting(importUrl);
                   void aiRecipeFromUrl(importUrl).then((retry) => {

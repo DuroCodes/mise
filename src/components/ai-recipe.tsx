@@ -86,10 +86,10 @@ function AiRecipe({ onImported }: { onImported: (recipe: RecipeInput) => void })
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader className="pr-8">
-          <DialogTitle>Read a recipe with Claude</DialogTitle>
+          <DialogTitle>Read a recipe</DialogTitle>
           <DialogDescription>
-            Paste a recipe or add a photo. Claude fills in the form. Sent to
-            Anthropic.
+            Paste a recipe or add a photo. The model fills in the form. Sent
+            only when you use this.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4" noValidate>
