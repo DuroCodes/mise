@@ -216,12 +216,16 @@ select optgroup {
   }
   html {
     @apply font-sans;
-    overflow-x: clip;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    overflow-x: clip;
     text-rendering: optimizeLegibility;
+  }
+  /* Clip sideways overflow on the app, not on body. overflow on body
+     makes position:fixed menus (the theme menu) stick to the page top
+     instead of the header once you scroll. */
+  #root {
+    overflow-x: clip;
   }
   h1,
   h2,

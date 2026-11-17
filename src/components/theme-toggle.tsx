@@ -25,7 +25,7 @@ function ThemeToggle() {
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
-          className="z-50 min-w-48 origin-(--radix-dropdown-menu-content-transform-origin) rounded-xl bg-popover p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200 data-[state=open]:ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 data-[state=closed]:ease-[cubic-bezier(0.7,0,0.84,0)] motion-reduce:animate-none"
+          className="z-50 min-w-48 rounded-xl bg-popover p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=open]:ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 data-[state=closed]:ease-[cubic-bezier(0.7,0,0.84,0)] motion-reduce:animate-none"
         >
           <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
             Theme
