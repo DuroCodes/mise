@@ -5,10 +5,19 @@ import {
   Share2Icon,
   TrashIcon,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { QrCode } from "@/components/qr-code";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -24,6 +33,7 @@ import {
   revokeInvite,
   type Invite,
 } from "@/lib/api";
+import { easeOut } from "@/lib/motion";
 
 const linkFor = (token: string) => `${window.location.origin}/invite/${token}`;
 
@@ -33,12 +43,13 @@ const when = (iso: string) =>
     day: "numeric",
   });
 
-const copy = async (text: string) => {
+const copyLink = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text);
-    toast.success("Invite link copied");
+    return true;
   } catch {
     toast.error("Could not copy. Select the link and copy it.");
+    return false;
   }
 };
 
@@ -73,10 +84,7 @@ function InvitePanel() {
     setInvites(result.value);
     setNote("");
     const newest = result.value[0];
-    if (newest) {
-      setFresh(newest.id);
-      void copy(linkFor(newest.token));
-    }
+    if (newest && (await copyLink(linkFor(newest.token)))) setFresh(newest.id);
   };
 
   const revoke = async (id: string) => {
@@ -221,21 +229,38 @@ function InvitePanel() {
         )}
 
         {used.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               Recently used
             </p>
-            <ul className="space-y-1 text-muted-foreground">
-              {used.map((invite) => (
-                <li key={invite.id}>
-                  {invite.usedBy
-                    ? `${invite.usedBy.name} (${invite.usedBy.email})`
-                    : "An account that was removed"}{" "}
-                  joined {invite.usedAt ? when(invite.usedAt) : ""}
-                  {invite.note && ` · ${invite.note}`}
-                </li>
-              ))}
-            </ul>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Note</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {used.map((invite) => (
+                  <TableRow key={invite.id}>
+                    <TableCell className="font-medium">
+                      {invite.usedBy?.name ?? "Removed account"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {invite.usedBy?.email ?? ""}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {invite.usedAt ? when(invite.usedAt) : ""}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {invite.note}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

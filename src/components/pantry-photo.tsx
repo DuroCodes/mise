@@ -89,7 +89,7 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" className="h-10">
           <CameraIcon data-icon="inline-start" />
           From a photo
         </Button>

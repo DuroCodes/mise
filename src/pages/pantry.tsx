@@ -261,11 +261,6 @@ function PantryList({
 
   return (
     <div className="space-y-5">
-      {ai && (
-        <div className="flex justify-end">
-          <PantryPhoto onAdded={onItems} />
-        </div>
-      )}
       <form onSubmit={add} className="flex flex-col gap-2 sm:flex-row">
         <Input
           value={draft}
@@ -284,6 +279,7 @@ function PantryList({
             className="h-10 w-full sm:w-40"
             onChange={(event) => setExpires(event.target.value)}
           />
+          {ai && <PantryPhoto onAdded={onItems} />}
           <Button
             type="submit"
             size="lg"

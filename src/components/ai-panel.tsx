@@ -1,6 +1,7 @@
 import { SparklesIcon } from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,10 +151,9 @@ function AiPanel() {
           <SparklesIcon className="size-5 text-brand" aria-hidden="true" />
           AI
         </h2>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Turns on reading recipes from photos and pasted text, substitution
-          answers, pantry photos, recipe search and meal planning. When someone
-          uses one, the recipe or pantry involved is sent to the provider.
+        <p className="text-sm text-muted-foreground">
+          Reads recipes, answers questions, and plans meals. What you send goes
+          to the provider.
         </p>
       </div>
 
@@ -286,7 +286,7 @@ function AiPanel() {
                 )}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={pending} aria-busy={pending}>
                 {pending ? "Checking" : "Save"}
               </Button>
@@ -297,24 +297,19 @@ function AiPanel() {
                   disabled={pending}
                   onClick={remove}
                 >
+                  <SparklesIcon data-icon="inline-start" />
                   Turn off
                 </Button>
               )}
+              <InlineError message={error} />
             </div>
           </form>
         )}
 
         {fromEnvironment && (
-          <p className="text-xs text-muted-foreground">
-            Set by MISE_AI_MODEL and MISE_AI_API_KEY, or MISE_AI_BASE_URL for
-            a local model. To manage it here instead, start the server
-            without them.
-          </p>
-        )}
-
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
+          <p className="text-sm text-muted-foreground">
+            Set with MISE_AI_MODEL and MISE_AI_API_KEY. Remove them to change it
+            here.
           </p>
         )}
       </div>

@@ -5,11 +5,11 @@ import { KeyRoundIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { BackupPanel } from "@/components/backup-panel";
 import { AiPanel } from "@/components/ai-panel";
 import { InvitePanel } from "@/components/invite-panel";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -378,16 +378,12 @@ function AdminPage({ selfId }: { selfId: string }) {
                 onChange={(event) => setPassword(event.target.value)}
               />
             </div>
-            {formError && (
-              <p className="text-sm text-destructive" role="alert">
-                {formError}
-              </p>
-            )}
-            <DialogFooter>
+            <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={pending}>
                 {pending ? "Adding" : "Add account"}
               </Button>
-            </DialogFooter>
+              <InlineError message={formError} />
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -414,16 +410,12 @@ function AdminPage({ selfId }: { selfId: string }) {
                   onChange={(event) => setNextPassword(event.target.value)}
                 />
               </div>
-              {resetError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {resetError}
-                </p>
-              )}
-              <DialogFooter>
+              <div className="flex flex-wrap items-center gap-3">
                 <Button type="submit" disabled={saving}>
                   {saving ? "Saving" : "Save"}
                 </Button>
-              </DialogFooter>
+                <InlineError message={resetError} />
+              </div>
             </form>
           )}
         </DialogContent>

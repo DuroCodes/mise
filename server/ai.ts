@@ -12,8 +12,8 @@ import { publicRecipeUrl } from "./fetch-recipe";
  * in.
  *
  * Set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
- * chooses the provider. A bare model id means Anthropic. A local model needs
- * no key: `local:hermes3`, with `MISE_AI_BASE_URL` if it isn't Ollama on this
+ * is required and chooses the provider. A local model needs no key:
+ * `local:hermes3`, with `MISE_AI_BASE_URL` if it isn't Ollama on this
  * machine. Examples: `anthropic:claude-opus-5-5`, `openai:gpt-5`,
  * `openrouter:openai/gpt-5`.
  *
@@ -55,12 +55,10 @@ const envSetup = () => {
   if (raw) {
     const split = raw.indexOf(":");
     const head = split === -1 ? "" : raw.slice(0, split);
-    if (providers.has(head as ProviderId) && split < raw.length - 1) {
-      provider = head as ProviderId;
-      model = raw.slice(split + 1);
-    } else {
-      model = raw;
-    }
+    if (!providers.has(head as ProviderId) || split >= raw.length - 1)
+      return null;
+    provider = head as ProviderId;
+    model = raw.slice(split + 1);
   }
   const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
   if ((needsKey(provider) && !apiKey) || !model) return null;

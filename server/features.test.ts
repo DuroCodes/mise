@@ -863,13 +863,7 @@ describe("Claude meal planner", () => {
 
 describe("local models", () => {
   test("a local model turns AI on without a key", () => {
-    const names = [
-      "MISE_AI_MODEL",
-      "MISE_AI_API_KEY",
-      "MISE_AI_BASE_URL",
-      "ANTHROPIC_API_KEY",
-      "ANTHROPIC_AUTH_TOKEN",
-    ];
+    const names = ["MISE_AI_MODEL", "MISE_AI_API_KEY", "MISE_AI_BASE_URL"];
     const before = names.map((name) => process.env[name]);
     try {
       for (const name of names) delete process.env[name];
@@ -883,6 +877,9 @@ describe("local models", () => {
         hint: null,
       });
       process.env.MISE_AI_MODEL = "openai:gpt-5";
+      expect(aiStatus().source).not.toBe("environment");
+      process.env.MISE_AI_API_KEY = "test-key";
+      process.env.MISE_AI_MODEL = "claude-opus-5-5";
       expect(aiStatus().source).not.toBe("environment");
     } finally {
       names.forEach((name, index) => {

@@ -16,6 +16,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -347,18 +348,16 @@ function PasswordSection() {
             />
           </div>
         </div>
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        )}
-        <Button
-          type="submit"
-          variant="outline"
-          disabled={pending || !current || !next}
-        >
-          {pending ? "Saving" : "Change password"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={pending || !current || !next}
+          >
+            {pending ? "Saving" : "Change password"}
+          </Button>
+          <InlineError message={error} />
+        </div>
       </form>
     </Section>
   );
@@ -402,17 +401,40 @@ function AiSection() {
       icon={<SparklesIcon className="size-4 text-brand" aria-hidden="true" />}
       title="AI features"
     >
-      <Toggle
-        label="Use AI features"
-        hint={
-          enabled === false
-            ? "Off. The AI buttons are hidden and nothing of yours is sent to the AI provider."
-            : "Read recipes from photos, ask about substitutions, plan meals, and more. Only what you use them on is sent."
-        }
-        checked={enabled ?? true}
-        disabled={enabled === null || saving}
-        onChange={change}
-      />
+      {enabled === null ? (
+        <p className="text-sm text-muted-foreground">Checking…</p>
+      ) : enabled ? (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Read recipes from photos, ask about substitutions, and plan meals.
+            Only what you use them on is sent.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={saving}
+            onClick={() => void change(false)}
+          >
+            <SparklesIcon data-icon="inline-start" />
+            {saving ? "Saving" : "Turn off"}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Off for you. The AI buttons stay hidden, and nothing of yours is
+            sent.
+          </p>
+          <Button
+            type="button"
+            disabled={saving}
+            onClick={() => void change(true)}
+          >
+            <SparklesIcon data-icon="inline-start" />
+            {saving ? "Saving" : "Turn on"}
+          </Button>
+        </div>
+      )}
     </Section>
   );
 }
