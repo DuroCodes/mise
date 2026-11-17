@@ -5,6 +5,7 @@ import {
   PlusIcon,
   ShoppingBasketIcon,
   SparklesIcon,
+  UtensilsCrossedIcon,
   XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -452,6 +453,7 @@ function Suggestions({ today, hasPantry }: { today: string; hasPantry: boolean }
     <div className="space-y-5">
       {suggestions && suggestions.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-8 text-center ring-1 ring-foreground/10">
+          <UtensilsCrossedIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">
             {hasPantry ? "Nothing in your recipes matches yet" : "Add what you have first"}
           </h2>

@@ -150,7 +150,8 @@ function CookLog({
         </Dialog>
       </div>
       {entries === null ? null : entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <ChefHatIcon className="size-4" aria-hidden="true" />
           Nobody has logged this one yet.
         </p>
       ) : (

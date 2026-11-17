@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ExternalLinkIcon, LockIcon } from "lucide-react";
+import { CarrotIcon, ChevronDownIcon, ExternalLinkIcon, ListOrderedIcon, LockIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { cn } from "cn";
@@ -290,7 +290,10 @@ function RecipeView({
             </div>
           </div>
           {ingredients.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No ingredients yet.</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CarrotIcon className="size-4" aria-hidden="true" />
+              No ingredients yet.
+            </p>
           ) : (
             <ul className="text-sm leading-6 md:columns-2 md:gap-x-8">
               {ingredients.map((item, index) => (
@@ -319,7 +322,10 @@ function RecipeView({
         <section className="min-w-0 space-y-3">
           <h2 className="text-sm font-medium">Instructions</h2>
           {recipe.instructions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No steps yet.</p>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ListOrderedIcon className="size-4" aria-hidden="true" />
+              No steps yet.
+            </p>
           ) : (
             <ol className="space-y-1.5 text-sm leading-6">
               {recipe.instructions.map((item, index) => (

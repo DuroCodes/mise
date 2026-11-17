@@ -1,4 +1,4 @@
-import { CheckIcon, FolderPlusIcon, PlusIcon } from "lucide-react";
+import { CheckIcon, FolderIcon, FolderPlusIcon, PlusIcon } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
@@ -101,7 +101,8 @@ function AddToCollection({ recipeId }: { recipeId: string }) {
         {collections === null ? (
           <p className="text-sm text-muted-foreground">Loading</p>
         ) : collections.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FolderIcon className="size-4 shrink-0" aria-hidden="true" />
             No collections yet. Make the first one below.
           </p>
         ) : (

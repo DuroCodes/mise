@@ -12,6 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
+  CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   GripVerticalIcon,
@@ -219,7 +220,10 @@ function DayRow({
         </Button>
       </div>
       {entries.length === 0 ? (
-        <p className="text-xs text-muted-foreground">Nothing planned.</p>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
+          Nothing planned.
+        </p>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
           {entries.map((entry) => (
@@ -458,7 +462,8 @@ function PlanPage() {
               >
                 <ShoppingBasketIcon data-icon="inline-start" />
               </motion.span>
-              Shopping list
+              <span className="sm:hidden">Shopping</span>
+              <span className="max-sm:hidden">Shopping list</span>
             </Button>
           </div>
         </div>

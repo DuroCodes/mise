@@ -6,6 +6,7 @@ import {
   PlusIcon,
   ScanLineIcon,
   Share2Icon,
+  ShoppingBasketIcon,
   StoreIcon,
   TrashIcon,
   XIcon,
@@ -573,7 +574,8 @@ function ShoppingPage() {
       )}
 
       {items && total === 0 && (
-        <div className="space-y-3 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+        <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+          <ShoppingBasketIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">Your list is empty</h2>
           <p className="text-sm text-muted-foreground">
             Add items above, or send them from a recipe or the meal plan.

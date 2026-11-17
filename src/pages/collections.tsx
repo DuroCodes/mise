@@ -1,4 +1,4 @@
-import { FolderIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import { FolderIcon, FolderOpenIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -136,7 +136,8 @@ function CollectionsPage() {
       </div>
 
       {collections && collections.length === 0 && (
-        <div className="space-y-3 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+        <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+          <FolderIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">No collections yet</h2>
           <p className="text-sm text-muted-foreground">
             Make one here, or use “Collect” on any recipe.
@@ -268,7 +269,8 @@ function CollectionPage() {
       </div>
 
       {collection.recipes.length === 0 ? (
-        <div className="space-y-3 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+        <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
+          <FolderOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-base font-medium">This collection is empty</h2>
           <p className="text-sm text-muted-foreground">
             Open a recipe and use “Collect” to add it here.

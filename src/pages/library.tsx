@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { BookOpenIcon, SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -233,8 +233,13 @@ function LibraryPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: easeOut }}
-          className="space-y-3 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10"
+          className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10"
         >
+          {filtering ? (
+            <SearchIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          ) : (
+            <BookOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+          )}
           <h2 className="text-base font-medium">
             {filtering ? "Nothing matches" : "No recipes yet"}
           </h2>

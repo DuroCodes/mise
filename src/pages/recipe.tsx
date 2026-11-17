@@ -153,7 +153,8 @@ function RecipeBody({
           <Button asChild size="sm">
             <Link to={`/recipes/${recipe.id}/cook${cookQuery ? `?${cookQuery}` : ""}`}>
               <ChefHatIcon data-icon="inline-start" />
-              Cook mode
+              <span className="sm:hidden">Cook</span>
+              <span className="max-sm:hidden">Cook mode</span>
             </Link>
           </Button>
           <Button
@@ -175,7 +176,8 @@ function RecipeBody({
             >
               <ShoppingBasketIcon data-icon="inline-start" />
             </motion.span>
-            Shopping list
+            <span className="sm:hidden">Shopping</span>
+            <span className="max-sm:hidden">Shopping list</span>
           </Button>
           <AddToPlan
             recipeId={recipe.id}
