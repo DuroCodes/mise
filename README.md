@@ -61,18 +61,17 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 
 ## settings
 
-| variable                                           | default                     | what it does                                                                                   |
-| -------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------- |
-| `DATA_DIR`                                         | `./data`                    | where the database and uploads live                                                            |
-| `PORT`                                             | `3000` (`3001` in dev)      | port the server listens on                                                                     |
-| `HOST`                                             | `0.0.0.0`                   | address to bind; use `127.0.0.1` behind a tunnel or proxy                                      |
-| `BETTER_AUTH_URL`                                  |                             | the public origin, such as `https://mise.example.com`                                          |
-| `BETTER_AUTH_SECRET`                               | generated into `DATA_DIR`   | session signing secret                                                                         |
-| `ANTHROPIC_API_KEY`                                |                             | turns on Claude when `MISE_AI_MODEL` is unset or starts with `anthropic:`                      |
-| `MISE_AI_API_KEY`                                  |                             | key for the provider in `MISE_AI_MODEL`. used instead of `ANTHROPIC_API_KEY` when set          |
-| `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, or `openrouter:` plus the model id, such as `openrouter:openai/gpt-5` |
-| `MISE_AI_BASE_URL`                                 |                             | optional base url for an openai-compatible server                                              |
-| `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR`   | keys for push notifications                                                                    |
+| variable                                           | default                     | what it does                                                                           |
+| -------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| `DATA_DIR`                                         | `./data`                    | where the database and uploads live                                                    |
+| `PORT`                                             | `3000` (`3001` in dev)      | port the server listens on                                                             |
+| `HOST`                                             | `0.0.0.0`                   | address to bind; use `127.0.0.1` behind a tunnel or proxy                              |
+| `BETTER_AUTH_URL`                                  |                             | the public origin, such as `https://mise.example.com`                                  |
+| `BETTER_AUTH_SECRET`                               | generated into `DATA_DIR`   | session signing secret                                                                 |
+| `MISE_AI_API_KEY`                                  |                             | turns on the optional model features. one key, for whichever provider the model names  |
+| `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, or `openrouter:` plus the model id. a bare id means anthropic |
+| `MISE_AI_BASE_URL`                                 |                             | optional base url for an openai-compatible server                                      |
+| `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR`   | keys for push notifications                                                            |
 
 ## backups
 

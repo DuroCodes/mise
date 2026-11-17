@@ -6,12 +6,12 @@ import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
- * Optional model features. They stay off unless the server has a key, so
+ * Optional model features. They stay off unless `MISE_AI_API_KEY` is set, so
  * recipes never leave the machine unless the person running mise opts in.
  *
- * ANTHROPIC_API_KEY still turns on Claude. For anything else set
- * MISE_AI_API_KEY and MISE_AI_MODEL as `provider:model`, for example
- * `openrouter:openai/gpt-5` or `anthropic:claude-opus-5-5`.
+ * `MISE_AI_MODEL` picks the provider and model, as `provider:model`. A bare
+ * model id, or no model at all, means Anthropic. Examples:
+ * `anthropic:claude-opus-5-5`, `openai:gpt-5`, `openrouter:openai/gpt-5`.
  */
 type ProviderId = "anthropic" | "openai" | "openrouter";
 
@@ -31,11 +31,7 @@ export const aiSetup = () => {
       model = raw;
     }
   }
-  const shared = process.env.MISE_AI_API_KEY?.trim();
-  const anthropic =
-    process.env.ANTHROPIC_API_KEY?.trim() ||
-    process.env.ANTHROPIC_AUTH_TOKEN?.trim();
-  const apiKey = shared || (provider === "anthropic" ? anthropic : "") || "";
+  const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
   if (!apiKey || !model) return null;
   const baseURL = process.env.MISE_AI_BASE_URL?.trim() || undefined;
   return { provider, model, apiKey, baseURL };
