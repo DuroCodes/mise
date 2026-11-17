@@ -214,6 +214,43 @@ export const getFeatures = () =>
     "/api/features"
   );
 
+export const aiProviders = ["anthropic", "openai", "openrouter"] as const;
+export type AiProvider = (typeof aiProviders)[number];
+
+export const aiProviderLabel: Record<AiProvider, string> = {
+  anthropic: "Claude (Anthropic)",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+};
+
+const aiStatusSchema = z.object({
+  enabled: z.boolean(),
+  source: z.enum(["environment", "saved"]).nullable(),
+  provider: z.enum(aiProviders).nullable(),
+  model: z.string().nullable(),
+  hint: z.string().nullable(),
+});
+
+export type AiStatus = z.infer<typeof aiStatusSchema>;
+
+export const getAiStatus = () =>
+  zodFetch(aiStatusSchema, "Could not load the AI setting", "/api/admin/ai");
+
+export const saveAiSetup = (input: {
+  provider: AiProvider;
+  model: string;
+  apiKey: string;
+}) =>
+  zodFetch(aiStatusSchema, "Could not save the AI setting", "/api/admin/ai", {
+    method: "PUT",
+    ...json(input),
+  });
+
+export const removeAiKey = () =>
+  zodFetch(aiStatusSchema, "Could not turn AI off", "/api/admin/ai", {
+    method: "DELETE",
+  });
+
 // Ratings and cooking log ---------------------------------------------------
 
 export const rateRecipe = async (id: string, stars: number | null) => {
@@ -409,6 +446,31 @@ export const removePlanEntry = (id: string) =>
   zodFetch(z.null(), "Could not remove that", `/api/plan/${id}`, {
     method: "DELETE",
   });
+
+const plannedMealSchema = z.object({
+  day: z.string(),
+  slot: z.enum(mealSlots),
+  recipeId: z.string(),
+  why: z.string(),
+  title: z.string(),
+  image: z.string().nullable(),
+  servings: z.number().nullable(),
+  minutes: z.number().nullable(),
+});
+
+export type PlannedMeal = z.infer<typeof plannedMealSchema>;
+
+export const planWeekWithAi = (input: {
+  today: string;
+  fill: { day: string; slots: MealSlot[] }[];
+  notes: string;
+}) =>
+  zodFetch(
+    z.object({ summary: z.string(), meals: z.array(plannedMealSchema) }),
+    "Could not plan the week",
+    "/api/ai/plan-week",
+    { method: "POST", ...json(input) }
+  );
 
 // Collections ---------------------------------------------------------------
 

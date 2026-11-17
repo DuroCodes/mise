@@ -25,6 +25,8 @@ import { safeNext, sharedLink } from "../src/lib/view";
 import {
   linksFromSearchHtml,
   parseFound,
+  plannerRecipes,
+  toMealPlan,
   toPhotoItems,
   toRecipeInput,
 } from "./ai";
@@ -799,5 +801,61 @@ describe("Claude output normalization", () => {
     expect(
       toRecipeInput({ ...base, ingredients: [], instructions: [] })
     ).toBeNull();
+  });
+});
+
+describe("Claude meal planner", () => {
+  const keys = new Map([
+    ["r1", "soup"],
+    ["r2", "pasta"],
+  ]);
+  const wanted = new Map([
+    ["2026-11-17", new Set(["dinner" as const])],
+    ["2026-11-18", new Set(["lunch" as const, "dinner" as const])],
+  ]);
+
+  test("keeps meals for requested slots and known recipes only", () => {
+    const plan = toMealPlan(
+      {
+        summary: "  A light week. ",
+        meals: [
+          { day: "2026-11-17", slot: "Dinner", recipe: "R1", why: "warm" },
+          { day: "2026-11-17", slot: "dinner", recipe: "r2", why: "double" },
+          { day: "2026-11-17", slot: "lunch", recipe: "r2", why: "not asked" },
+          { day: "2026-11-18", slot: "lunch", recipe: "r9", why: "made up" },
+          { day: "2026-11-19", slot: "dinner", recipe: "r1", why: "wrong day" },
+          { day: "2026-11-18", slot: "dinner", recipe: "r2", why: "quick" },
+        ],
+      },
+      keys,
+      wanted
+    );
+    expect(plan.summary).toBe("A light week.");
+    expect(plan.meals).toEqual([
+      { day: "2026-11-17", slot: "dinner", recipeId: "soup", why: "warm" },
+      { day: "2026-11-18", slot: "dinner", recipeId: "pasta", why: "quick" },
+    ]);
+  });
+
+  test("sends favorites and regulars first", () => {
+    const recipe = (id: string, favorite: boolean, cookCount: number) => ({
+      id,
+      title: id,
+      tags: [],
+      prepMinutes: null,
+      cookMinutes: null,
+      servings: null,
+      favorite,
+      lastCooked: null,
+      cookCount,
+      rating: { average: null, count: 0, mine: null },
+      ingredients: [],
+    });
+    const order = plannerRecipes([
+      recipe("new", false, 0),
+      recipe("regular", false, 5),
+      recipe("loved", true, 0),
+    ]).map((item) => item.id);
+    expect(order).toEqual(["loved", "regular", "new"]);
   });
 });

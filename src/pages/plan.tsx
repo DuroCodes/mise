@@ -19,6 +19,7 @@ import {
   PlusIcon,
   SearchIcon,
   ShoppingBasketIcon,
+  SparklesIcon,
   XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -26,6 +27,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { AiPlanner } from "@/components/ai-planner";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -54,6 +56,7 @@ import {
   type MealSlot,
   type PlanEntry,
 } from "@/lib/api";
+import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 import {
   addDays,
@@ -260,6 +263,8 @@ function PlanPage() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [reload, setReload] = useState(0);
+  const [planning, setPlanning] = useState(false);
+  const { ai } = useSession();
   useTitle("Meal plan · Mise");
 
   const sensors = useSensors(
@@ -445,6 +450,18 @@ function PlanPage() {
                 <ChevronRightIcon />
               </Button>
             </div>
+            {ai && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!entries || recipes.length === 0}
+                onClick={() => setPlanning(true)}
+              >
+                <SparklesIcon data-icon="inline-start" />
+                <span className="sm:hidden">Plan</span>
+                <span className="max-sm:hidden">Plan with AI</span>
+              </Button>
+            )}
             <Button
               type="button"
               disabled={adding || !entries || entries.length === 0}
@@ -525,6 +542,17 @@ function PlanPage() {
           </div>
         ) : null}
       </DragOverlay>
+
+      {ai && (
+        <AiPlanner
+          open={planning}
+          onOpenChange={setPlanning}
+          days={days}
+          today={today}
+          entries={entries ?? []}
+          onAdded={refresh}
+        />
+      )}
 
       <Dialog
         open={picking !== null}

@@ -4,6 +4,7 @@ import type { Account } from "@/lib/api";
 export type Session = {
   account: Account;
   ai: boolean;
+  setAi: (on: boolean) => void;
   offline: boolean;
 };
 

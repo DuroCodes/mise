@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import { KeyRoundIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { BackupPanel } from "@/components/backup-panel";
+import { AiPanel } from "@/components/ai-panel";
 import { InvitePanel } from "@/components/invite-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -328,6 +329,8 @@ function AdminPage({ selfId }: { selfId: string }) {
       </section>
 
       <InvitePanel />
+
+      <AiPanel />
 
       <BackupPanel />
 
