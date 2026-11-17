@@ -73,7 +73,7 @@ function DraggableRecipe({ recipe }: { recipe: Recipe }) {
     <li
       ref={setNodeRef}
       className={cn(
-        "flex cursor-grab touch-none items-center gap-2 rounded-lg bg-card px-2 py-1.5 text-sm ring-1 ring-foreground/10 active:cursor-grabbing",
+        "flex cursor-grab touch-none items-center gap-2 rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm active:cursor-grabbing",
         isDragging && "opacity-40"
       )}
       {...attributes}
@@ -471,30 +471,34 @@ function PlanPage() {
         <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
           <aside className="hidden space-y-3 lg:block">
             <div className="sticky top-20 space-y-3">
-              <h2 className="text-sm font-medium">Recipes</h2>
-              <p className="text-xs text-muted-foreground">
-                Drag one onto a day.
-              </p>
-              <div className="relative">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  placeholder="Filter"
-                  aria-label="Filter recipes"
-                  className="pl-8"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
+              <div className="space-y-1">
+                <h2 className="text-sm font-medium">Recipes</h2>
+                <p className="text-xs text-muted-foreground">
+                  Drag one onto a day.
+                </p>
               </div>
-              <ul className="max-h-[calc(100svh-16rem)] space-y-1.5 overflow-y-auto pr-1">
-                {shown.map((recipe) => (
-                  <DraggableRecipe key={recipe.id} recipe={recipe} />
-                ))}
-                {shown.length === 0 && (
-                  <li className="text-xs text-muted-foreground">
-                    No recipes match.
-                  </li>
-                )}
-              </ul>
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    placeholder="Filter"
+                    aria-label="Filter recipes"
+                    className="pl-8"
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </div>
+                <ul className="max-h-[calc(100svh-16rem)] space-y-1.5 overflow-y-auto">
+                  {shown.map((recipe) => (
+                    <DraggableRecipe key={recipe.id} recipe={recipe} />
+                  ))}
+                  {shown.length === 0 && (
+                    <li className="text-xs text-muted-foreground">
+                      No recipes match.
+                    </li>
+                  )}
+                </ul>
+              </div>
             </div>
           </aside>
 
