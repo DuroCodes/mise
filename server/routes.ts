@@ -33,7 +33,11 @@ import {
 } from "./collections";
 import { canEdit, createRecipe, db, getRecipe, viewable } from "./db";
 import { recipes } from "./db/schema";
-import { maxImportBytes, maxImportRecipes, readImportFile } from "./import-file";
+import {
+  maxImportBytes,
+  maxImportRecipes,
+  readImportFile,
+} from "./import-file";
 import { parseRecipeHtml } from "./recipe-page";
 import { addPlan, listPlan, removePlan, slots, updatePlan } from "./plan";
 import {
@@ -311,16 +315,23 @@ export const registerRoutes = (api: Api) => {
   });
 
   api.post("/ai/pantry-photo", async (c) => {
-    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
     const form = await c.req.formData().catch(() => null);
     const file = form?.get("image");
     const kind = form?.get("kind") === "fridge" ? "fridge" : "receipt";
-    if (!(file instanceof File) || file.size === 0) return c.json({ error: "Take a photo first" }, 400);
+    if (!(file instanceof File) || file.size === 0)
+      return c.json({ error: "Take a photo first" }, 400);
     const mediaType = aiImageTypes.find((type) => type === file.type);
-    if (!mediaType) return c.json({ error: "Use a JPEG, PNG, GIF, or WebP photo" }, 400);
-    if (file.size > 5 * 1024 * 1024) return c.json({ error: "Photos must be under 5MB" }, 400);
+    if (!mediaType)
+      return c.json({ error: "Use a JPEG, PNG, GIF, or WebP photo" }, 400);
+    if (file.size > 5 * 1024 * 1024)
+      return c.json({ error: "Photos must be under 5MB" }, 400);
     const result = await readPantryPhoto({
-      image: { data: Buffer.from(await file.arrayBuffer()).toString("base64"), mediaType },
+      image: {
+        data: Buffer.from(await file.arrayBuffer()).toString("base64"),
+        mediaType,
+      },
       kind,
     });
     if (!result.ok) return c.json({ error: result.error }, 502);
@@ -330,7 +341,11 @@ export const registerRoutes = (api: Api) => {
   api.post("/pantry/from-shopping", (c) => {
     const userId = c.get("user").id;
     const moved = moveCheckedToPantry(userId);
-    return c.json({ moved, pantry: listPantry(userId), shopping: listShopping(userId) });
+    return c.json({
+      moved,
+      pantry: listPantry(userId),
+      shopping: listShopping(userId),
+    });
   });
 
   api.post("/shopping/done", async (c) => {
@@ -350,42 +365,68 @@ export const registerRoutes = (api: Api) => {
     if (!parsed.success) return c.json({ error: "Check the amounts" }, 400);
     const userId = c.get("user").id;
     const result = finishShopping(userId, parsed.data.keep);
-    return c.json({ ...result, shopping: listShopping(userId), pantry: listPantry(userId) });
+    return c.json({
+      ...result,
+      shopping: listShopping(userId),
+      pantry: listPantry(userId),
+    });
   });
 
   api.get("/products/:code", async (c) => {
     const code = c.req.param("code");
-    if (!barcodeShape.test(code)) return c.json({ error: "That isn't a barcode" }, 400);
+    if (!barcodeShape.test(code))
+      return c.json({ error: "That isn't a barcode" }, 400);
     const result = await lookupBarcode(code);
-    if (!result.ok) return c.json({ error: "Couldn't look that up right now" }, 502);
+    if (!result.ok)
+      return c.json({ error: "Couldn't look that up right now" }, 502);
     if (!result.product) return c.json({ error: "Product not found" }, 404);
     return c.json(result.product);
   });
 
   // Push notifications --------------------------------------------------------------
 
-  const endpointInput = z.string().max(1000).refine(allowedEndpoint, "Unsupported push service");
+  const endpointInput = z
+    .string()
+    .max(1000)
+    .refine(allowedEndpoint, "Unsupported push service");
   const prefsInput = z.object({ useSoon: z.boolean(), tomorrow: z.boolean() });
 
   api.get("/push/key", (c) => c.json({ publicKey }));
 
   api.post("/push/status", async (c) => {
-    const parsed = z.object({ endpoint: z.string().max(1000) }).safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "Check the subscription" }, 400);
-    return c.json({ prefs: subscriptionFor(c.get("user").id, parsed.data.endpoint) });
+    const parsed = z
+      .object({ endpoint: z.string().max(1000) })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success)
+      return c.json({ error: "Check the subscription" }, 400);
+    return c.json({
+      prefs: subscriptionFor(c.get("user").id, parsed.data.endpoint),
+    });
   });
 
   api.post("/push/subscribe", async (c) => {
     const parsed = z
       .object({
         endpoint: endpointInput,
-        keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+        keys: z.object({
+          p256dh: z.string().min(1).max(200),
+          auth: z.string().min(1).max(100),
+        }),
       })
       .extend(prefsInput.shape)
       .safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "This browser's push service isn't supported" }, 400);
+    if (!parsed.success)
+      return c.json(
+        { error: "This browser's push service isn't supported" },
+        400
+      );
     const { endpoint, keys: subscriptionKeys, useSoon, tomorrow } = parsed.data;
-    saveSubscription(c.get("user").id, { endpoint, ...subscriptionKeys, useSoon, tomorrow });
+    saveSubscription(c.get("user").id, {
+      endpoint,
+      ...subscriptionKeys,
+      useSoon,
+      tomorrow,
+    });
     return c.json({ prefs: { useSoon, tomorrow } }, 201);
   });
 
@@ -404,8 +445,11 @@ export const registerRoutes = (api: Api) => {
   });
 
   api.delete("/push/subscribe", async (c) => {
-    const parsed = z.object({ endpoint: z.string().max(1000) }).safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "Check the subscription" }, 400);
+    const parsed = z
+      .object({ endpoint: z.string().max(1000) })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success)
+      return c.json({ error: "Check the subscription" }, 400);
     removeSubscription(c.get("user").id, parsed.data.endpoint);
     return c.json(null);
   });
@@ -434,7 +478,12 @@ export const registerRoutes = (api: Api) => {
     if (!parsed.success) return c.json({ error: "Check the timer" }, 400);
     const userId = c.get("user").id;
     if (!hasSubscription(userId)) return c.json({ scheduled: false });
-    if (!scheduleTimer(userId, { ...parsed.data, seconds: Math.round(parsed.data.seconds) }))
+    if (
+      !scheduleTimer(userId, {
+        ...parsed.data,
+        seconds: Math.round(parsed.data.seconds),
+      })
+    )
       return c.json({ error: "Too many timers" }, 400);
     return c.json({ scheduled: true });
   });
@@ -445,7 +494,9 @@ export const registerRoutes = (api: Api) => {
   });
 
   api.get("/pantry/suggestions", (c) =>
-    c.json(pantrySuggestions(c.get("user").id, todayParam(c.req.query("today"))))
+    c.json(
+      pantrySuggestions(c.get("user").id, todayParam(c.req.query("today")))
+    )
   );
 
   api.post("/shopping/missing", async (c) => {
@@ -457,9 +508,11 @@ export const registerRoutes = (api: Api) => {
     const recipe = getRecipe(parsed.data.recipeId, user.id, isAdmin(user));
     if (!recipe) return c.json({ error: "Recipe not found" }, 404);
     const missing = missingFor(user.id, recipe);
-    const lines = recipeLines(recipe, recipe.servings, parsed.data.measure).filter(
-      (_, index) => missing.has(recipe.ingredients[index]?.name ?? "")
-    );
+    const lines = recipeLines(
+      recipe,
+      recipe.servings,
+      parsed.data.measure
+    ).filter((_, index) => missing.has(recipe.ingredients[index]?.name ?? ""));
     if (lines.length === 0)
       return c.json({ error: "You already have everything for this one" }, 400);
     mergeLines(user.id, lines);
@@ -467,11 +520,13 @@ export const registerRoutes = (api: Api) => {
   });
 
   api.post("/ai/find-recipes", async (c) => {
-    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
     const parsed = z
       .object({ focus: z.string().trim().max(200).default("") })
       .safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "Keep the request short" }, 400);
+    if (!parsed.success)
+      return c.json({ error: "Keep the request short" }, 400);
     const pantry = listPantry(c.get("user").id).map((item) => item.name);
     if (pantry.length === 0 && !parsed.data.focus)
       return c.json({ error: "Add a few things to your pantry first" }, 400);
@@ -487,7 +542,9 @@ export const registerRoutes = (api: Api) => {
   api.get("/stores", (c) => c.json(listStores(c.get("user").id)));
 
   api.post("/stores", async (c) => {
-    const parsed = z.object({ name: storeName }).safeParse(await readJson(c.req.raw));
+    const parsed = z
+      .object({ name: storeName })
+      .safeParse(await readJson(c.req.raw));
     if (!parsed.success) return c.json({ error: "Name the store" }, 400);
     const userId = c.get("user").id;
     if (listStores(userId).length >= 20)
@@ -544,7 +601,8 @@ export const registerRoutes = (api: Api) => {
         servings: servings.default(null),
       })
       .safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "Pick a day and a recipe" }, 400);
+    if (!parsed.success)
+      return c.json({ error: "Pick a day and a recipe" }, 400);
     if (!viewable(parsed.data.recipeId, user.id, isAdmin(user)))
       return c.json({ error: "Recipe not found" }, 404);
     const id = addPlan(user.id, parsed.data);
@@ -649,10 +707,15 @@ export const registerRoutes = (api: Api) => {
     const parsed = z
       .object({ url: httpUrl, html: z.string().min(1).max(5_000_000) })
       .safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "That page couldn't be sent" }, 400);
+    if (!parsed.success)
+      return c.json({ error: "That page couldn't be sent" }, 400);
     const result = parseRecipeHtml(parsed.data.html);
     if (!result.ok) return c.json({ error: result.error }, 404);
-    return c.json({ ...result.recipe, sourceUrl: parsed.data.url, visibility: "private" });
+    return c.json({
+      ...result.recipe,
+      sourceUrl: parsed.data.url,
+      visibility: "private",
+    });
   });
 
   api.post("/import/file", async (c) => {
@@ -666,15 +729,36 @@ export const registerRoutes = (api: Api) => {
       file.name,
       new Uint8Array(await file.arrayBuffer())
     );
+    // Nothing is saved until the person confirms. One recipe is handed back
+    // to the form; a batch is only listed until they ask to add it.
+    if (form?.get("commit") !== "1") {
+      const titles = result.recipes.map((entry) => entry.recipe.title);
+      const only = result.recipes.length === 1 ? result.recipes[0] : null;
+      if (only?.image)
+        only.recipe.image = await saveUpload(
+          only.image.bytes,
+          only.image.extension
+        );
+      return c.json({
+        recipe: only?.recipe ?? null,
+        titles,
+        skipped: result.skipped.slice(0, 200),
+      });
+    }
     const imported: { id: string; title: string }[] = [];
     const skipped = [...result.skipped];
     for (const entry of result.recipes) {
       if (imported.length >= maxImportRecipes) {
-        skipped.push(`${entry.recipe.title}: over the ${maxImportRecipes} recipe limit`);
+        skipped.push(
+          `${entry.recipe.title}: over the ${maxImportRecipes} recipe limit`
+        );
         continue;
       }
       if (entry.image)
-        entry.recipe.image = await saveUpload(entry.image.bytes, entry.image.extension);
+        entry.recipe.image = await saveUpload(
+          entry.image.bytes,
+          entry.image.extension
+        );
       const saved = createRecipe(
         { ...entry.recipe, visibility: "private", favorite: false },
         user.id
@@ -703,10 +787,12 @@ export const registerRoutes = (api: Api) => {
 
   api.post("/admin/restore", async (c) => {
     const user = c.get("user");
-    if (!isAdmin(user)) return c.json({ error: "An admin has to do that" }, 403);
+    if (!isAdmin(user))
+      return c.json({ error: "An admin has to do that" }, 403);
     const form = await c.req.formData().catch(() => null);
     const file = form?.get("file");
-    if (!(file instanceof File)) return c.json({ error: "Choose a backup file" }, 400);
+    if (!(file instanceof File))
+      return c.json({ error: "Choose a backup file" }, 400);
     const result = restoreBackup(
       file.name,
       new Uint8Array(await file.arrayBuffer()),
@@ -719,14 +805,17 @@ export const registerRoutes = (api: Api) => {
   // Claude ------------------------------------------------------------------------
 
   api.post("/ai/recipe", async (c) => {
-    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
     const form = await c.req.formData().catch(() => null);
     if (!form) return c.json({ error: "Paste a recipe or add a photo" }, 400);
     const text = form.get("text");
     const file = form.get("image");
     const body = typeof text === "string" ? text.slice(0, 60_000) : "";
-    let image: { data: string; mediaType: (typeof aiImageTypes)[number] } | null =
-      null;
+    let image: {
+      data: string;
+      mediaType: (typeof aiImageTypes)[number];
+    } | null = null;
     if (file instanceof File && file.size > 0) {
       const mediaType = aiImageTypes.find((type) => type === file.type);
       if (!mediaType)
@@ -746,9 +835,13 @@ export const registerRoutes = (api: Api) => {
   });
 
   api.post("/ai/recipe-from-url", async (c) => {
-    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
-    const parsed = z.object({ url: httpUrl }).safeParse(await readJson(c.req.raw));
-    if (!parsed.success) return c.json({ error: "Paste a public http(s) recipe link" }, 400);
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
+    const parsed = z
+      .object({ url: httpUrl })
+      .safeParse(await readJson(c.req.raw));
+    if (!parsed.success)
+      return c.json({ error: "Paste a public http(s) recipe link" }, 400);
     const result = await recipeFromUrl(parsed.data.url);
     if (!result.ok) return c.json({ error: result.error }, 502);
     return c.json({ ...result.value, visibility: "private" });
@@ -756,9 +849,13 @@ export const registerRoutes = (api: Api) => {
 
   api.post("/ai/ask", async (c) => {
     const user = c.get("user");
-    if (!aiEnabled()) return c.json({ error: "AI is not set up on this server" }, 400);
+    if (!aiEnabled())
+      return c.json({ error: "AI is not set up on this server" }, 400);
     const parsed = z
-      .object({ recipeId: z.string(), question: z.string().trim().min(3).max(500) })
+      .object({
+        recipeId: z.string(),
+        question: z.string().trim().min(3).max(500),
+      })
       .safeParse(await readJson(c.req.raw));
     if (!parsed.success) return c.json({ error: "Ask a short question" }, 400);
     const recipe = getRecipe(parsed.data.recipeId, user.id, isAdmin(user));

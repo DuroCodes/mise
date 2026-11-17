@@ -483,18 +483,37 @@ const importResultSchema = z.object({
   skipped: z.array(z.string()),
 });
 
-export type ImportResult = z.infer<typeof importResultSchema>;
+const importPreviewSchema = z.object({
+  recipe: recipeInput.nullable(),
+  titles: z.array(z.string()),
+  skipped: z.array(z.string()),
+});
 
-export const importFile = (file: File) => {
+export type ImportResult = z.infer<typeof importResultSchema>;
+export type ImportPreview = z.infer<typeof importPreviewSchema>;
+
+const importBody = (file: File, commit: boolean) => {
   const body = new FormData();
   body.append("file", file);
-  return zodFetch(
+  if (commit) body.append("commit", "1");
+  return body;
+};
+
+export const previewImportFile = (file: File) =>
+  zodFetch(
+    importPreviewSchema,
+    "Could not read that file",
+    "/api/import/file",
+    { method: "POST", body: importBody(file, false) }
+  );
+
+export const importFile = (file: File) =>
+  zodFetch(
     importResultSchema,
     "Could not import that file",
     "/api/import/file",
-    { method: "POST", body }
+    { method: "POST", body: importBody(file, true) }
   );
-};
 
 const restoreSummarySchema = z.object({
   recipes: z.number(),

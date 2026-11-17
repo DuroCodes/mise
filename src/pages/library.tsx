@@ -1,4 +1,4 @@
-import { ArrowDownUpIcon, FileUpIcon, SearchIcon } from "lucide-react";
+import { ArrowDownUpIcon, SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -137,23 +137,15 @@ function LibraryPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-medium tracking-tight">Recipes</h1>
-            <p className="text-sm text-muted-foreground">
-              {recipes === null
-                ? "Loading recipes"
-                : filtering
-                  ? `${shown.length} of ${recipes.length}`
-                  : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
-            </p>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/import">
-              <FileUpIcon data-icon="inline-start" />
-              Import
-            </Link>
-          </Button>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-medium tracking-tight">Recipes</h1>
+          <p className="text-sm text-muted-foreground">
+            {recipes === null
+              ? "Loading recipes"
+              : filtering
+                ? `${shown.length} of ${recipes.length}`
+                : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative w-full max-w-md">

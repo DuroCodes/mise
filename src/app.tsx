@@ -20,7 +20,6 @@ import { AdminPage } from "@/pages/admin";
 import { CollectionPage, CollectionsPage } from "@/pages/collections";
 import { CookPage } from "@/pages/cook";
 import { EditorPage } from "@/pages/editor";
-import { ImportPage } from "@/pages/import";
 import { LibraryPage } from "@/pages/library";
 import { NotFoundPage } from "@/pages/not-found";
 import { PantryPage } from "@/pages/pantry";
@@ -125,7 +124,7 @@ function SignedInApp() {
           <Route path="/receive" element={<ReceivePage />} />
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/collections/:id" element={<CollectionPage />} />
-          <Route path="/import" element={<ImportPage />} />
+          <Route path="/import" element={<Navigate to="/" replace />} />
           <Route path="/recipes/new" element={<EditorPage />} />
           <Route path="/recipes/:id" element={<RecipePage />} />
           <Route path="/recipes/:id/edit" element={<EditorPage />} />

@@ -1,10 +1,11 @@
+import { GlobeIcon, LockIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { HeartMark } from "@/components/heart-mark";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AiRecipe } from "@/components/ai-recipe";
-import { ImportRecipe } from "@/components/import-recipe";
+import { ImportButton } from "@/components/import-recipe";
 import {
   IngredientList,
   InstructionList,
@@ -207,7 +208,20 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     setDraft(draftFromInput(imported));
   };
 
-  // Arrived from "Send to Mise": the draft was loaded above; tidy the address.
+  // A link import while this page is already open arrives as ?n=. The first
+  // visit still reads the draft in the state initializer above.
+  const nonce = params.get("n");
+  const [appliedNonce, setAppliedNonce] = useState<string | null>(null);
+  if (!recipe && nonce && nonce !== appliedNonce) {
+    setAppliedNonce(nonce);
+    const incoming = receivedDraft();
+    if (incoming) {
+      setErrors({});
+      setDraft(incoming);
+    }
+  }
+
+  // Arrived from "Send to Mise" or a link import: the draft was loaded above.
   useEffect(() => {
     if (params.get("received") !== "1") return;
     try {
@@ -217,6 +231,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     }
     const next = new URLSearchParams(params);
     next.delete("received");
+    next.delete("n");
     setParams(next, { replace: true });
   }, [params, setParams]);
 
@@ -374,7 +389,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
           {recipe ? "Edit recipe" : "New recipe"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          {!recipe && <ImportRecipe onImported={fillFrom} />}
+          {!recipe && <ImportButton onImported={fillFrom} />}
           {!recipe && ai && <AiRecipe onImported={fillFrom} />}
           {(!recipe || recipe.ownerId) && (
             <Button
@@ -395,8 +410,13 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.16, ease: easeOut }}
-                  className="inline-block"
+                  className="inline-flex items-center gap-1.5"
                 >
+                  {draft.visibility === "public" ? (
+                    <GlobeIcon data-icon="inline-start" aria-hidden="true" />
+                  ) : (
+                    <LockIcon data-icon="inline-start" aria-hidden="true" />
+                  )}
                   {draft.visibility === "public" ? "Public" : "Private"}
                 </motion.span>
               </AnimatePresence>
