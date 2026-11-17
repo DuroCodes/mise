@@ -164,7 +164,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
     <TimerContext.Provider value={api}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-3 z-[60] flex max-w-[calc(100vw-1.5rem)] flex-col gap-2 sm:bottom-24 sm:left-4 print:hidden"
+        className="pointer-events-none fixed bottom-[calc(8.5rem+env(safe-area-inset-bottom))] left-3 z-[60] flex w-max max-w-[calc(100vw-1.5rem)] flex-col items-stretch gap-2 sm:bottom-40 sm:left-4 print:hidden"
         aria-live="polite"
       >
         <AnimatePresence initial={false}>
@@ -174,13 +174,13 @@ function TimerProvider({ children }: { children: ReactNode }) {
             return (
               <motion.div
                 key={timer.id}
-                layout
+                layout="position"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.2, ease: easeOut }}
                 className={cn(
-                  "pointer-events-auto flex items-center gap-2 rounded-xl bg-popover py-1.5 pr-1.5 pl-3 text-sm shadow-lg ring-1 ring-foreground/10",
+                  "pointer-events-auto flex w-full items-center gap-2 rounded-xl bg-popover py-1.5 pr-1.5 pl-3 text-sm shadow-lg ring-1 ring-foreground/10",
                   timer.done && "bg-brand text-background ring-brand"
                 )}
               >
@@ -192,7 +192,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
                     aria-hidden="true"
                   />
                 )}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="font-medium tabular-nums">
                     {timer.done ? "Done" : formatClock(left)}
                   </p>
