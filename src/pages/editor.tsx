@@ -66,7 +66,7 @@ type Draft = {
   instructions: InstructionDraft[];
 };
 
-const emptyIngredient = (): IngredientDraft => ({
+const emptyIngredient = () => ({
   key: crypto.randomUUID(),
   amount: "",
   unit: "",
@@ -74,7 +74,7 @@ const emptyIngredient = (): IngredientDraft => ({
   note: "",
 });
 
-const draftFromInput = (imported: RecipeInput): Draft => ({
+const draftFromInput = (imported: RecipeInput) => ({
   title: imported.title,
   description: imported.description,
   image: imported.image ?? "",
@@ -83,7 +83,7 @@ const draftFromInput = (imported: RecipeInput): Draft => ({
   cookMinutes: imported.cookMinutes?.toString() ?? "",
   servings: imported.servings?.toString() ?? "",
   favorite: false,
-  visibility: "private",
+  visibility: "private" as const,
   tags: imported.tags,
   ingredients: imported.ingredients.length
     ? imported.ingredients.map((item) => ({
@@ -101,7 +101,7 @@ const draftFromInput = (imported: RecipeInput): Draft => ({
 });
 
 /** A recipe handed over by "Send to Mise", used once and then cleared. */
-const receivedDraft = (): Draft | null => {
+const receivedDraft = () => {
   if (new URLSearchParams(window.location.search).get("received") !== "1")
     return null;
   try {
@@ -114,7 +114,7 @@ const receivedDraft = (): Draft | null => {
   }
 };
 
-const draftFrom = (recipe: Recipe | null): Draft => ({
+const draftFrom = (recipe: Recipe | null) => ({
   title: recipe?.title ?? "",
   description: recipe?.description ?? "",
   image: recipe?.image ?? "",
@@ -123,7 +123,7 @@ const draftFrom = (recipe: Recipe | null): Draft => ({
   cookMinutes: recipe?.cookMinutes?.toString() ?? "",
   servings: recipe?.servings?.toString() ?? "",
   favorite: recipe?.favorite ?? false,
-  visibility: recipe?.visibility ?? "private",
+  visibility: recipe?.visibility ?? ("private" as const),
   tags: recipe?.tags ?? [],
   ingredients: recipe?.ingredients.length
     ? recipe.ingredients.map((item) => ({ key: crypto.randomUUID(), ...item }))
@@ -198,7 +198,7 @@ function CountField({
 function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(
+  const [draft, setDraft] = useState<Draft>(
     () => (recipe ? null : receivedDraft()) ?? draftFrom(recipe)
   );
   const { ai } = useSession();

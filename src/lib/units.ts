@@ -362,7 +362,7 @@ const scaleNote = (note: string, factor: number, measure: Measure) =>
 
 export type UnitInfo = { kind: Kind; system: System; toBase: number };
 
-export const unitInfo = (unit: string): UnitInfo | null =>
+export const unitInfo = (unit: string) =>
   catalog.get(normalizeUnit(unit)) ?? null;
 
 export const fromBase = (kind: Kind, base: number, system: System) =>

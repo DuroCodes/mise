@@ -1,5 +1,4 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { SharedRecipe } from "../src/shared/recipe";
 import { db } from "./db";
 import { cookLogs, ratings, recipes, user } from "./db/schema";
 import { freshToken, linkTokenShape } from "./link-token";
@@ -112,7 +111,7 @@ export const removeShare = (recipeId: string) => {
     .run();
 };
 
-export const sharedRecipe = (token: string): SharedRecipe | null => {
+export const sharedRecipe = (token: string) => {
   if (!linkTokenShape.test(token)) return null;
   const row = db.query.recipes
     .findFirst({

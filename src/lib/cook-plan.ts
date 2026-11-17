@@ -25,7 +25,7 @@ export const nextFiveMinutes = (now = new Date()) => {
 
 const key = (recipeId: string) => `mise-cook-${recipeId}-plan`;
 
-export const readPlan = (recipeId: string): CookPlan | null => {
+export const readPlan = (recipeId: string) => {
   try {
     const raw = sessionStorage.getItem(key(recipeId));
     const value = raw ? (JSON.parse(raw) as Partial<CookPlan>) : null;

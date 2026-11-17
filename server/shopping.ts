@@ -113,7 +113,7 @@ export const recipeLines = (
   recipe: { title: string; servings: number | null; ingredients: Ingredient[] },
   servings: number | null,
   measure: Measure
-): ShoppingLine[] => {
+) => {
   const factor =
     recipe.servings && servings && servings > 0
       ? servings / recipe.servings

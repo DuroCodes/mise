@@ -81,7 +81,7 @@ export const rankRecipes = <R extends Recipe>(
   pantry: PantryEntry[],
   today: string,
   soonDays = 3
-): Match<R>[] => {
+) => {
   const soonLimit = new Date(`${today}T00:00:00Z`);
   soonLimit.setUTCDate(soonLimit.getUTCDate() + soonDays);
   const soon = soonLimit.toISOString().slice(0, 10);

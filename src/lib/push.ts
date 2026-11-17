@@ -60,7 +60,7 @@ const post = (path: string, method: string, body: unknown) =>
   });
 
 /** This device's saved settings, or null when notifications are off here. */
-export const loadPushPrefs = async (): Promise<PushPrefs | null> => {
+export const loadPushPrefs = async () => {
   const subscription = await currentSubscription();
   if (!subscription) {
     setFlag(false);
@@ -75,7 +75,7 @@ export const loadPushPrefs = async (): Promise<PushPrefs | null> => {
   return body.prefs;
 };
 
-export const enablePush = async (prefs: PushPrefs): Promise<string | null> => {
+export const enablePush = async (prefs: PushPrefs) => {
   if (!pushSupported()) return "This browser can't show notifications.";
   const reg = await registration();
   if (!reg)

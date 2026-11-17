@@ -6,7 +6,7 @@ export const parenthetical = (note: string) => {
   return `(${trimmed})`;
 };
 
-export const storedMeasure = (): Measure => {
+export const storedMeasure = () => {
   try {
     const stored = localStorage.getItem("mise-units");
     if (stored === "metric" || stored === "imperial" || stored === "original")

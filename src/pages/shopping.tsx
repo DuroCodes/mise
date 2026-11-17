@@ -85,7 +85,7 @@ const saveStoreId = (id: string) => {
   }
 };
 
-const readGrouping = (): Grouping => {
+const readGrouping = () => {
   try {
     return localStorage.getItem(groupingKey) === "recipe" ? "recipe" : "aisle";
   } catch {
@@ -120,7 +120,7 @@ const groupItems = (
   items: ShoppingItem[],
   grouping: Grouping,
   layout: StoreSection[]
-): Group[] => {
+) => {
   if (grouping === "aisle") {
     const byAisle = new Map<string, ShoppingItem[]>();
     for (const item of items) {

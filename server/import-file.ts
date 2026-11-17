@@ -62,7 +62,7 @@ const multiline = (value: unknown) =>
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
 /** Reads "15 minutes", "1 hr 10 min", "1:30", or ISO 8601 "PT15M". */
-export const minutesFromText = (value: unknown): number | null => {
+export const minutesFromText = (value: unknown) => {
   const iso = minutesOf(value);
   if (iso !== null) return iso;
   if (typeof value !== "string") return null;
@@ -119,7 +119,7 @@ const lines = (value: string) =>
     .map((line) => line.trim())
     .filter(Boolean);
 
-const finish = (draft: Record<string, unknown>): RecipeInput | null => {
+const finish = (draft: Record<string, unknown>) => {
   const parsed = recipeInput.safeParse({ ...draft, visibility: "private" });
   if (
     !parsed.success ||
@@ -155,7 +155,7 @@ const isPaprika = (value: Record<string, unknown>) =>
   (typeof value.ingredients === "string" ||
     typeof value.directions === "string");
 
-const fromPaprika = (value: Record<string, unknown>): ImportedRecipe | null => {
+const fromPaprika = (value: Record<string, unknown>) => {
   const description = [text(value.description), text(value.notes)]
     .filter(Boolean)
     .join("\n\n");
@@ -200,7 +200,7 @@ const isMealie = (value: Record<string, unknown>) =>
   ("slug" in value || "recipeYield" in value || "orgURL" in value) &&
   !("@type" in value);
 
-const mealieIngredient = (raw: unknown): Ingredient | null => {
+const mealieIngredient = (raw: unknown) => {
   if (typeof raw === "string") return parseIngredientLine(raw);
   if (!raw || typeof raw !== "object") return null;
   const item = raw as Record<string, unknown>;
@@ -410,7 +410,7 @@ const imageFromZip = (files: Unzipped, hints: string[]) => {
 
 // Detection ---------------------------------------------------------------
 
-const parseJson = (raw: string): unknown => {
+const parseJson = (raw: string) => {
   try {
     return JSON.parse(raw.replace(/^﻿/, ""));
   } catch {
@@ -504,10 +504,7 @@ const isGzip = (bytes: Uint8Array) =>
  * (.paprikarecipes / .paprikarecipe), Mealie recipe exports and backups (.zip
  * or .json), schema.org JSON-LD (.json), and saved recipe pages (.html).
  */
-export const readImportFile = (
-  name: string,
-  bytes: Uint8Array
-): ImportResult => {
+export const readImportFile = (name: string, bytes: Uint8Array) => {
   const result: ImportResult = { recipes: [], skipped: [] };
   const lower = name.toLowerCase();
 

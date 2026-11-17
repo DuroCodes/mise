@@ -2,11 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
-import {
-  recipeInput,
-  type Recipe,
-  type RecipeInput,
-} from "../src/shared/recipe";
+import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
 
 /**
@@ -19,16 +15,9 @@ import { publicRecipeUrl } from "./fetch-recipe";
  */
 type ProviderId = "anthropic" | "openai" | "openrouter";
 
-type AiSetup = {
-  provider: ProviderId;
-  model: string;
-  apiKey: string;
-  baseURL?: string;
-};
-
 const providers = new Set<ProviderId>(["anthropic", "openai", "openrouter"]);
 
-export const aiSetup = (): AiSetup | null => {
+export const aiSetup = () => {
   const raw = process.env.MISE_AI_MODEL?.trim();
   let provider: ProviderId = "anthropic";
   let model = "claude-opus-5-5";
@@ -110,7 +99,7 @@ const within = (value: number | null, low: number, high: number) =>
     : null;
 
 /** Fits model output to mise's limits. Exported for tests. */
-export const toRecipeInput = (value: Extracted): RecipeInput | null => {
+export const toRecipeInput = (value: Extracted) => {
   if (!value.found) return null;
   const parsed = recipeInput.safeParse({
     title: clip(value.title, 200),
@@ -156,16 +145,22 @@ Copy what the recipe says; do not invent ingredients, amounts, or steps that are
 
 export type AiResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
-const failure = (error: unknown): { ok: false; error: string } => {
+const failure = (error: unknown) => {
   console.error(error);
   if (APICallError.isInstance(error)) {
     if (error.statusCode === 401 || error.statusCode === 403)
-      return { ok: false, error: "The API key was rejected" };
+      return { ok: false as const, error: "The API key was rejected" };
     if (error.statusCode === 429)
-      return { ok: false, error: "The model is busy. Try again in a minute." };
-    return { ok: false, error: "The model could not answer that right now" };
+      return {
+        ok: false as const,
+        error: "The model is busy. Try again in a minute.",
+      };
+    return {
+      ok: false as const,
+      error: "The model could not answer that right now",
+    };
   }
-  return { ok: false, error: "Could not reach the model" };
+  return { ok: false as const, error: "Could not reach the model" };
 };
 
 type Part =
@@ -195,9 +190,9 @@ const objectFrom = async <T>(
 export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
-}): Promise<AiResult<RecipeInput>> => {
+}) => {
   if (!aiEnabled())
-    return { ok: false, error: "AI is not set up on this server" };
+    return { ok: false as const, error: "AI is not set up on this server" };
   const content: Part[] = [];
   if (input.image) {
     content.push({
@@ -216,10 +211,14 @@ export const extractRecipe = async (input: {
   try {
     const output = await objectFrom(extracted, extractionPrompt, content);
     if (!output)
-      return { ok: false, error: "The model's answer could not be read" };
+      return {
+        ok: false as const,
+        error: "The model's answer could not be read",
+      };
     const recipe = toRecipeInput(output);
-    if (!recipe) return { ok: false, error: "No recipe was found in that" };
-    return { ok: true, value: recipe };
+    if (!recipe)
+      return { ok: false as const, error: "No recipe was found in that" };
+    return { ok: true as const, value: recipe };
   } catch (error) {
     return failure(error);
   }
@@ -271,15 +270,13 @@ export const readPublicPage = async (raw: string) => {
 };
 
 /** Reads a recipe page the direct importer could not parse. */
-export const recipeFromUrl = async (
-  url: string
-): Promise<AiResult<RecipeInput>> => {
+export const recipeFromUrl = async (url: string) => {
   if (!aiEnabled())
-    return { ok: false, error: "AI is not set up on this server" };
+    return { ok: false as const, error: "AI is not set up on this server" };
   const page = await readPublicPage(url);
   if (!page)
     return {
-      ok: false,
+      ok: false as const,
       error:
         "That site blocked the download. Save the page and import the file instead.",
     };
@@ -290,11 +287,14 @@ export const recipeFromUrl = async (
       `<page url="${url}">\n${page}\n</page>`
     );
     if (!output)
-      return { ok: false, error: "The model's answer could not be read" };
+      return {
+        ok: false as const,
+        error: "The model's answer could not be read",
+      };
     const recipe = toRecipeInput(output);
     if (!recipe)
-      return { ok: false, error: "No recipe was found on that page" };
-    return { ok: true, value: { ...recipe, sourceUrl: url } };
+      return { ok: false as const, error: "No recipe was found on that page" };
+    return { ok: true as const, value: { ...recipe, sourceUrl: url } };
   } catch (error) {
     return failure(error);
   }
@@ -309,9 +309,7 @@ const photoItems = z.object({
 export type PhotoItem = { name: string; amount: string; unit: string };
 
 /** Fits model output to pantry limits. Exported for tests. */
-export const toPhotoItems = (
-  value: z.infer<typeof photoItems>
-): PhotoItem[] => {
+export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
   for (const item of value.items) {
@@ -342,9 +340,9 @@ const photoPrompts = {
 export const readPantryPhoto = async (input: {
   image: { data: string; mediaType: AiImageType };
   kind: "receipt" | "fridge";
-}): Promise<AiResult<PhotoItem[]>> => {
+}) => {
   if (!aiEnabled())
-    return { ok: false, error: "AI is not set up on this server" };
+    return { ok: false as const, error: "AI is not set up on this server" };
   try {
     const output = await objectFrom(photoItems, photoPrompts[input.kind], [
       {
@@ -361,17 +359,20 @@ export const readPantryPhoto = async (input: {
       },
     ]);
     if (!output)
-      return { ok: false, error: "The model's answer could not be read" };
+      return {
+        ok: false as const,
+        error: "The model's answer could not be read",
+      };
     const items = toPhotoItems(output);
     if (items.length === 0)
       return {
-        ok: false,
+        ok: false as const,
         error:
           input.kind === "receipt"
             ? "No groceries found on that receipt"
             : "No food found in that photo",
       };
-    return { ok: true, value: items };
+    return { ok: true as const, value: items };
   } catch (error) {
     return failure(error);
   }
@@ -406,10 +407,7 @@ const normalizeUrl = (raw: string) => {
 };
 
 /** Pulls the JSON array out of the model's final text (a ```json block or a bare array). */
-export const parseFound = (
-  text: string,
-  searched: Set<string>
-): FoundRecipe[] => {
+export const parseFound = (text: string, searched: Set<string>) => {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
   let raw: unknown;
@@ -495,12 +493,9 @@ Use only URLs that search_web returned. Do not invent links.
 Finish with only a JSON array in a \`\`\`json code block, 3 to 6 items, each:
 {"title": "...", "url": "the exact page URL from the search results", "why": "one short sentence on why it fits", "uses": ["pantry items it uses"]}`;
 
-export const findRecipes = async (
-  pantry: string[],
-  focus: string
-): Promise<AiResult<FoundRecipe[]>> => {
+export const findRecipes = async (pantry: string[], focus: string) => {
   if (!aiEnabled())
-    return { ok: false, error: "AI is not set up on this server" };
+    return { ok: false as const, error: "AI is not set up on this server" };
   const list = pantry
     .slice(0, 80)
     .map((name) => `- ${name}`)
@@ -530,14 +525,17 @@ export const findRecipes = async (
       maxOutputTokens: 4000,
     });
     if (result.finishReason === "content-filter")
-      return { ok: false, error: "The model declined to search for that" };
+      return {
+        ok: false as const,
+        error: "The model declined to search for that",
+      };
     const found = parseFound(result.text, searched);
     if (found.length === 0)
       return {
-        ok: false,
+        ok: false as const,
         error: "No recipes came back this time. Try again or change the focus.",
       };
-    return { ok: true, value: found };
+    return { ok: true as const, value: found };
   } catch (error) {
     return failure(error);
   }
@@ -546,9 +544,9 @@ export const findRecipes = async (
 export const askAboutRecipe = async (
   recipe: Pick<Recipe, "title" | "servings" | "ingredients" | "instructions">,
   question: string
-): Promise<AiResult<string>> => {
+) => {
   if (!aiEnabled())
-    return { ok: false, error: "AI is not set up on this server" };
+    return { ok: false as const, error: "AI is not set up on this server" };
   const ingredients = recipe.ingredients
     .map((item) =>
       [item.amount, item.unit, item.name, item.note ? `(${item.note})` : ""]
@@ -569,10 +567,11 @@ export const askAboutRecipe = async (
       maxOutputTokens: 2000,
     });
     if (result.finishReason === "content-filter")
-      return { ok: false, error: "The model declined to answer that" };
+      return { ok: false as const, error: "The model declined to answer that" };
     const answer = result.text.trim();
-    if (!answer) return { ok: false, error: "The model did not answer" };
-    return { ok: true, value: answer };
+    if (!answer)
+      return { ok: false as const, error: "The model did not answer" };
+    return { ok: true as const, value: answer };
   } catch (error) {
     return failure(error);
   }

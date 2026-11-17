@@ -220,7 +220,7 @@ export const scheduleTimer = (
       body: input.recipe || "Your timer finished.",
       url: "/",
       tag: `timer-${input.id}`,
-      kind: "timer",
+      kind: "timer" as const,
     });
   }, input.seconds * 1000);
   timers.set(key, handle);
@@ -251,7 +251,7 @@ const plusDays = (day: string, count: number) => {
 };
 
 /** "Use soon" text for one person's pantry, or null when nothing is close. */
-export const soonNote = (userId: string, today: string): Note | null => {
+export const soonNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const soon = listPantry(userId)
     .filter(
@@ -272,12 +272,12 @@ export const soonNote = (userId: string, today: string): Note | null => {
     body: soon.slice(0, 6).map(describe).join(", "),
     url: "/pantry?tab=make",
     tag: `use-soon-${today}`,
-    kind: "use-soon",
+    kind: "use-soon" as const,
   };
 };
 
 /** Tomorrow's meals, with a thaw reminder when one needs meat or seafood. */
-export const tomorrowNote = (userId: string, today: string): Note | null => {
+export const tomorrowNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const meals = listPlan(userId, tomorrow, tomorrow, false);
   if (meals.length === 0) return null;
@@ -295,7 +295,7 @@ export const tomorrowNote = (userId: string, today: string): Note | null => {
       : "Check you have everything.",
     url: `/plan?week=${tomorrow}`,
     tag: `tomorrow-${today}`,
-    kind: "tomorrow",
+    kind: "tomorrow" as const,
   };
 };
 

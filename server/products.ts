@@ -22,11 +22,10 @@ const remember = (code: string, product: Product | null) => {
   cache.set(code, product);
 };
 
-export const lookupBarcode = async (
-  code: string
-): Promise<{ ok: true; product: Product | null } | { ok: false }> => {
-  if (!barcodeShape.test(code)) return { ok: true, product: null };
-  if (cache.has(code)) return { ok: true, product: cache.get(code) ?? null };
+export const lookupBarcode = async (code: string) => {
+  if (!barcodeShape.test(code)) return { ok: true as const, product: null };
+  if (cache.has(code))
+    return { ok: true as const, product: cache.get(code) ?? null };
   try {
     const response = await fetch(
       `https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_en,generic_name,brands,quantity`,
@@ -41,9 +40,9 @@ export const lookupBarcode = async (
     );
     if (response.status === 404) {
       remember(code, null);
-      return { ok: true, product: null };
+      return { ok: true as const, product: null };
     }
-    if (!response.ok) return { ok: false };
+    if (!response.ok) return { ok: false as const };
     const body = (await response.json()) as {
       status?: unknown;
       product?: Record<string, unknown>;
@@ -62,8 +61,8 @@ export const lookupBarcode = async (
           }
         : null;
     remember(code, product);
-    return { ok: true, product };
+    return { ok: true as const, product };
   } catch {
-    return { ok: false };
+    return { ok: false as const };
   }
 };

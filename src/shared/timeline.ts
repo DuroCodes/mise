@@ -37,7 +37,7 @@ export const buildTimeline = (
   anchor: number,
   mode: "start" | "ready",
   gapMinutes = 5
-): Timeline => {
+) => {
   const durations = steps.map((step) => {
     const minutes = stepMinutes(step.text);
     return { minutes: minutes ?? gapMinutes, timed: minutes !== null };
@@ -71,7 +71,7 @@ const temperaturePattern =
   /(\d{2,3})(?:\s*(?:°|º)\s*|\s*degrees?\s+|)(F|C|Fahrenheit|Celsius)\b/gi;
 
 /** Oven-style temperatures such as "400°F", "425F", "200 °C", or "180 degrees Celsius". */
-export const findTemperatures = (text: string): Temperature[] => {
+export const findTemperatures = (text: string) => {
   const found: Temperature[] = [];
   for (const match of text.matchAll(temperaturePattern)) {
     const value = Number(match[1]);

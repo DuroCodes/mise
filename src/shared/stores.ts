@@ -27,11 +27,11 @@ export type StoreSection = z.infer<typeof storeSection>;
 export type Store = z.infer<typeof storeSchema>;
 
 /** The default walk (aisles in their usual order, no labels). */
-export const defaultLayout = (): StoreSection[] =>
+export const defaultLayout = () =>
   aisles.map((aisle) => ({ aisle, label: "" }));
 
 /** Every section in this store's order; sections it doesn't list go last. */
-export const fullLayout = (layout: StoreSection[]): StoreSection[] => {
+export const fullLayout = (layout: StoreSection[]) => {
   const listed = new Set(layout.map((section) => section.aisle));
   return [
     ...layout,
@@ -41,7 +41,7 @@ export const fullLayout = (layout: StoreSection[]): StoreSection[] => {
   ];
 };
 
-export const parseLayout = (raw: string): StoreSection[] => {
+export const parseLayout = (raw: string) => {
   try {
     const parsed = storeLayout.safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data : [];

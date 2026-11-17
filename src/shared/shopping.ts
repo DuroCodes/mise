@@ -42,10 +42,7 @@ const isEmpty = (quantity: Quantity) =>
  * combined honestly (different kinds of unit, ranges, or text amounts), so the
  * caller keeps them as separate lines.
  */
-export const combineQuantities = (
-  existing: Quantity,
-  incoming: Quantity
-): Quantity | null => {
+export const combineQuantities = (existing: Quantity, incoming: Quantity) => {
   if (isEmpty(existing) && isEmpty(incoming)) return { amount: "", unit: "" };
 
   const left = parseAmount(existing.amount);

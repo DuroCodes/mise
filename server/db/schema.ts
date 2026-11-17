@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
 import {
-  type AnySQLiteColumn,
   index,
   integer,
   primaryKey,
@@ -22,7 +21,7 @@ export const recipes = sqliteTable(
     servings: integer("servings"),
     visibility: text("visibility").notNull().default("public"),
     shareToken: text("share_token"),
-    ownerId: text("owner_id").references((): AnySQLiteColumn => user.id, {
+    ownerId: text("owner_id").references(() => user.id, {
       onDelete: "set null",
     }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -39,7 +38,7 @@ export const ratings = sqliteTable(
       .references(() => recipes.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     stars: integer("stars").notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
@@ -54,7 +53,7 @@ export const favorites = sqliteTable(
   {
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     recipeId: text("recipe_id")
       .notNull()
       .references(() => recipes.id, { onDelete: "cascade" }),
@@ -74,7 +73,7 @@ export const cookLogs = sqliteTable(
       .references(() => recipes.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     cookedOn: text("cooked_on").notNull(),
     note: text("note").notNull().default(""),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -88,7 +87,7 @@ export const shoppingItems = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     amount: text("amount").notNull().default(""),
     unit: text("unit").notNull().default(""),
@@ -107,7 +106,7 @@ export const mealPlan = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     day: text("day").notNull(),
     slot: text("slot").notNull(),
     position: integer("position").notNull().default(0),
@@ -126,7 +125,7 @@ export const collections = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -315,13 +314,13 @@ export const invites = sqliteTable(
     id: text("id").primaryKey(),
     token: text("token").notNull(),
     note: text("note").notNull().default(""),
-    createdBy: text("created_by").references((): AnySQLiteColumn => user.id, {
+    createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
     usedAt: integer("used_at", { mode: "timestamp_ms" }),
-    usedBy: text("used_by").references((): AnySQLiteColumn => user.id, {
+    usedBy: text("used_by").references(() => user.id, {
       onDelete: "set null",
     }),
   },
@@ -334,7 +333,7 @@ export const stores = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     layout: text("layout").notNull().default("[]"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
@@ -349,7 +348,7 @@ export const pantryItems = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     amount: text("amount").notNull().default(""),
     unit: text("unit").notNull().default(""),
@@ -367,7 +366,7 @@ export const pushSubscriptions = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     endpoint: text("endpoint").notNull(),
     p256dh: text("p256dh").notNull(),
     auth: text("auth").notNull(),

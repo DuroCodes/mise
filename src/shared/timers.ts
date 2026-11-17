@@ -71,7 +71,7 @@ const unitSeconds = (unit: string) => {
  * in a step. A range uses its low end, so the timer goes off when it is time
  * to start checking.
  */
-export const findTimers = (text: string): StepTimer[] => {
+export const findTimers = (text: string) => {
   const found: StepTimer[] = [];
   for (const match of text.matchAll(pattern)) {
     const low = toNumber(match[1] ?? "");

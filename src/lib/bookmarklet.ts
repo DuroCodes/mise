@@ -14,7 +14,7 @@ export const bookmarkletFor = (origin: string) => {
 export type ReceivedPage = { url: string; html: string };
 
 /** Accepts only a well-formed page message (it comes from an untrusted site). */
-export const readPageMessage = (data: unknown): ReceivedPage | null => {
+export const readPageMessage = (data: unknown) => {
   if (!data || typeof data !== "object") return null;
   const value = data as Record<string, unknown>;
   if (value.type !== "mise-page") return null;

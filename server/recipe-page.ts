@@ -1,4 +1,4 @@
-import type { Ingredient, RecipeInput } from "../src/shared/recipe";
+import type { Ingredient } from "../src/shared/recipe";
 import { recipeInput } from "../src/shared/recipe";
 
 const units = new Set([
@@ -170,7 +170,7 @@ const withoutGroups = (value: string) => {
   return { rest: rest.replace(/\s+/g, " ").trim(), notes };
 };
 
-export const parseIngredientLine = (raw: string): Ingredient | null => {
+export const parseIngredientLine = (raw: string) => {
   let text = listMarker(plain(raw));
   if (!text || text.endsWith(":")) return null;
 
@@ -256,7 +256,7 @@ const servingsOf = (value: unknown) => {
   return servings >= 1 && servings <= 999 ? servings : null;
 };
 
-const imageOf = (value: unknown): string | null => {
+const imageOf = (value: unknown) => {
   const urls: string[] = [];
   const visit = (node: unknown) => {
     if (!node) return;
@@ -379,7 +379,7 @@ const pageTitle = (html: string) => {
   return raw.replace(/\s+[-|]\s+.*$/, "").trim();
 };
 
-const urlOf = (value: unknown): string | null => {
+const urlOf = (value: unknown) => {
   const candidates: unknown[] = Array.isArray(value) ? value : [value];
   for (const candidate of candidates) {
     const raw =
@@ -407,7 +407,7 @@ const urlOf = (value: unknown): string | null => {
 export const recipeFromJsonLd = (
   recipe: Record<string, unknown>,
   fallbackTitle = ""
-): RecipeInput | null => {
+) => {
   const tags: string[] = [];
   addTags(recipe.keywords, tags);
   addTags(recipe.recipeCategory, tags);
@@ -456,9 +456,7 @@ export const recipeFromJsonLd = (
   return parsed.data;
 };
 
-export const parseRecipeHtml = (
-  html: string
-): { ok: true; recipe: RecipeInput } | { ok: false; error: string } => {
+export const parseRecipeHtml = (html: string) => {
   const found: Record<string, unknown>[] = [];
   const pattern =
     /<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
@@ -485,10 +483,10 @@ export const parseRecipeHtml = (
     found.find((item) => plain(item.name)) ??
     null;
   if (!recipe)
-    return { ok: false, error: "That page did not include a recipe" };
+    return { ok: false as const, error: "That page did not include a recipe" };
 
   const converted = recipeFromJsonLd(recipe, pageTitle(html));
   if (!converted)
-    return { ok: false, error: "That page did not include a recipe" };
-  return { ok: true, recipe: converted };
+    return { ok: false as const, error: "That page did not include a recipe" };
+  return { ok: true as const, recipe: converted };
 };

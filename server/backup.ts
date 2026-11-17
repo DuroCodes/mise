@@ -351,7 +351,7 @@ export const restoreBackup = (
   fileName: string,
   bytes: Uint8Array,
   adminId: string
-): { ok: true; summary: RestoreSummary } | { ok: false; error: string } => {
+) => {
   let json: string;
   let uploads: Record<string, Uint8Array> = {};
   const isZip = bytes.length > 4 && bytes[0] === 0x50 && bytes[1] === 0x4b;
@@ -368,28 +368,32 @@ export const restoreBackup = (
         },
       });
     } catch {
-      return { ok: false, error: "Could not open that zip file" };
+      return { ok: false as const, error: "Could not open that zip file" };
     }
     const data = files["mise.json"];
-    if (!data) return { ok: false, error: "That zip has no mise.json" };
+    if (!data)
+      return { ok: false as const, error: "That zip has no mise.json" };
     json = strFromU8(data);
     uploads = files;
   } else if (fileName.toLowerCase().endsWith(".json")) {
     json = strFromU8(bytes);
   } else {
-    return { ok: false, error: "Choose a mise backup (.zip or .json)" };
+    return {
+      ok: false as const,
+      error: "Choose a mise backup (.zip or .json)",
+    };
   }
 
   let raw: unknown;
   try {
     raw = JSON.parse(json);
   } catch {
-    return { ok: false, error: "The backup file is not valid JSON" };
+    return { ok: false as const, error: "The backup file is not valid JSON" };
   }
   const parsed = backupSchema.safeParse(raw);
   if (!parsed.success)
     return {
-      ok: false,
+      ok: false as const,
       error: "That is not a mise backup this version can read",
     };
   const backup = parsed.data;
@@ -593,5 +597,5 @@ export const restoreBackup = (
     }
   });
 
-  return { ok: true, summary };
+  return { ok: true as const, summary };
 };

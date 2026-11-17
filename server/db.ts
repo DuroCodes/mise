@@ -121,7 +121,7 @@ type RecipeStats = {
   cookCount: number;
 };
 
-const emptyStats = (): RecipeStats => ({
+const emptyStats = () => ({
   rating: { average: null, count: 0, mine: null },
   lastCooked: null,
   cookCount: 0,

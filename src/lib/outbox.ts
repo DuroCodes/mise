@@ -25,7 +25,7 @@ export const outboxFor = (userId: string) => {
 const key = () => `mise-outbox:${account}`;
 const isTemp = (id: string) => id.startsWith("local-");
 
-const read = (): Op[] => {
+const read = () => {
   try {
     const raw = localStorage.getItem(key());
     const value = raw ? (JSON.parse(raw) as unknown) : [];
@@ -98,15 +98,7 @@ export const withOutbox = (items: ShoppingItem[]) => {
   return list;
 };
 
-type Sent =
-  | { network: false }
-  | { network: true; ok: boolean; list: ShoppingItem[] | null };
-
-const request = async (
-  method: string,
-  path: string,
-  body?: unknown
-): Promise<Sent> => {
+const request = async (method: string, path: string, body?: unknown) => {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -128,7 +120,7 @@ const request = async (
   };
 };
 
-const perform = async (op: Op): Promise<Sent> => {
+const perform = async (op: Op) => {
   if (op.kind === "check")
     return request("PATCH", `/api/shopping/${op.id}`, { checked: op.checked });
   if (op.kind === "remove") return request("DELETE", `/api/shopping/${op.id}`);
@@ -172,7 +164,7 @@ const run = async () => {
  * earlier attempt is still running (and may fail), waits for it, then tries
  * again rather than reporting its stale result.
  */
-export const flush = async (): Promise<boolean> => {
+export const flush = async () => {
   if (flushing) await flushing;
   if (read().length === 0) return true;
   flushing ??= run();
@@ -183,11 +175,7 @@ export const flush = async (): Promise<boolean> => {
  * Sends one change, or saves it for later when offline. Returns the fresh
  * list when the server answered with one.
  */
-export const send = async (
-  op: Op
-): Promise<
-  { queued: true } | { queued: false; ok: boolean; list: ShoppingItem[] | null }
-> => {
+export const send = async (op: Op) => {
   if (op.kind !== "add" && isTemp(op.id)) {
     enqueue(op);
     void flush();

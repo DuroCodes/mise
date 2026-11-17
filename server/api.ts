@@ -4,7 +4,7 @@ import type { SessionUser } from "./auth";
 export type ApiEnv = { Variables: { user: SessionUser } };
 export type Api = Hono<ApiEnv>;
 
-export const readJson = async (request: Request): Promise<unknown> => {
+export const readJson = async (request: Request) => {
   try {
     return await request.json();
   } catch {

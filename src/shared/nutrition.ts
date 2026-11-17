@@ -25,7 +25,7 @@ const food = (
   [kcal, protein, carbs, fat, fiber]: [number, number, number, number, number],
   density: number,
   extra: Partial<Pick<Food, "each" | "units" | "can" | "perInch">> = {}
-): Food => ({ names, kcal, protein, carbs, fat, fiber, density, ...extra });
+) => ({ names, kcal, protein, carbs, fat, fiber, density, ...extra });
 
 const foods: Food[] = [
   // Grains, flours, and starches (dry weight)
@@ -451,7 +451,7 @@ const contains = (haystack: string[], needle: string[]) => {
 };
 
 /** Picks the most specific food whose name appears in the ingredient name. */
-export const matchFood = (name: string): Food | null => {
+export const matchFood = (name: string) => {
   const words = tokens(name);
   let best: Alias | null = null;
   for (const alias of aliases) {
@@ -527,7 +527,7 @@ const amountOf = (raw: string) => {
 export const gramsFor = (
   item: { amount: string; unit: string; note?: string },
   entry: Food
-): number | null => {
+) => {
   const unit = item.unit.trim();
   const amount = amountOf(item.amount) ?? (item.amount.trim() ? null : 1);
   if (amount === null) return null;
@@ -576,7 +576,7 @@ export type NutritionEstimate = {
   unknown: string[];
 };
 
-const zero = (): Nutrients => ({
+const zero = () => ({
   kcal: 0,
   protein: 0,
   carbs: 0,
@@ -587,7 +587,7 @@ const zero = (): Nutrients => ({
 export const estimateNutrition = (
   ingredients: { amount: string; unit: string; name: string; note: string }[],
   servings: number | null
-): NutritionEstimate => {
+) => {
   const total = zero();
   const counted: string[] = [];
   const unmeasured: string[] = [];

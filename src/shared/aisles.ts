@@ -360,7 +360,7 @@ const contains = (haystack: string[], needle: string[]) => {
  * "chicken stock" is Pantry rather than Meat and "garlic powder" is Spices
  * rather than Produce. Anything marked frozen goes to Frozen.
  */
-export const aisleFor = (name: string): Aisle => {
+export const aisleFor = (name: string) => {
   const words = tokens(name);
   if (words.includes("frozen")) return "Frozen";
   let best: Entry | null = null;

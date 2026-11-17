@@ -122,13 +122,17 @@ export type AcceptResult =
 export const acceptInvite = async (
   token: string,
   input: { name: string; email: string; password: string }
-): Promise<AcceptResult> => {
+) => {
   if (!inviteTokenShape.test(token))
-    return { ok: false, status: 404, error: "This invite link doesn't work" };
+    return {
+      ok: false as const,
+      status: 404 as const,
+      error: "This invite link doesn't work",
+    };
   if (emailTaken(input.email))
     return {
-      ok: false,
-      status: 400,
+      ok: false as const,
+      status: 400 as const,
       error: "That email already has an account. Sign in instead.",
     };
 
@@ -141,8 +145,8 @@ export const acceptInvite = async (
   const invite = claimed[0];
   if (!invite)
     return {
-      ok: false,
-      status: 404,
+      ok: false as const,
+      status: 404 as const,
       error: "This invite link has expired or was already used",
     };
 
@@ -164,11 +168,15 @@ export const acceptInvite = async (
         : "";
     if (code.includes("USER_ALREADY_EXISTS"))
       return {
-        ok: false,
-        status: 400,
+        ok: false as const,
+        status: 400 as const,
         error: "That email already has an account. Sign in instead.",
       };
-    return { ok: false, status: 400, error: "Could not create the account" };
+    return {
+      ok: false as const,
+      status: 400 as const,
+      error: "Could not create the account",
+    };
   }
 
   const person = listUsers().find(
@@ -179,5 +187,5 @@ export const acceptInvite = async (
       .set({ usedBy: person.id })
       .where(eq(invites.id, invite.id))
       .run();
-  return { ok: true };
+  return { ok: true as const };
 };
