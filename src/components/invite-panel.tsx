@@ -1,11 +1,11 @@
 import {
+  CheckIcon,
   CopyIcon,
   LinkIcon,
   QrCodeIcon,
   Share2Icon,
   TrashIcon,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { QrCode } from "@/components/qr-code";
@@ -33,7 +33,6 @@ import {
   revokeInvite,
   type Invite,
 } from "@/lib/api";
-import { easeOut } from "@/lib/motion";
 
 const linkFor = (token: string) => `${window.location.origin}/invite/${token}`;
 
@@ -71,6 +70,12 @@ function InvitePanel() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!fresh) return;
+    const id = window.setTimeout(() => setFresh(null), 2000);
+    return () => window.clearTimeout(id);
+  }, [fresh]);
 
   const create = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -146,86 +151,101 @@ function InvitePanel() {
         </form>
 
         {open.length > 0 && (
-          <ul className="divide-y rounded-lg ring-1 ring-foreground/10">
-            {open.map((invite) => (
-              <li
-                key={invite.id}
-                className="flex flex-wrap items-center gap-2 px-3 py-2.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    {invite.note || "Invite"}
-                    {fresh === invite.id && (
-                      <span className="ml-2 text-xs font-normal text-brand">
-                        copied
-                      </span>
-                    )}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {linkFor(invite.token)} · expires {when(invite.expiresAt)}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void copy(linkFor(invite.token))}
-                  >
-                    <CopyIcon data-icon="inline-start" />
-                    Copy
-                  </Button>
-                  {"share" in navigator && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      aria-label={`Share the invite${invite.note ? ` for ${invite.note}` : ""}`}
-                      onClick={() =>
-                        void navigator
-                          .share({
-                            title: "Join me on Mise",
-                            url: linkFor(invite.token),
-                          })
-                          .catch(() => undefined)
-                      }
-                    >
-                      <Share2Icon />
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant={showing === invite.id ? "secondary" : "outline"}
-                    size="icon-sm"
-                    aria-pressed={showing === invite.id}
-                    aria-label={`QR code for the invite${invite.note ? ` for ${invite.note}` : ""}`}
-                    onClick={() =>
-                      setShowing(showing === invite.id ? null : invite.id)
-                    }
-                  >
-                    <QrCodeIcon />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    aria-label={`Revoke the invite${invite.note ? ` for ${invite.note}` : ""}`}
-                    onClick={() => void revoke(invite.id)}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </div>
-                {showing === invite.id && (
-                  <div className="w-full pt-2">
-                    <QrCode
-                      value={linkFor(invite.token)}
-                      label="Invite QR code"
-                    />
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Note</TableHead>
+                <TableHead>Link</TableHead>
+                <TableHead>Expires</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {open.map((invite) => {
+                const href = linkFor(invite.token);
+                const justCopied = fresh === invite.id;
+                return (
+                  <TableRow key={invite.id}>
+                    <TableCell className="max-w-[10rem] truncate font-medium">
+                      {invite.note || "Invite"}
+                    </TableCell>
+                    <TableCell className="max-w-[14rem] truncate font-mono text-xs text-muted-foreground">
+                      {href}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                      {when(invite.expiresAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="min-w-[5.5rem]"
+                          onClick={async () => {
+                            if (await copyLink(href)) setFresh(invite.id);
+                          }}
+                        >
+                          {justCopied ? (
+                            <CheckIcon data-icon="inline-start" />
+                          ) : (
+                            <CopyIcon data-icon="inline-start" />
+                          )}
+                          {justCopied ? "Copied" : "Copy"}
+                        </Button>
+                        {"share" in navigator && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            aria-label={`Share the invite${invite.note ? ` for ${invite.note}` : ""}`}
+                            onClick={() =>
+                              void navigator
+                                .share({
+                                  title: "Join me on Mise",
+                                  url: href,
+                                })
+                                .catch(() => undefined)
+                            }
+                          >
+                            <Share2Icon />
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant={
+                            showing === invite.id ? "secondary" : "outline"
+                          }
+                          size="icon-sm"
+                          aria-pressed={showing === invite.id}
+                          aria-label={`QR code for the invite${invite.note ? ` for ${invite.note}` : ""}`}
+                          onClick={() =>
+                            setShowing(showing === invite.id ? null : invite.id)
+                          }
+                        >
+                          <QrCodeIcon />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          aria-label={`Revoke the invite${invite.note ? ` for ${invite.note}` : ""}`}
+                          onClick={() => void revoke(invite.id)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </div>
+                      {showing === invite.id && (
+                        <div className="mt-2 flex justify-end">
+                          <QrCode value={href} label="Invite QR code" />
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
 
         {used.length > 0 && (
