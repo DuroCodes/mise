@@ -18,6 +18,7 @@ import {
   removeUser,
   setUserPassword,
   setUserRole,
+  setVisibility,
   toggleFavorite,
   updateRecipe,
   uploadDir,
@@ -68,7 +69,8 @@ const bodyCap = (path: string) => {
   if (path === "/api/import/file") return megabytes(101);
   if (path === "/api/import/page") return megabytes(12);
   if (path === "/api/uploads") return megabytes(9);
-  if (path === "/api/ai/recipe" || path === "/api/ai/pantry-photo") return megabytes(6);
+  if (path === "/api/ai/recipe" || path === "/api/ai/pantry-photo")
+    return megabytes(6);
   return megabytes(1);
 };
 
@@ -215,7 +217,8 @@ api.post("/import", async (c) => {
   if (!imported.ok) return c.json({ error: imported.error }, imported.status);
   return c.json({
     ...imported.recipe,
-    sourceUrl: imported.url.length <= 2000 ? imported.url : imported.recipe.sourceUrl,
+    sourceUrl:
+      imported.url.length <= 2000 ? imported.url : imported.recipe.sourceUrl,
     visibility: "private",
   });
 });
@@ -312,6 +315,17 @@ api.delete("/users/:id", (c) => {
 
 api.post("/recipes/:id/favorite", (c) => {
   const result = toggleFavorite(c.req.param("id"), c.get("user").id);
+  if (!result) return c.json({ error: "Recipe not found" }, 404);
+  return c.json(result);
+});
+
+api.post("/recipes/:id/visibility", (c) => {
+  const user = c.get("user");
+  const result = setVisibility(
+    c.req.param("id"),
+    user.id,
+    user.role === "admin"
+  );
   if (!result) return c.json({ error: "Recipe not found" }, 404);
   return c.json(result);
 });

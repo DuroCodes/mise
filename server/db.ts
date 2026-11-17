@@ -234,7 +234,13 @@ const toRecipe = (
 export const getRecipe = (id: string, viewerId: string, asAdmin = false) => {
   const row = load(id);
   if (!row || (!asAdmin && !canView(row, viewerId))) return null;
-  return toRecipe(row, viewerId, asAdmin, recipeStats(viewerId, id)(id), favoriteIds(viewerId));
+  return toRecipe(
+    row,
+    viewerId,
+    asAdmin,
+    recipeStats(viewerId, id)(id),
+    favoriteIds(viewerId)
+  );
 };
 
 /** True when the viewer may see the recipe (admins see everything). */
@@ -432,7 +438,11 @@ export const updateRecipe = (
   if (!current || (!asAdmin && !canEdit(current, viewerId))) return null;
   writeRecipe(id, input, current.createdAt, current.ownerId);
   setFavorite(viewerId, id, input.favorite);
-  if (current.image && current.image !== input.image && !uploadInUse(current.image))
+  if (
+    current.image &&
+    current.image !== input.image &&
+    !uploadInUse(current.image)
+  )
     removeUpload(current.image);
   return getRecipe(id, viewerId);
 };
@@ -454,6 +464,22 @@ export const toggleFavorite = (id: string, viewerId: string) => {
   const favorite = !favoriteIds(viewerId).has(id);
   setFavorite(viewerId, id, favorite);
   return { favorite };
+};
+
+export const setVisibility = (
+  id: string,
+  viewerId: string,
+  asAdmin = false
+) => {
+  const current = db.select().from(recipes).where(eq(recipes.id, id)).get();
+  if (!current || (!asAdmin && !canEdit(current, viewerId))) return null;
+  if (!current.ownerId) return { visibility: "public" as const };
+  const visibility = current.visibility === "public" ? "private" : "public";
+  db.update(recipes)
+    .set({ visibility, updatedAt: new Date() })
+    .where(eq(recipes.id, id))
+    .run();
+  return { visibility };
 };
 
 export const countUsers = () => {

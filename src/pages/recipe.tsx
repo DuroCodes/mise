@@ -1,5 +1,7 @@
 import {
   ChefHatIcon,
+  GlobeIcon,
+  LockIcon,
   PencilIcon,
   PrinterIcon,
   ShoppingBasketIcon,
@@ -25,6 +27,7 @@ import {
   getRecipe,
   rateRecipe,
   setFavorite,
+  setVisibility,
 } from "@/lib/api";
 import { match } from "@/lib/result";
 import { useSession } from "@/lib/session-context";
@@ -48,6 +51,7 @@ function RecipeBody({
   const [servings, setServings] = useState(recipe.servings ?? 1);
   const [system, setSystem] = useState<Measure>(storedMeasure);
   const [pending, setPending] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [rating, setRating] = useState(false);
 
@@ -65,6 +69,17 @@ function RecipeBody({
       (error) => toast.error(error)
     );
     setPending(false);
+  };
+
+  const toggleVisibility = async () => {
+    setSharing(true);
+    const result = await setVisibility(recipe.id);
+    match(
+      result,
+      (value) => onRecipe({ ...recipe, visibility: value.visibility }),
+      (error) => toast.error(error)
+    );
+    setSharing(false);
   };
 
   const rate = async (stars: number | null) => {
@@ -112,6 +127,23 @@ function RecipeBody({
       actions={
         recipe.canEdit ? (
           <>
+            {recipe.ownerId && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-pressed={recipe.visibility === "public"}
+                aria-label={
+                  recipe.visibility === "public"
+                    ? `Make ${recipe.title} private`
+                    : `Make ${recipe.title} public`
+                }
+                disabled={sharing}
+                onClick={toggleVisibility}
+              >
+                {recipe.visibility === "public" ? <GlobeIcon /> : <LockIcon />}
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -151,7 +183,9 @@ function RecipeBody({
       toolbar={
         <>
           <Button asChild size="sm">
-            <Link to={`/recipes/${recipe.id}/cook${cookQuery ? `?${cookQuery}` : ""}`}>
+            <Link
+              to={`/recipes/${recipe.id}/cook${cookQuery ? `?${cookQuery}` : ""}`}
+            >
               <ChefHatIcon data-icon="inline-start" />
               <span className="sm:hidden">Cook</span>
               <span className="max-sm:hidden">Cook mode</span>
@@ -216,7 +250,9 @@ function RecipeBody({
           })
         }
       />
-      {ai && recipe.ingredients.length > 0 && <AskClaude recipeId={recipe.id} />}
+      {ai && recipe.ingredients.length > 0 && (
+        <AskClaude recipeId={recipe.id} />
+      )}
     </RecipeView>
   );
 }

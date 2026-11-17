@@ -26,6 +26,9 @@ const json = (body: unknown) => ({
 });
 
 const favoriteSchema = z.object({ favorite: z.boolean() });
+const visibilitySchema = z.object({
+  visibility: z.enum(["private", "public"]),
+});
 const uploadSchema = z.object({ url: z.string() });
 
 export const listRecipes = async () => {
@@ -98,6 +101,20 @@ export const setFavorite = async (id: string) => {
   if (result.ok) {
     const current = byId.get(id);
     if (current) keep({ ...current, favorite: result.value.favorite });
+  }
+  return result;
+};
+
+export const setVisibility = async (id: string) => {
+  const result = await zodFetch(
+    visibilitySchema,
+    "Could not update who can see this",
+    `/api/recipes/${id}/visibility`,
+    { method: "POST" }
+  );
+  if (result.ok) {
+    const current = byId.get(id);
+    if (current) keep({ ...current, visibility: result.value.visibility });
   }
   return result;
 };
