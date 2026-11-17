@@ -6,11 +6,12 @@ import {
   isoDay,
   type RecipeInput,
 } from "../src/shared/recipe";
-import { dataDir, db, uploadDir, writeRecipe } from "./db";
+import { dataDir, db, setFavorite, uploadDir, writeRecipe } from "./db";
 import {
   collectionRecipes,
   collections,
   cookLogs,
+  favorites,
   mealPlan,
   ratings,
   recipes,
@@ -60,7 +61,7 @@ export const exportData = () => {
       prepMinutes: row.prepMinutes,
       cookMinutes: row.cookMinutes,
       servings: row.servings,
-      favorite: row.favorite,
+      favorite: false,
       visibility: row.visibility === "private" ? "private" : "public",
       ownerEmail: row.ownerId ? (emailOf.get(row.ownerId) ?? null) : null,
       tags: row.recipeTags.map((link) => link.tag.name),
@@ -73,6 +74,14 @@ export const exportData = () => {
       createdAt: stamp(row.createdAt),
       updatedAt: stamp(row.updatedAt),
     })),
+    favorites: db
+      .select()
+      .from(favorites)
+      .all()
+      .map((row) => ({
+        recipeId: row.recipeId,
+        userEmail: emailOf.get(row.userId) ?? null,
+      })),
     ratings: db
       .select()
       .from(ratings)
@@ -219,6 +228,14 @@ const backupSchema = z.object({
       updatedAt: when,
     })
   ),
+  favorites: z
+    .array(
+      z.object({
+        recipeId: z.string(),
+        userEmail: email,
+      })
+    )
+    .default([]),
   ratings: z
     .array(
       z.object({
@@ -413,6 +430,20 @@ export const restoreBackup = (
     const ownerId = personFor(ownerEmail) ?? (ownerEmail ? adminId : null);
     writeRecipe(id, input, createdAt, ownerId, updatedAt);
     summary.recipes += 1;
+  }
+
+  if (backup.favorites.length > 0) {
+    for (const favorite of backup.favorites) {
+      const userId = personFor(favorite.userEmail);
+      if (!userId) continue;
+      setFavorite(userId, favorite.recipeId, true);
+    }
+  } else {
+    for (const entry of backup.recipes) {
+      if (!entry.favorite) continue;
+      const ownerId = personFor(entry.ownerEmail) ?? (entry.ownerEmail ? adminId : null);
+      if (ownerId) setFavorite(ownerId, entry.id, true);
+    }
   }
 
   const recipeIds = new Set(

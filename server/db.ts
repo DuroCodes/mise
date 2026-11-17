@@ -10,6 +10,7 @@ import * as schema from "./db/schema";
 import {
   account,
   cookLogs,
+  favorites,
   ingredients,
   instructions,
   ratings,
@@ -178,11 +179,24 @@ export const recipeStats = (viewerId: string, recipeId?: string) => {
   return (id: string) => stats.get(id) ?? emptyStats();
 };
 
+const favoriteIds = (viewerId: string) =>
+  new Set(
+    viewerId
+      ? db
+          .select({ recipeId: favorites.recipeId })
+          .from(favorites)
+          .where(eq(favorites.userId, viewerId))
+          .all()
+          .map((row) => row.recipeId)
+      : []
+  );
+
 const toRecipe = (
   row: RecipeRow,
   viewerId: string,
   asAdmin: boolean,
-  stats: RecipeStats
+  stats: RecipeStats,
+  favorited: Set<string>
 ) => {
   const editable = asAdmin || canEdit(row, viewerId);
   return {
@@ -194,7 +208,7 @@ const toRecipe = (
     prepMinutes: row.prepMinutes,
     cookMinutes: row.cookMinutes,
     servings: row.servings,
-    favorite: row.favorite,
+    favorite: favorited.has(row.id),
     visibility: row.visibility === "private" ? "private" : "public",
     ownerId: row.ownerId,
     ownerName: row.owner?.name ?? null,
@@ -220,7 +234,7 @@ const toRecipe = (
 export const getRecipe = (id: string, viewerId: string, asAdmin = false) => {
   const row = load(id);
   if (!row || (!asAdmin && !canView(row, viewerId))) return null;
-  return toRecipe(row, viewerId, asAdmin, recipeStats(viewerId, id)(id));
+  return toRecipe(row, viewerId, asAdmin, recipeStats(viewerId, id)(id), favoriteIds(viewerId));
 };
 
 /** True when the viewer may see the recipe (admins see everything). */
@@ -251,11 +265,12 @@ export const hasRecipes = () =>
 
 export const listRecipes = (viewerId: string) => {
   const stats = recipeStats(viewerId);
+  const favorited = favoriteIds(viewerId);
   return db.query.recipes
     .findMany({ with: withRecipe })
     .sync()
     .filter((row) => canView(row, viewerId))
-    .map((row) => toRecipe(row, viewerId, false, stats(row.id)))
+    .map((row) => toRecipe(row, viewerId, false, stats(row.id), favorited))
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 };
 
@@ -315,7 +330,6 @@ export const writeRecipe = (
         prepMinutes: input.prepMinutes,
         cookMinutes: input.cookMinutes,
         servings: input.servings,
-        favorite: input.favorite,
         visibility,
         ownerId,
         createdAt,
@@ -331,7 +345,6 @@ export const writeRecipe = (
           prepMinutes: input.prepMinutes,
           cookMinutes: input.cookMinutes,
           servings: input.servings,
-          favorite: input.favorite,
           visibility,
           updatedAt: now,
         },
@@ -388,9 +401,24 @@ export const writeRecipe = (
   });
 };
 
+export const setFavorite = (userId: string, recipeId: string, on: boolean) => {
+  if (!userId) return;
+  if (on) {
+    db.insert(favorites)
+      .values({ userId, recipeId })
+      .onConflictDoNothing()
+      .run();
+    return;
+  }
+  db.delete(favorites)
+    .where(and(eq(favorites.userId, userId), eq(favorites.recipeId, recipeId)))
+    .run();
+};
+
 export const createRecipe = (input: RecipeInput, ownerId: string | null) => {
   const id = crypto.randomUUID();
   writeRecipe(id, input, new Date(), ownerId);
+  if (ownerId) setFavorite(ownerId, id, input.favorite);
   return getRecipe(id, ownerId ?? "");
 };
 
@@ -403,6 +431,7 @@ export const updateRecipe = (
   const current = db.select().from(recipes).where(eq(recipes.id, id)).get();
   if (!current || (!asAdmin && !canEdit(current, viewerId))) return null;
   writeRecipe(id, input, current.createdAt, current.ownerId);
+  setFavorite(viewerId, id, input.favorite);
   if (current.image && current.image !== input.image && !uploadInUse(current.image))
     removeUpload(current.image);
   return getRecipe(id, viewerId);
@@ -422,8 +451,8 @@ export const deleteRecipe = (id: string, viewerId: string, asAdmin = false) => {
 export const toggleFavorite = (id: string, viewerId: string) => {
   const current = db.select().from(recipes).where(eq(recipes.id, id)).get();
   if (!current || !canView(current, viewerId)) return null;
-  const favorite = !current.favorite;
-  db.update(recipes).set({ favorite }).where(eq(recipes.id, id)).run();
+  const favorite = !favoriteIds(viewerId).has(id);
+  setFavorite(viewerId, id, favorite);
   return { favorite };
 };
 

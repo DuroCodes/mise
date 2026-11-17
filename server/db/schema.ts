@@ -20,7 +20,6 @@ export const recipes = sqliteTable(
     prepMinutes: integer("prep_minutes"),
     cookMinutes: integer("cook_minutes"),
     servings: integer("servings"),
-    favorite: integer("favorite", { mode: "boolean" }).notNull().default(false),
     visibility: text("visibility").notNull().default("public"),
     shareToken: text("share_token"),
     ownerId: text("owner_id").references((): AnySQLiteColumn => user.id, {
@@ -47,6 +46,22 @@ export const ratings = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.recipeId, table.userId] }),
     index("ratings_user_idx").on(table.userId),
+  ]
+);
+
+export const favorites = sqliteTable(
+  "favorites",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references((): AnySQLiteColumn => user.id, { onDelete: "cascade" }),
+    recipeId: text("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.recipeId] }),
+    index("favorites_recipe_idx").on(table.recipeId),
   ]
 );
 
