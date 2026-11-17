@@ -98,6 +98,14 @@ const plain = (value: unknown) => {
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
+/** Bullets and "2. " prefixes that some sites leave on each line. */
+const listMarker = (value: string) =>
+  value
+    .replace(/^[\u2022\u2023\u25E6\u2043\u2219\u00B7•·▪▫‣⁃]\s*/, "")
+    .replace(/^[-*–—]\s+/, "")
+    .replace(/^\d+[.)]\s+/, "")
+    .trim();
+
 const unitLength = (words: string[]) => {
   const two = unitKey(words.slice(0, 2).join(" "));
   if (words.length >= 2 && units.has(two)) return 2;
@@ -163,7 +171,7 @@ const withoutGroups = (value: string) => {
 };
 
 export const parseIngredientLine = (raw: string): Ingredient | null => {
-  let text = plain(raw);
+  let text = listMarker(plain(raw));
   if (!text || text.endsWith(":")) return null;
 
   const notes: string[] = [];
@@ -173,7 +181,7 @@ export const parseIngredientLine = (raw: string): Ingredient | null => {
     notes.push(trailing.note);
   }
   const grouped = withoutGroups(text);
-  text = grouped.rest;
+  text = grouped.rest.replace(/\s+,/g, ",");
   notes.push(...grouped.notes);
 
   const comma = text.match(/^(.*\S),\s+([^,]+)$/);
@@ -284,7 +292,7 @@ const stepsOf = (value: unknown) => {
   const visit = (node: unknown, section: string) => {
     if (!node) return;
     if (typeof node === "string") {
-      const text = plain(node);
+      const text = listMarker(plain(node));
       if (text) steps.push(section ? `${section}: ${text}` : text);
       return;
     }
@@ -303,7 +311,7 @@ const stepsOf = (value: unknown) => {
       return;
     }
     if (typeof record.text === "string") {
-      const text = plain(record.text);
+      const text = listMarker(plain(record.text));
       if (text)
         steps.push(
           section && !/^instructions?$/i.test(section)
