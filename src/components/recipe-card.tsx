@@ -93,24 +93,22 @@ function RecipeCard({
           ))}
         </div>
       )}
-      {recipe.canEdit && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          className="absolute top-2 right-2 bg-background/90"
-          aria-pressed={recipe.favorite}
-          aria-label={
-            recipe.favorite
-              ? `Remove ${recipe.title} from favorites`
-              : `Favorite ${recipe.title}`
-          }
-          disabled={pending}
-          onClick={toggle}
-        >
-          <HeartMark filled={recipe.favorite} />
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="absolute top-2 right-2 z-10 bg-background/90"
+        aria-pressed={recipe.favorite}
+        aria-label={
+          recipe.favorite
+            ? `Remove ${recipe.title} from favorites`
+            : `Favorite ${recipe.title}`
+        }
+        disabled={pending}
+        onClick={toggle}
+      >
+        <HeartMark filled={recipe.favorite} />
+      </Button>
     </article>
   );
 }

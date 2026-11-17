@@ -421,7 +421,7 @@ export const deleteRecipe = (id: string, viewerId: string, asAdmin = false) => {
 
 export const toggleFavorite = (id: string, viewerId: string) => {
   const current = db.select().from(recipes).where(eq(recipes.id, id)).get();
-  if (!current || !canEdit(current, viewerId)) return null;
+  if (!current || !canView(current, viewerId)) return null;
   const favorite = !current.favorite;
   db.update(recipes).set({ favorite }).where(eq(recipes.id, id)).run();
   return { favorite };
