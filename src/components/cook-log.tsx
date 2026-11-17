@@ -1,6 +1,7 @@
 import { ChefHatIcon, TrashIcon } from "lucide-react";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
+import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -159,7 +160,10 @@ function CookLog({
           {entries.map((entry) => (
             <li
               key={entry.id}
-              className="flex items-start gap-3 rounded-xl bg-card p-3 text-sm ring-1 ring-foreground/10"
+              className={cn(
+                "flex gap-3 rounded-xl bg-card px-3 text-sm ring-1 ring-foreground/10",
+                entry.note ? "items-start py-3" : "items-center py-2"
+              )}
             >
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="text-muted-foreground">
