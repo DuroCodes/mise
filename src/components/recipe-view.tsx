@@ -164,18 +164,23 @@ function RecipeView({
     >
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 flex-1 text-3xl font-medium tracking-tight text-balance">
-            {recipe.title}
-            {recipe.visibility === "private" && (
-              <>
-                <LockIcon
-                  className="ml-2 inline-block size-5 -translate-y-0.5 text-muted-foreground print:hidden"
-                  aria-hidden="true"
-                />
-                <span className="sr-only">Private</span>
-              </>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-3xl font-medium tracking-tight text-balance">
+              {recipe.title}
+              {recipe.visibility === "private" && (
+                <>
+                  <LockIcon
+                    className="ml-2 inline-block size-5 -translate-y-0.5 text-muted-foreground print:hidden"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">Private</span>
+                </>
+              )}
+            </h1>
+            {byline && (
+              <p className="mt-1 text-sm text-muted-foreground">{byline}</p>
             )}
-          </h1>
+          </div>
           {actions && (
             <div className="flex shrink-0 items-center gap-1 print:hidden">
               {actions}
@@ -196,20 +201,12 @@ function RecipeView({
             {recipe.description}
           </p>
         )}
-        {(meta.length > 0 || recipe.sourceUrl || byline) && (
+        {(meta.length > 0 || recipe.sourceUrl) && (
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
             {meta.length > 0 && <span>{meta.join(" · ")}</span>}
-            {byline && (
-              <>
-                {meta.length > 0 && <span aria-hidden="true">·</span>}
-                <span>{byline}</span>
-              </>
-            )}
             {recipe.sourceUrl && (
               <>
-                {(meta.length > 0 || byline) && (
-                  <span aria-hidden="true">·</span>
-                )}
+                {meta.length > 0 && <span aria-hidden="true">·</span>}
                 <a
                   href={recipe.sourceUrl}
                   target="_blank"
