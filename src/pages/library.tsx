@@ -1,4 +1,4 @@
-import { BookOpenIcon, SearchIcon } from "lucide-react";
+import { ArrowDownUpIcon, BookOpenIcon, SearchIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -154,8 +154,8 @@ function LibraryPage() {
                 : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-full max-w-md">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1 sm:max-w-md">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -171,8 +171,14 @@ function LibraryPage() {
               setFilter({ sort: value === "updated" ? null : value })
             }
           >
-            <SelectTrigger aria-label="Sort recipes">
-              <SelectValue />
+            <SelectTrigger
+              aria-label="Sort recipes"
+              className="size-8 shrink-0 justify-center px-0 sm:w-fit sm:justify-between sm:px-2.5 max-sm:[&_[data-slot=select-icon]]:hidden"
+            >
+              <ArrowDownUpIcon className="sm:hidden" aria-hidden="true" />
+              <span className="max-sm:sr-only">
+                <SelectValue />
+              </span>
             </SelectTrigger>
             <SelectContent>
               {sorts.map((option) => (
@@ -236,9 +242,15 @@ function LibraryPage() {
           className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10"
         >
           {filtering ? (
-            <SearchIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+            <SearchIcon
+              className="mx-auto size-6 text-muted-foreground"
+              aria-hidden="true"
+            />
           ) : (
-            <BookOpenIcon className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+            <BookOpenIcon
+              className="mx-auto size-6 text-muted-foreground"
+              aria-hidden="true"
+            />
           )}
           <h2 className="text-base font-medium">
             {filtering ? "Nothing matches" : "No recipes yet"}
