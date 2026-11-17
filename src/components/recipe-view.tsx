@@ -1,6 +1,7 @@
 import { CarrotIcon, ChevronDownIcon, ExternalLinkIcon, ListOrderedIcon, LockIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { cn } from "cn";
 import { StepText } from "@/components/step-text";
 import { Badge } from "@/components/ui/badge";
@@ -168,8 +169,8 @@ function RecipeView({
         {recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 print:hidden">
             {recipe.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
+              <Badge key={tag} variant="secondary" asChild>
+                <Link to={`/?tag=${encodeURIComponent(tag)}`}>{tag}</Link>
               </Badge>
             ))}
           </div>

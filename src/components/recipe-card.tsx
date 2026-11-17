@@ -49,7 +49,9 @@ function RecipeCard({
         ) : (
           <div className="aspect-[4/3] w-full bg-muted" />
         )}
-        <div className="flex flex-1 flex-col gap-3 p-4">
+        <div
+          className={`flex flex-1 flex-col gap-3 p-4 ${recipe.tags.length > 0 ? "pb-0" : ""}`}
+        >
           <div className="min-w-0 space-y-1 pr-8">
             <h2 className="flex items-center gap-1.5 text-base font-medium tracking-tight">
               <span className="min-w-0 truncate">{recipe.title}</span>
@@ -63,31 +65,34 @@ function RecipeCard({
                 </span>
               )}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {[minutes, recipe.servings ? `${recipe.servings} servings` : null]
-                .filter(Boolean)
-                .join(" · ") || "No time set"}
+            <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+              <span>
+                {[minutes, recipe.servings ? `${recipe.servings} servings` : null]
+                  .filter(Boolean)
+                  .join(" · ") || "No time set"}
+              </span>
+              {recipe.rating.average !== null && (
+                <span className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">·</span>
+                  <Stars value={recipe.rating.average} />
+                  <span className="sr-only">Rated</span>
+                  {recipe.rating.average.toFixed(1)}
+                  <span className="sr-only">out of 5</span>
+                </span>
+              )}
             </p>
-            {recipe.rating.average !== null && (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Stars value={recipe.rating.average} />
-                <span className="sr-only">Rated</span>
-                {recipe.rating.average.toFixed(1)}
-                <span className="sr-only">out of 5</span>
-              </p>
-            )}
           </div>
-          {recipe.tags.length > 0 && (
-            <div className="mt-auto flex flex-wrap gap-1.5">
-              {recipe.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
       </Link>
+      {recipe.tags.length > 0 && (
+        <div className="mt-auto flex flex-wrap gap-1.5 px-4 pt-3 pb-4">
+          {recipe.tags.map((tag) => (
+            <Badge key={tag} variant="secondary" asChild>
+              <Link to={`/?tag=${encodeURIComponent(tag)}`}>{tag}</Link>
+            </Badge>
+          ))}
+        </div>
+      )}
       {recipe.canEdit && (
         <Button
           type="button"
