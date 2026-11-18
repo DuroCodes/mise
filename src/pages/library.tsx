@@ -17,6 +17,7 @@ import { totalMinutes } from "@/lib/format";
 import { easeIn, easeOut } from "@/lib/motion";
 import { useTitle } from "@/lib/use-title";
 import type { Recipe } from "@/shared/recipe";
+import { CardGridSkeleton } from "@/components/ui/skeleton";
 
 const matches = (
   recipe: Recipe,
@@ -233,6 +234,8 @@ function LibraryPage() {
           </Button>
         </div>
       )}
+
+      {recipes === null && !error && <CardGridSkeleton />}
 
       {recipes && shown.length === 0 && (
         <motion.div

@@ -61,6 +61,7 @@ import {
   type Store,
   type StoreSection,
 } from "@/shared/stores";
+import { ListSkeleton } from "@/components/ui/skeleton";
 
 type Grouping = "aisle" | "recipe";
 type Group = { name: string; items: ShoppingItem[] };
@@ -633,6 +634,10 @@ function ShoppingPage() {
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
+      )}
+
+      {items === null && !error && (
+        <ListSkeleton label="Loading your list" rows={6} />
       )}
 
       {items && total === 0 && (

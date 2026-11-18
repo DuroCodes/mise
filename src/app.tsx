@@ -9,7 +9,7 @@ import {
 } from "react-router";
 import { ThemeProvider } from "next-themes";
 import { AppHeader, BottomNav } from "@/components/app-header";
-import { RecipePlaceholder } from "@/components/recipe-placeholder";
+import { AppSkeleton } from "@/components/app-skeleton";
 import { TimerProvider } from "@/components/timer-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { currentAccount, getFeatures, type Account } from "@/lib/api";
@@ -92,7 +92,7 @@ function SignedInApp() {
     };
   }, [signedIn, featuresVersion]);
 
-  if (session.isPending) return <RecipePlaceholder />;
+  if (session.isPending) return <AppSkeleton path={location.pathname} />;
   if (!signedIn || failed) {
     const back = `${location.pathname}${location.search}`;
     return (
@@ -102,7 +102,7 @@ function SignedInApp() {
       />
     );
   }
-  if (!account) return <RecipePlaceholder />;
+  if (!account) return <AppSkeleton path={location.pathname} />;
 
   const hideTabs = fullScreen.test(location.pathname);
   const cooking = /^\/recipes\/[^/]+\/cook\/?$/.test(location.pathname);

@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import { useTitle } from "@/lib/use-title";
 import { NotFoundPage } from "@/pages/not-found";
+import { CardGridSkeleton, Skeleton } from "@/components/ui/skeleton";
 
 function CollectionForm({
   open,
@@ -150,6 +151,14 @@ function CollectionsPage() {
         </Button>
       </div>
 
+      {collections === null && (
+        <CardGridSkeleton
+          count={3}
+          label="Loading collections"
+          media="aspect-[2/1]"
+        />
+      )}
+
       {collections && collections.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <FolderIcon
@@ -254,7 +263,16 @@ function CollectionPage() {
   }, [id]);
 
   if (missing) return <NotFoundPage />;
-  if (!collection) return null;
+  if (!collection)
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-8 w-48 max-w-full" />
+        </div>
+        <CardGridSkeleton count={3} />
+      </div>
+    );
 
   const remove = async (recipeId: string) => {
     const result = await removeFromCollection(collection.id, recipeId);

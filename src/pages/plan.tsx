@@ -57,6 +57,7 @@ import {
   type PlanEntry,
 } from "@/lib/api";
 import { useSession } from "@/lib/session-context";
+import { LinesSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { useTitle } from "@/lib/use-title";
 import {
   addDays,
@@ -177,6 +178,7 @@ function EntryCard({
 function DayRow({
   day,
   entries,
+  loading,
   today,
   onAdd,
   onSlot,
@@ -184,6 +186,7 @@ function DayRow({
 }: {
   day: string;
   entries: PlanEntry[];
+  loading: boolean;
   today: boolean;
   onAdd: () => void;
   onSlot: (entry: PlanEntry, slot: MealSlot) => void;
@@ -222,7 +225,9 @@ function DayRow({
           Add
         </Button>
       </div>
-      {entries.length === 0 ? (
+      {loading ? (
+        <Skeleton className="h-15 sm:w-[calc(50%-0.25rem)]" />
+      ) : entries.length === 0 ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
           Nothing planned.
@@ -255,7 +260,7 @@ function PlanPage() {
   const end = days[6] ?? start;
 
   const [entries, setEntries] = useState<PlanEntry[] | null>(null);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[] | null>(null);
   const [query, setQuery] = useState("");
   const [picking, setPicking] = useState<string | null>(null);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
@@ -290,10 +295,15 @@ function PlanPage() {
   useEffect(() => {
     let active = true;
     listRecipes().then((result) => {
-      if (active && result.ok)
+      if (!active) return;
+      if (result.ok)
         setRecipes(
           [...result.value].sort((a, b) => a.title.localeCompare(b.title))
         );
+      else {
+        toast.error(result.error);
+        setRecipes([]);
+      }
     });
     return () => {
       active = false;
@@ -390,11 +400,11 @@ function PlanPage() {
     setParams(next, { replace: true });
   };
 
-  const shown = recipes.filter((recipe) =>
+  const shown = (recipes ?? []).filter((recipe) =>
     recipe.title.toLowerCase().includes(query.trim().toLowerCase())
   );
   const dragged = dragging?.startsWith("recipe:")
-    ? recipes.find((recipe) => `recipe:${recipe.id}` === dragging)?.title
+    ? recipes?.find((recipe) => `recipe:${recipe.id}` === dragging)?.title
     : dragging?.startsWith("entry:")
       ? entries?.find((entry) => `entry:${entry.id}` === dragging)?.title
       : null;
@@ -454,7 +464,7 @@ function PlanPage() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={!entries || recipes.length === 0}
+                disabled={!entries || !recipes || recipes.length === 0}
                 onClick={() => setPlanning(true)}
               >
                 <SparklesIcon data-icon="inline-start" />
@@ -505,16 +515,22 @@ function PlanPage() {
                     onChange={(event) => setQuery(event.target.value)}
                   />
                 </div>
-                <ul className="max-h-[calc(100svh-16rem)] space-y-1.5 overflow-y-auto">
-                  {shown.map((recipe) => (
-                    <DraggableRecipe key={recipe.id} recipe={recipe} />
-                  ))}
-                  {shown.length === 0 && (
-                    <li className="text-xs text-muted-foreground">
-                      No recipes match.
-                    </li>
-                  )}
-                </ul>
+                {recipes === null ? (
+                  <LinesSkeleton label="Loading recipes" line="h-8.5" />
+                ) : (
+                  <ul className="max-h-[calc(100svh-16rem)] space-y-1.5 overflow-y-auto">
+                    {shown.map((recipe) => (
+                      <DraggableRecipe key={recipe.id} recipe={recipe} />
+                    ))}
+                    {shown.length === 0 && (
+                      <li className="text-xs text-muted-foreground">
+                        {recipes.length === 0
+                          ? "No recipes yet."
+                          : "No recipes match."}
+                      </li>
+                    )}
+                  </ul>
+                )}
               </div>
             </div>
           </aside>
@@ -526,6 +542,7 @@ function PlanPage() {
                 day={day}
                 today={day === today}
                 entries={(entries ?? []).filter((entry) => entry.day === day)}
+                loading={entries === null}
                 onAdd={() => {
                   setQuery("");
                   setPickedDay(day);
@@ -598,39 +615,45 @@ function PlanPage() {
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
-          <ul className="max-h-80 space-y-1 overflow-y-auto">
-            {shown.map((recipe) => (
-              <li key={recipe.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring"
-                  onClick={() => {
-                    if (picking) void add(picking, recipe, pickSlot);
-                    setPicking(null);
-                  }}
-                >
-                  {recipe.image ? (
-                    <img
-                      src={recipe.image}
-                      alt=""
-                      className="size-8 shrink-0 rounded-md object-cover"
-                    />
-                  ) : (
-                    <span
-                      className="size-8 shrink-0 rounded-md bg-muted"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span className="min-w-0 truncate">{recipe.title}</span>
-                </button>
-              </li>
-            ))}
-            {shown.length === 0 && (
-              <li className="px-2 py-2 text-sm text-muted-foreground">
-                No recipes match.
-              </li>
-            )}
-          </ul>
+          {recipes === null ? (
+            <LinesSkeleton label="Loading recipes" rows={5} line="h-12" />
+          ) : (
+            <ul className="max-h-80 space-y-1 overflow-y-auto">
+              {shown.map((recipe) => (
+                <li key={recipe.id}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring"
+                    onClick={() => {
+                      if (picking) void add(picking, recipe, pickSlot);
+                      setPicking(null);
+                    }}
+                  >
+                    {recipe.image ? (
+                      <img
+                        src={recipe.image}
+                        alt=""
+                        className="size-8 shrink-0 rounded-md object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="size-8 shrink-0 rounded-md bg-muted"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className="min-w-0 truncate">{recipe.title}</span>
+                  </button>
+                </li>
+              ))}
+              {shown.length === 0 && (
+                <li className="px-2 py-2 text-sm text-muted-foreground">
+                  {recipes.length === 0
+                    ? "No recipes yet."
+                    : "No recipes match."}
+                </li>
+              )}
+            </ul>
+          )}
         </DialogContent>
       </Dialog>
     </DndContext>

@@ -41,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { createStore, deleteStore, listStores, updateStore } from "@/lib/api";
 import { useTitle } from "@/lib/use-title";
 import { fullLayout, type Store, type StoreSection } from "@/shared/stores";
+import { ListSkeleton } from "@/components/ui/skeleton";
 
 function SectionRow({
   section,
@@ -363,6 +364,8 @@ function StoresPage() {
           Add
         </Button>
       </form>
+
+      {stores === null && <ListSkeleton label="Loading stores" rows={3} />}
 
       {stores && stores.length === 0 && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">

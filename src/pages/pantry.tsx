@@ -42,6 +42,7 @@ import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 import { dayFromKey, localDay, storedMeasure } from "@/lib/view";
 import { aisleFor, aisles } from "@/shared/aisles";
+import { ListSkeleton } from "@/components/ui/skeleton";
 
 const daysUntil = (day: string, today: string) =>
   Math.round(
@@ -739,6 +740,8 @@ function PantryPage() {
           ))}
         </div>
       </div>
+
+      {items === null && <ListSkeleton label="Loading your pantry" />}
 
       {items !== null &&
         (tab === "have" ? (

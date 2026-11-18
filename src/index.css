@@ -217,6 +217,14 @@ select optgroup {
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 dropped the hand cursor on buttons; bring it back for
+     anything clickable that isn't disabled. Utilities like cursor-grab
+     still win because they live in a later layer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     text-rendering: optimizeLegibility;

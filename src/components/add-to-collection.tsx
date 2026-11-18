@@ -20,6 +20,7 @@ import {
   removeFromCollection,
   type CollectionSummary,
 } from "@/lib/api";
+import { LinesSkeleton } from "@/components/ui/skeleton";
 
 function AddToCollection({ recipeId }: { recipeId: string }) {
   const [open, setOpen] = useState(false);
@@ -99,7 +100,7 @@ function AddToCollection({ recipeId }: { recipeId: string }) {
           </DialogDescription>
         </DialogHeader>
         {collections === null ? (
-          <p className="text-sm text-muted-foreground">Loading</p>
+          <LinesSkeleton label="Loading collections" rows={3} line="h-9" />
         ) : collections.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <FolderIcon className="size-4 shrink-0" aria-hidden="true" />

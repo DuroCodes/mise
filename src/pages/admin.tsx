@@ -42,6 +42,18 @@ import {
 } from "@/lib/api";
 import { match } from "@/lib/result";
 import { useTitle } from "@/lib/use-title";
+import { Skeleton } from "@/components/ui/skeleton";
+
+/** Gray table rows shown while a table's data loads. */
+function SkeletonRows({ rows = 3 }: { rows?: number }) {
+  return Array.from({ length: rows }, (_, index) => (
+    <TableRow key={index} aria-hidden="true">
+      <TableCell colSpan={4}>
+        <Skeleton className="h-6 w-full" />
+      </TableCell>
+    </TableRow>
+  ));
+}
 
 function AdminPage({ selfId }: { selfId: string }) {
   const [people, setPeople] = useState<Account[] | null>(null);
@@ -207,6 +219,7 @@ function AdminPage({ selfId }: { selfId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {people === null && <SkeletonRows />}
             {(people ?? []).map((person) => (
               <TableRow key={person.id}>
                 <TableCell className="font-medium">{person.name}</TableCell>
@@ -278,6 +291,7 @@ function AdminPage({ selfId }: { selfId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {recipes === null && <SkeletonRows />}
             {(recipes ?? []).map((recipe) => (
               <TableRow key={recipe.id}>
                 <TableCell className="font-medium">

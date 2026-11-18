@@ -42,6 +42,7 @@ import { getUserSettings, updateUserSettings } from "@/lib/api";
 import { bookmarkletFor } from "@/lib/bookmarklet";
 import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Section({
   icon,
@@ -234,7 +235,11 @@ function NotificationsSection() {
             : "This browser can't show notifications."}
         </p>
       ) : loading ? (
-        <p className="text-sm text-muted-foreground">Checking…</p>
+        <div role="status" className="space-y-2">
+          <span className="sr-only">Checking</span>
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-8 w-28" />
+        </div>
       ) : prefs ? (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
@@ -402,7 +407,11 @@ function AiSection() {
       title="AI features"
     >
       {enabled === null ? (
-        <p className="text-sm text-muted-foreground">Checking…</p>
+        <div role="status" className="space-y-2">
+          <span className="sr-only">Checking</span>
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-8 w-28" />
+        </div>
       ) : enabled ? (
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
