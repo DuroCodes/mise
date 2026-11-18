@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { HeartMark } from "@/components/heart-mark";
+import { Stars } from "@/components/star-rating";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { setFavorite } from "@/lib/api";
@@ -48,7 +49,9 @@ function RecipeCard({
         ) : (
           <div className="aspect-[4/3] w-full bg-muted" />
         )}
-        <div className="flex flex-1 flex-col gap-3 p-4">
+        <div
+          className={`flex flex-1 flex-col gap-3 p-4 ${recipe.tags.length > 0 ? "pb-0" : ""}`}
+        >
           <div className="min-w-0 space-y-1 pr-8">
             <h2 className="flex items-center gap-1.5 text-base font-medium tracking-tight">
               <span className="min-w-0 truncate">{recipe.title}</span>
@@ -62,41 +65,53 @@ function RecipeCard({
                 </span>
               )}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {[minutes, recipe.servings ? `${recipe.servings} servings` : null]
-                .filter(Boolean)
-                .join(" · ") || "No time set"}
+            <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+              <span>
+                {[
+                  minutes,
+                  recipe.servings ? `${recipe.servings} servings` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "No time set"}
+              </span>
+              {recipe.rating.average !== null && (
+                <span className="inline-flex items-center gap-1">
+                  <span aria-hidden="true">·</span>
+                  <Stars value={recipe.rating.average} />
+                  <span className="sr-only">Rated</span>
+                  {recipe.rating.average.toFixed(1)}
+                  <span className="sr-only">out of 5</span>
+                </span>
+              )}
             </p>
           </div>
-          {recipe.tags.length > 0 && (
-            <div className="mt-auto flex flex-wrap gap-1.5">
-              {recipe.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
       </Link>
-      {recipe.canEdit && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="icon"
-          className="absolute top-2 right-2 bg-background/90"
-          aria-pressed={recipe.favorite}
-          aria-label={
-            recipe.favorite
-              ? `Remove ${recipe.title} from favorites`
-              : `Favorite ${recipe.title}`
-          }
-          disabled={pending}
-          onClick={toggle}
-        >
-          <HeartMark filled={recipe.favorite} />
-        </Button>
+      {recipe.tags.length > 0 && (
+        <div className="mt-auto flex flex-wrap gap-1.5 px-4 pt-3 pb-4">
+          {recipe.tags.map((tag) => (
+            <Badge key={tag} variant="secondary" asChild>
+              <Link to={`/?tag=${encodeURIComponent(tag)}`}>{tag}</Link>
+            </Badge>
+          ))}
+        </div>
       )}
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="absolute top-2 right-2 z-10 bg-background/90"
+        aria-pressed={recipe.favorite}
+        aria-label={
+          recipe.favorite
+            ? `Remove ${recipe.title} from favorites`
+            : `Favorite ${recipe.title}`
+        }
+        disabled={pending}
+        onClick={toggle}
+      >
+        <HeartMark filled={recipe.favorite} />
+      </Button>
     </article>
   );
 }

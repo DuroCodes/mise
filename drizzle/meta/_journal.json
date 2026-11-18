@@ -22,6 +22,55 @@
       "when": 1794780000000,
       "tag": "0002_recipe_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794790000000,
+      "tag": "0003_kitchen_features",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794800000000,
+      "tag": "0004_invites",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794810000000,
+      "tag": "0005_stores",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794820000000,
+      "tag": "0006_pantry",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794830000000,
+      "tag": "0007_push",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794840000000,
+      "tag": "0008_favorites",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794850000000,
+      "tag": "0009_user_settings",
+      "breakpoints": true
     }
   ]
 }

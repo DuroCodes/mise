@@ -3,7 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *, .espresso *, .herb *));
 
 @theme inline {
   --font-heading: var(--font-sans);
@@ -85,7 +85,8 @@
   --sidebar-ring: oklch(0.62 0.1 60);
 }
 
-.dark {
+/* Warm dark (the original dark theme). */
+.espresso {
   --background: oklch(0.18 0.014 55);
   --foreground: oklch(0.96 0.012 85);
   --card: oklch(0.23 0.016 55);
@@ -120,24 +121,154 @@
   --sidebar-ring: oklch(0.72 0.08 70);
 }
 
+/* Neutral dark: true greys on near-black, amber accent. */
+.dark {
+  --background: oklch(0.155 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.225 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.93 0 0);
+  --primary-foreground: oklch(0.2 0 0);
+  --secondary: oklch(0.27 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.27 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.29 0 0);
+  --accent-foreground: oklch(0.96 0 0);
+  --destructive: oklch(0.7 0.19 25);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.6 0 0);
+  --brand: oklch(0.8 0.13 75);
+  --chart-1: oklch(0.8 0.13 75);
+  --chart-2: oklch(0.7 0.08 60);
+  --chart-3: oklch(0.6 0 0);
+  --chart-4: oklch(0.85 0 0);
+  --chart-5: oklch(0.45 0 0);
+  --sidebar: oklch(0.18 0 0);
+  --sidebar-foreground: oklch(0.96 0 0);
+  --sidebar-primary: oklch(0.8 0.13 75);
+  --sidebar-primary-foreground: oklch(0.2 0 0);
+  --sidebar-accent: oklch(0.29 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.6 0 0);
+}
+
+/* Deep green, so it doesn't read as another brown or grey dark. */
+.herb {
+  --background: oklch(0.2 0.03 150);
+  --foreground: oklch(0.96 0.02 140);
+  --card: oklch(0.25 0.032 150);
+  --card-foreground: oklch(0.96 0.02 140);
+  --popover: oklch(0.25 0.032 150);
+  --popover-foreground: oklch(0.96 0.02 140);
+  --primary: oklch(0.93 0.03 140);
+  --primary-foreground: oklch(0.22 0.04 150);
+  --secondary: oklch(0.3 0.03 150);
+  --secondary-foreground: oklch(0.96 0.02 140);
+  --muted: oklch(0.3 0.03 150);
+  --muted-foreground: oklch(0.75 0.03 145);
+  --accent: oklch(0.32 0.04 150);
+  --accent-foreground: oklch(0.96 0.02 140);
+  --destructive: oklch(0.7 0.16 25);
+  --border: oklch(0.85 0.04 145 / 14%);
+  --input: oklch(0.85 0.04 145 / 18%);
+  --ring: oklch(0.7 0.08 145);
+  --brand: oklch(0.78 0.14 145);
+  --chart-1: oklch(0.78 0.14 145);
+  --chart-2: oklch(0.68 0.08 150);
+  --chart-3: oklch(0.5 0.04 150);
+  --chart-4: oklch(0.85 0.04 140);
+  --chart-5: oklch(0.38 0.03 150);
+  --sidebar: oklch(0.18 0.03 150);
+  --sidebar-foreground: oklch(0.96 0.02 140);
+  --sidebar-primary: oklch(0.78 0.14 145);
+  --sidebar-primary-foreground: oklch(0.2 0.04 150);
+  --sidebar-accent: oklch(0.32 0.04 150);
+  --sidebar-accent-foreground: oklch(0.96 0.02 140);
+  --sidebar-border: oklch(0.85 0.04 145 / 14%);
+  --sidebar-ring: oklch(0.7 0.08 145);
+}
+
+/* Tell the browser which way each theme leans, so built-in controls
+   (select menus, date pickers, scrollbars) are drawn to match. */
+:root,
+.light {
+  color-scheme: light;
+}
+.dark,
+.espresso,
+.herb {
+  color-scheme: dark;
+}
+select option,
+select optgroup {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
     @apply font-sans;
-    overflow-x: clip;
+  }
+  /* Tailwind v4 dropped the hand cursor on buttons; bring it back for
+     anything clickable that isn't disabled. Utilities like cursor-grab
+     still win because they live in a later layer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    overflow-x: clip;
     text-rendering: optimizeLegibility;
+  }
+  /* Clip sideways overflow on the app, not on body. overflow on body
+     makes position:fixed menus (the theme menu) stick to the page top
+     instead of the header once you scroll. */
+  #root {
+    overflow-x: clip;
   }
   h1,
   h2,
   h3 {
     font-style: normal;
     overflow-wrap: anywhere;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm 16mm;
+  }
+  :root,
+  .dark,
+  .espresso,
+  .herb {
+    color-scheme: light;
+    --background: #fff;
+    --foreground: #111;
+    --card: #fff;
+    --muted: #f2f2f2;
+    --muted-foreground: #555;
+    --border: #ccc;
+    --brand: #111;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }
 

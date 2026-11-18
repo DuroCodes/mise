@@ -4,6 +4,45 @@ import { parseIngredientLine, parseRecipeHtml } from "./recipe-page";
 const page = (json: unknown) =>
   `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify(json)}</script></head></html>`;
 
+describe("parseRecipeHtml on real-world markup", () => {
+  const recipe = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: "Soup",
+    description: 'A "quick" soup',
+    recipeIngredient: ["2 cups broth"],
+    recipeInstructions: [{ "@type": "HowToStep", text: "Heat." }],
+  };
+
+  test("keeps escaped quotes inside JSON strings", () => {
+    // JSON.stringify escapes the inner quotes; pages often also contain &quot;.
+    const json = JSON.stringify({
+      ...recipe,
+      description: "Say &quot;hi&quot; to soup",
+    });
+    const result = parseRecipeHtml(
+      `<script type="application/ld+json">${json}</script>`
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  test("reads unquoted type attributes from minified pages", () => {
+    const result = parseRecipeHtml(
+      `<html><head><script type=application/ld+json class=yoast-schema-graph>${JSON.stringify(recipe)}</script></head></html>`
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.recipe.title).toBe("Soup");
+  });
+
+  test("still decodes entity-encoded JSON when that's how the page ships it", () => {
+    const encoded = JSON.stringify(recipe).replace(/"/g, "&quot;");
+    const result = parseRecipeHtml(
+      `<script type="application/ld+json">${encoded}</script>`
+    );
+    expect(result.ok).toBe(true);
+  });
+});
+
 describe("parseRecipeHtml", () => {
   test("reads a schema.org recipe", () => {
     const result = parseRecipeHtml(
@@ -60,6 +99,68 @@ describe("parseRecipeHtml", () => {
 
   test("rejects a page without a recipe", () => {
     expect(parseRecipeHtml("<html><title>Home</title></html>").ok).toBe(false);
+  });
+
+  test("drops bullets and step numbers that sites leave on each line", () => {
+    expect(parseIngredientLine("• 1 tbsp grass-fed butter")).toEqual({
+      amount: "1",
+      unit: "tbsp",
+      name: "grass-fed butter",
+      note: "",
+    });
+    expect(parseIngredientLine("• 1.5 lbs chicken breasts")).toEqual({
+      amount: "1.5",
+      unit: "lbs",
+      name: "chicken breasts",
+      note: "",
+    });
+    expect(parseIngredientLine("• 1/2 cup heavy cream")).toEqual({
+      amount: "1/2",
+      unit: "cup",
+      name: "heavy cream",
+      note: "",
+    });
+    expect(parseIngredientLine("• Sea salt and black pepper to taste")).toEqual(
+      {
+        amount: "",
+        unit: "",
+        name: "Sea salt and black pepper to taste",
+        note: "",
+      }
+    );
+
+    const result = parseRecipeHtml(
+      page({
+        "@type": "Recipe",
+        name: "One Pan Creamy Spinach Chicken",
+        recipeIngredient: [
+          "• 1 tbsp grass-fed butter",
+          "• 1/4 tsp red pepper flakes (optional)",
+        ],
+        recipeInstructions: [
+          {
+            "@type": "HowToStep",
+            text: "Season & Sear: Season the chicken.",
+          },
+          {
+            "@type": "HowToStep",
+            text: "2. Sauté Garlic: Cook the garlic for 1 minute.",
+          },
+        ],
+      })
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.recipe.ingredients[1]).toEqual({
+      amount: "1/4",
+      unit: "tsp",
+      name: "red pepper flakes",
+      note: "optional",
+    });
+    expect(result.recipe.instructions.map((step) => step.text)).toEqual([
+      "Season & Sear: Season the chicken.",
+      "Sauté Garlic: Cook the garlic for 1 minute.",
+    ]);
   });
 
   test("splits a note from an ingredient", () => {

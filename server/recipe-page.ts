@@ -1,4 +1,4 @@
-import type { Ingredient, RecipeInput } from "../src/shared/recipe";
+import type { Ingredient } from "../src/shared/recipe";
 import { recipeInput } from "../src/shared/recipe";
 
 const units = new Set([
@@ -98,6 +98,14 @@ const plain = (value: unknown) => {
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
+/** Bullets and "2. " prefixes that some sites leave on each line. */
+const listMarker = (value: string) =>
+  value
+    .replace(/^[\u2022\u2023\u25E6\u2043\u2219\u00B7•·▪▫‣⁃]\s*/, "")
+    .replace(/^[-*–—]\s+/, "")
+    .replace(/^\d+[.)]\s+/, "")
+    .trim();
+
 const unitLength = (words: string[]) => {
   const two = unitKey(words.slice(0, 2).join(" "));
   if (words.length >= 2 && units.has(two)) return 2;
@@ -162,8 +170,8 @@ const withoutGroups = (value: string) => {
   return { rest: rest.replace(/\s+/g, " ").trim(), notes };
 };
 
-export const parseIngredientLine = (raw: string): Ingredient | null => {
-  let text = plain(raw);
+export const parseIngredientLine = (raw: string) => {
+  let text = listMarker(plain(raw));
   if (!text || text.endsWith(":")) return null;
 
   const notes: string[] = [];
@@ -173,7 +181,7 @@ export const parseIngredientLine = (raw: string): Ingredient | null => {
     notes.push(trailing.note);
   }
   const grouped = withoutGroups(text);
-  text = grouped.rest;
+  text = grouped.rest.replace(/\s+,/g, ",");
   notes.push(...grouped.notes);
 
   const comma = text.match(/^(.*\S),\s+([^,]+)$/);
@@ -215,7 +223,7 @@ export const parseIngredientLine = (raw: string): Ingredient | null => {
   };
 };
 
-const minutesOf = (value: unknown) => {
+export const minutesOf = (value: unknown) => {
   if (typeof value === "number" && Number.isFinite(value)) {
     const minutes = Math.round(value);
     return minutes >= 0 && minutes <= 1440 ? minutes : null;
@@ -248,7 +256,7 @@ const servingsOf = (value: unknown) => {
   return servings >= 1 && servings <= 999 ? servings : null;
 };
 
-const imageOf = (value: unknown): string | null => {
+const imageOf = (value: unknown) => {
   const urls: string[] = [];
   const visit = (node: unknown) => {
     if (!node) return;
@@ -284,7 +292,7 @@ const stepsOf = (value: unknown) => {
   const visit = (node: unknown, section: string) => {
     if (!node) return;
     if (typeof node === "string") {
-      const text = plain(node);
+      const text = listMarker(plain(node));
       if (text) steps.push(section ? `${section}: ${text}` : text);
       return;
     }
@@ -303,7 +311,7 @@ const stepsOf = (value: unknown) => {
       return;
     }
     if (typeof record.text === "string") {
-      const text = plain(record.text);
+      const text = listMarker(plain(record.text));
       if (text)
         steps.push(
           section && !/^instructions?$/i.test(section)
@@ -332,7 +340,7 @@ const ingredientLines = (value: unknown) => {
   return lines;
 };
 
-const isRecipe = (value: unknown): value is Record<string, unknown> => {
+export const isRecipe = (value: unknown): value is Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const type = (value as { "@type"?: unknown })["@type"];
   const types = Array.isArray(type) ? type : [type];
@@ -344,7 +352,10 @@ const isRecipe = (value: unknown): value is Record<string, unknown> => {
   );
 };
 
-const collectRecipes = (node: unknown, found: Record<string, unknown>[]) => {
+export const collectRecipes = (
+  node: unknown,
+  found: Record<string, unknown>[]
+) => {
   if (Array.isArray(node)) {
     for (const item of node) collectRecipes(item, found);
     return;
@@ -368,30 +379,35 @@ const pageTitle = (html: string) => {
   return raw.replace(/\s+[-|]\s+.*$/, "").trim();
 };
 
-export const parseRecipeHtml = (
-  html: string
-): { ok: true; recipe: RecipeInput } | { ok: false; error: string } => {
-  const found: Record<string, unknown>[] = [];
-  const pattern =
-    /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
-  for (const match of html.matchAll(pattern)) {
-    try {
-      collectRecipes(JSON.parse(decode(match[1] ?? "").trim()), found);
-    } catch {
-      continue;
+const urlOf = (value: unknown) => {
+  const candidates: unknown[] = Array.isArray(value) ? value : [value];
+  for (const candidate of candidates) {
+    const raw =
+      typeof candidate === "string"
+        ? candidate
+        : candidate && typeof candidate === "object"
+          ? ((candidate as Record<string, unknown>)["@id"] ??
+            (candidate as Record<string, unknown>).url)
+          : null;
+    if (typeof raw === "string" && /^https?:\/\//i.test(raw.trim())) {
+      const trimmed = raw.trim();
+      if (trimmed.length > 2000) continue;
+      try {
+        new URL(trimmed);
+        return trimmed;
+      } catch {
+        continue;
+      }
     }
   }
+  return null;
+};
 
-  const recipe =
-    found.find(
-      (item) =>
-        plain(item.name) && ingredientLines(item.recipeIngredient).length
-    ) ??
-    found.find((item) => plain(item.name)) ??
-    null;
-  if (!recipe)
-    return { ok: false, error: "That page did not include a recipe" };
-
+/** Converts one schema.org Recipe object into mise's recipe shape. */
+export const recipeFromJsonLd = (
+  recipe: Record<string, unknown>,
+  fallbackTitle = ""
+) => {
   const tags: string[] = [];
   addTags(recipe.keywords, tags);
   addTags(recipe.recipeCategory, tags);
@@ -405,18 +421,18 @@ export const parseRecipeHtml = (
   const fromRecipe =
     plain(typeof recipe.headline === "string" ? recipe.headline : "") ||
     plain(recipe.name);
-  const fromPage = pageTitle(html);
   const title =
-    fromPage &&
+    fallbackTitle &&
     fromRecipe &&
-    fromPage.toLowerCase() === fromRecipe.toLowerCase()
-      ? fromPage
-      : fromRecipe || fromPage;
+    fallbackTitle.toLowerCase() === fromRecipe.toLowerCase()
+      ? fallbackTitle
+      : fromRecipe || fallbackTitle;
 
   const parsed = recipeInput.safeParse({
     title: clip(title, 200),
     description: clip(plain(recipe.description), 4000),
     image: imageOf(recipe.image),
+    sourceUrl: urlOf(recipe.url) ?? urlOf(recipe.mainEntityOfPage),
     prepMinutes,
     cookMinutes,
     servings: servingsOf(recipe.recipeYield),
@@ -436,6 +452,41 @@ export const parseRecipeHtml = (
     !parsed.success ||
     (!parsed.data.ingredients.length && !parsed.data.instructions.length)
   )
-    return { ok: false, error: "That page did not include a recipe" };
-  return { ok: true, recipe: parsed.data };
+    return null;
+  return parsed.data;
+};
+
+export const parseRecipeHtml = (html: string) => {
+  const found: Record<string, unknown>[] = [];
+  const pattern =
+    /<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
+  for (const match of html.matchAll(pattern)) {
+    const raw = (match[1] ?? "").trim();
+    // Parse the JSON as published first. Decoding HTML entities up front
+    // turns an escaped &quot; inside a string into a bare quote and breaks
+    // valid JSON, so only fall back to decoding for pages that need it.
+    for (const text of [raw, decode(raw).trim()]) {
+      try {
+        collectRecipes(JSON.parse(text), found);
+        break;
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  const recipe =
+    found.find(
+      (item) =>
+        plain(item.name) && ingredientLines(item.recipeIngredient).length
+    ) ??
+    found.find((item) => plain(item.name)) ??
+    null;
+  if (!recipe)
+    return { ok: false as const, error: "That page did not include a recipe" };
+
+  const converted = recipeFromJsonLd(recipe, pageTitle(html));
+  if (!converted)
+    return { ok: false as const, error: "That page did not include a recipe" };
+  return { ok: true as const, recipe: converted };
 };

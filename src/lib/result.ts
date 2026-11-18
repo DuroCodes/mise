@@ -4,7 +4,7 @@ export type Result<Ok, Err> =
 export const Ok = <Ok>(value: Ok) => ({ ok: true, value }) as const;
 export const Err = <Err>(error: Err) => ({ ok: false, error }) as const;
 
-export const attempt = <T>(fn: () => T): Result<T, unknown> => {
+export const attempt = <T>(fn: () => T) => {
   try {
     return Ok(fn());
   } catch (error) {
