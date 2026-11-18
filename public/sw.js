@@ -1,7 +1,6 @@
 // Mise service worker: makes the app installable and keeps recipes you have
 // opened readable without a connection. Cache names match src/lib/offline.ts.
-// bump the version comment when this file changes so browsers pick it up: v2.
-const SHELL = "mise-shell-v1";
+const SHELL = "mise-shell-v2";
 const API = "mise-api-v1";
 const IMAGES = "mise-images-v1";
 const KEEP = [SHELL, API, IMAGES];

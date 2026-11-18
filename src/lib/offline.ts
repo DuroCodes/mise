@@ -10,8 +10,7 @@ export const clearOfflineData = async () => {
   try {
     if (!("caches" in window)) return;
     await Promise.all([caches.delete(apiCache), caches.delete(imageCache)]);
-  } catch {
-  }
+  } catch {}
 };
 
 export const registerServiceWorker = () => {
@@ -19,7 +18,7 @@ export const registerServiceWorker = () => {
   window.addEventListener("load", () => {
     // the version query skips any copy a CDN cached before sw.js was marked
     // no-cache; bump it only if that ever happens again.
-    navigator.serviceWorker.register("/sw.js?v=2").catch((error: unknown) => {
+    navigator.serviceWorker.register("/sw.js?v=3").catch((error: unknown) => {
       console.error("Service worker registration failed", error);
     });
   });
