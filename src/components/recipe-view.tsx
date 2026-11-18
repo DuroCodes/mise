@@ -177,8 +177,29 @@ function RecipeView({
                 </>
               )}
             </h1>
-            {byline && (
-              <p className="mt-1 text-sm text-muted-foreground">{byline}</p>
+            {(byline || recipe.sourceUrl) && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+                {byline && <span>{byline}</span>}
+                {byline && recipe.sourceUrl && (
+                  <span aria-hidden="true">·</span>
+                )}
+                {recipe.sourceUrl && (
+                  <a
+                    href={recipe.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="inline-flex items-center gap-1 rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring"
+                  >
+                    <span className="print:hidden">View original on </span>
+                    <span className="hidden print:inline">From </span>
+                    {sourceHost(recipe.sourceUrl)}
+                    <ExternalLinkIcon
+                      className="size-3.5 print:hidden"
+                      aria-hidden="true"
+                    />
+                  </a>
+                )}
+              </p>
             )}
           </div>
           {actions && (
@@ -201,29 +222,8 @@ function RecipeView({
             {recipe.description}
           </p>
         )}
-        {(meta.length > 0 || recipe.sourceUrl) && (
-          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
-            {meta.length > 0 && <span>{meta.join(" · ")}</span>}
-            {recipe.sourceUrl && (
-              <>
-                {meta.length > 0 && <span aria-hidden="true">·</span>}
-                <a
-                  href={recipe.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-1 rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring"
-                >
-                  <span className="print:hidden">View original on </span>
-                  <span className="hidden print:inline">From </span>
-                  {sourceHost(recipe.sourceUrl)}
-                  <ExternalLinkIcon
-                    className="size-3.5 print:hidden"
-                    aria-hidden="true"
-                  />
-                </a>
-              </>
-            )}
-          </p>
+        {meta.length > 0 && (
+          <p className="text-sm text-muted-foreground">{meta.join(" · ")}</p>
         )}
         {aside}
         {toolbar && (
