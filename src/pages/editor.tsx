@@ -1,9 +1,11 @@
+import { GlobeIcon, LockIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { HeartMark } from "@/components/heart-mark";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { ImportRecipe } from "@/components/import-recipe";
+import { AiRecipe } from "@/components/ai-recipe";
+import { ImportButton } from "@/components/import-recipe";
 import {
   IngredientList,
   InstructionList,
@@ -28,21 +30,32 @@ import {
   cachedRecipe,
   createRecipe,
   discardUpload,
+  aiRecipeFromUrl,
   getRecipe,
+  importRecipe,
   updateRecipe,
   uploadImage,
 } from "@/lib/api";
+import { receivedKey } from "@/lib/bookmarklet";
+import { sourceHost } from "@/lib/view";
 import { match } from "@/lib/result";
+import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
 import { NotFoundPage } from "@/pages/not-found";
 import { easeOut } from "@/lib/motion";
 import { unitValue } from "@/lib/units";
-import { recipeInput, type Recipe, type RecipeInput } from "@/shared/recipe";
+import {
+  isReservedTag,
+  recipeInput,
+  type Recipe,
+  type RecipeInput,
+} from "@/shared/recipe";
 
 type Draft = {
   title: string;
   description: string;
   image: string;
+  sourceUrl: string;
   prepMinutes: string;
   cookMinutes: string;
   servings: string;
@@ -53,7 +66,7 @@ type Draft = {
   instructions: InstructionDraft[];
 };
 
-const emptyIngredient = (): IngredientDraft => ({
+const emptyIngredient = () => ({
   key: crypto.randomUUID(),
   amount: "",
   unit: "",
@@ -61,15 +74,56 @@ const emptyIngredient = (): IngredientDraft => ({
   note: "",
 });
 
-const draftFrom = (recipe: Recipe | null): Draft => ({
+const draftFromInput = (imported: RecipeInput) => ({
+  title: imported.title,
+  description: imported.description,
+  image: imported.image ?? "",
+  sourceUrl: imported.sourceUrl ?? "",
+  prepMinutes: imported.prepMinutes?.toString() ?? "",
+  cookMinutes: imported.cookMinutes?.toString() ?? "",
+  servings: imported.servings?.toString() ?? "",
+  favorite: false,
+  visibility: "private" as const,
+  tags: imported.tags,
+  ingredients: imported.ingredients.length
+    ? imported.ingredients.map((item) => ({
+        key: crypto.randomUUID(),
+        ...item,
+        unit: unitValue(item.unit),
+      }))
+    : [emptyIngredient()],
+  instructions: imported.instructions.length
+    ? imported.instructions.map((item) => ({
+        key: crypto.randomUUID(),
+        text: item.text,
+      }))
+    : [{ key: crypto.randomUUID(), text: "" }],
+});
+
+/** A recipe handed over by "Send to Mise", used once and then cleared. */
+const receivedDraft = () => {
+  if (new URLSearchParams(window.location.search).get("received") !== "1")
+    return null;
+  try {
+    const raw = sessionStorage.getItem(receivedKey);
+    if (!raw) return null;
+    const parsed = recipeInput.safeParse(JSON.parse(raw));
+    return parsed.success ? draftFromInput(parsed.data) : null;
+  } catch {
+    return null;
+  }
+};
+
+const draftFrom = (recipe: Recipe | null) => ({
   title: recipe?.title ?? "",
   description: recipe?.description ?? "",
   image: recipe?.image ?? "",
+  sourceUrl: recipe?.sourceUrl ?? "",
   prepMinutes: recipe?.prepMinutes?.toString() ?? "",
   cookMinutes: recipe?.cookMinutes?.toString() ?? "",
   servings: recipe?.servings?.toString() ?? "",
   favorite: recipe?.favorite ?? false,
-  visibility: recipe?.visibility ?? "private",
+  visibility: recipe?.visibility ?? ("private" as const),
   tags: recipe?.tags ?? [],
   ingredients: recipe?.ingredients.length
     ? recipe.ingredients.map((item) => ({ key: crypto.randomUUID(), ...item }))
@@ -144,7 +198,11 @@ function CountField({
 function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [draft, setDraft] = useState(() => draftFrom(recipe));
+  const [draft, setDraft] = useState<Draft>(
+    () => (recipe ? null : receivedDraft()) ?? draftFrom(recipe)
+  );
+  const { ai } = useSession();
+  const [params, setParams] = useSearchParams();
   const [tagDraft, setTagDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -152,6 +210,84 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
 
   const patch = (next: Partial<Draft>) =>
     setDraft((current) => ({ ...current, ...next }));
+
+  const fillFrom = (imported: RecipeInput) => {
+    setErrors({});
+    setDraft(draftFromInput(imported));
+  };
+
+  // A link import while this page is already open arrives as ?n=. The first
+  // visit still reads the draft in the state initializer above.
+  const nonce = params.get("n");
+  const [appliedNonce, setAppliedNonce] = useState<string | null>(null);
+  if (!recipe && nonce && nonce !== appliedNonce) {
+    setAppliedNonce(nonce);
+    const incoming = receivedDraft();
+    if (incoming) {
+      setErrors({});
+      setDraft(incoming);
+    }
+  }
+
+  // Arrived from "Send to Mise" or a link import: the draft was loaded above.
+  useEffect(() => {
+    if (params.get("received") !== "1") return;
+    try {
+      sessionStorage.removeItem(receivedKey);
+    } catch {
+      // Nothing to clean up.
+    }
+    const next = new URLSearchParams(params);
+    next.delete("received");
+    next.delete("n");
+    setParams(next, { replace: true });
+  }, [params, setParams]);
+
+  // Opened from "Import" on a Claude search result: fill the form from that page.
+  const importUrl = recipe ? null : params.get("import");
+  const [importing, setImporting] = useState<string | null>(importUrl);
+  // Read inside the import effect without restarting it when it loads.
+  const aiRef = useRef(ai);
+  useEffect(() => {
+    aiRef.current = ai;
+  }, [ai]);
+  useEffect(() => {
+    if (!importUrl) return;
+    let active = true;
+    importRecipe(importUrl).then((result) => {
+      if (!active) return;
+      setImporting(null);
+      if (result.ok) fillFrom(result.value);
+      else
+        toast.error(result.error, {
+          duration: 10_000,
+          action: aiRef.current
+            ? {
+                label: "Try with AI",
+                onClick: () => {
+                  setImporting(importUrl);
+                  void aiRecipeFromUrl(importUrl).then((retry) => {
+                    setImporting(null);
+                    if (retry.ok) fillFrom(retry.value);
+                    else toast.error(retry.error);
+                  });
+                },
+              }
+            : undefined,
+        });
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete("import");
+          return next;
+        },
+        { replace: true }
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [importUrl, setParams]);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -192,6 +328,9 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     ) {
       local.servings = "Servings should be from 1 to 999";
     }
+    if ([...draft.tags, tagDraft].some((tag) => isReservedTag(tag))) {
+      local.tags = "Favorites is not a tag";
+    }
 
     const ingredients = draft.ingredients
       .map(({ amount, unit, name, note }) => ({
@@ -210,6 +349,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
       title: draft.title,
       description: draft.description,
       image: draft.image.trim() || null,
+      sourceUrl: draft.sourceUrl.trim() || null,
       prepMinutes: Number.isNaN(prepMinutes) ? null : prepMinutes,
       cookMinutes: Number.isNaN(cookMinutes) ? null : cookMinutes,
       servings: Number.isNaN(servings) ? null : servings,
@@ -247,42 +387,21 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
 
   return (
     <form onSubmit={save} className="space-y-8" noValidate>
+      {importing && (
+        <p
+          className="rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground"
+          aria-live="polite"
+        >
+          Importing the recipe from {sourceHost(importing)}…
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-medium tracking-tight">
           {recipe ? "Edit recipe" : "New recipe"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          {!recipe && (
-            <ImportRecipe
-              onImported={(imported: RecipeInput) => {
-                setErrors({});
-                setDraft({
-                  title: imported.title,
-                  description: imported.description,
-                  image: imported.image ?? "",
-                  prepMinutes: imported.prepMinutes?.toString() ?? "",
-                  cookMinutes: imported.cookMinutes?.toString() ?? "",
-                  servings: imported.servings?.toString() ?? "",
-                  favorite: false,
-                  visibility: "private",
-                  tags: imported.tags,
-                  ingredients: imported.ingredients.length
-                    ? imported.ingredients.map((item) => ({
-                        key: crypto.randomUUID(),
-                        ...item,
-                        unit: unitValue(item.unit),
-                      }))
-                    : [emptyIngredient()],
-                  instructions: imported.instructions.length
-                    ? imported.instructions.map((item) => ({
-                        key: crypto.randomUUID(),
-                        text: item.text,
-                      }))
-                    : [{ key: crypto.randomUUID(), text: "" }],
-                });
-              }}
-            />
-          )}
+          {!recipe && <ImportButton onImported={fillFrom} />}
+          {!recipe && ai && <AiRecipe onImported={fillFrom} />}
           {(!recipe || recipe.ownerId) && (
             <Button
               type="button"
@@ -302,8 +421,13 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.16, ease: easeOut }}
-                  className="inline-block"
+                  className="inline-flex items-center gap-1.5"
                 >
+                  {draft.visibility === "public" ? (
+                    <GlobeIcon data-icon="inline-start" aria-hidden="true" />
+                  ) : (
+                    <LockIcon data-icon="inline-start" aria-hidden="true" />
+                  )}
                   {draft.visibility === "public" ? "Public" : "Private"}
                 </motion.span>
               </AnimatePresence>
@@ -343,6 +467,21 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
             onChange={(event) => patch({ description: event.target.value })}
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="source-url">Source link</Label>
+          <Input
+            id="source-url"
+            type="url"
+            inputMode="url"
+            value={draft.sourceUrl}
+            placeholder="https:// where the recipe came from"
+            aria-invalid={Boolean(errors.sourceUrl)}
+            onChange={(event) => patch({ sourceUrl: event.target.value })}
+          />
+          {errors.sourceUrl && (
+            <p className="text-sm text-destructive">{errors.sourceUrl}</p>
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <CountField
             id="prep"
@@ -377,7 +516,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Label htmlFor="image">Image</Label>
         {draft.image && (
           <img
@@ -389,6 +528,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             id="image"
+            className="min-w-0 flex-1"
             value={draft.image}
             placeholder="https:// or an uploaded file"
             aria-invalid={Boolean(errors.image)}
@@ -411,43 +551,48 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
               Remove
             </Button>
           )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+            className="sr-only"
+            onChange={(event) => onFile(event.target.files?.[0])}
+          />
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-          className="sr-only"
-          onChange={(event) => onFile(event.target.files?.[0])}
-        />
         {errors.image && (
           <p className="text-sm text-destructive">{errors.image}</p>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Label htmlFor="tag">Tags</Label>
-        <div className="flex flex-wrap gap-2">
-          {draft.tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className="rounded-4xl bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
-              onClick={() =>
-                patch({ tags: draft.tags.filter((item) => item !== tag) })
-              }
-            >
-              {tag}
-              <span aria-hidden="true"> ×</span>
-              <span className="sr-only">, remove</span>
-            </button>
-          ))}
-        </div>
+        {draft.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {draft.tags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className="rounded-4xl bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                onClick={() =>
+                  patch({ tags: draft.tags.filter((item) => item !== tag) })
+                }
+              >
+                {tag}
+                <span aria-hidden="true"> ×</span>
+                <span className="sr-only">, remove</span>
+              </button>
+            ))}
+          </div>
+        )}
         <TagField
           tags={draft.tags}
           draft={tagDraft}
           onTags={(tags) => patch({ tags })}
           onDraft={setTagDraft}
         />
+        {errors.tags && (
+          <p className="text-sm text-destructive">{errors.tags}</p>
+        )}
       </div>
 
       <IngredientList

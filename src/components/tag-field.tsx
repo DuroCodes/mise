@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { listTags } from "@/lib/api";
 import { cn } from "cn";
+import { isReservedTag } from "@/shared/recipe";
 
 const clean = (value: string) => value.trim().replace(/\s+/g, " ");
 
@@ -23,6 +24,7 @@ function TagField({
   const [known, setKnown] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let current = true;
@@ -36,7 +38,7 @@ function TagField({
 
   const query = clean(draft).toLowerCase();
   const unused = known.filter(
-    (tag) => !tags.some((item) => sameTag(item, tag))
+    (tag) => !isReservedTag(tag) && !tags.some((item) => sameTag(item, tag))
   );
   const suggestions = (
     query ? unused.filter((tag) => tag.toLowerCase().includes(query)) : unused
@@ -54,6 +56,11 @@ function TagField({
   const add = (value: string) => {
     const name = clean(value);
     if (!name) return;
+    if (isReservedTag(name)) {
+      setError("Favorites is not a tag");
+      return;
+    }
+    setError(null);
     const existing = known.find((tag) => sameTag(tag, name)) ?? name;
     if (!tags.some((tag) => sameTag(tag, existing)))
       onTags([...tags, existing]);
@@ -78,8 +85,10 @@ function TagField({
         placeholder="Add a tag and press enter"
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
+        aria-invalid={error !== null}
         onChange={(event) => {
           onDraft(event.target.value);
+          setError(null);
           setActive(null);
           setOpen(true);
         }}
@@ -110,6 +119,11 @@ function TagField({
           else add(draft);
         }}
       />
+      {error && (
+        <p className="mt-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       {showing && (
         <ul
           id={listId}

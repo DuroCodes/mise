@@ -1,21 +1,26 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import {
-  ChevronDownIcon,
-  KeyRoundIcon,
-  PencilIcon,
-  TrashIcon,
-} from "lucide-react";
+import { KeyRoundIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { BackupPanel } from "@/components/backup-panel";
+import { AiPanel } from "@/components/ai-panel";
+import { InvitePanel } from "@/components/invite-panel";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -37,6 +42,18 @@ import {
 } from "@/lib/api";
 import { match } from "@/lib/result";
 import { useTitle } from "@/lib/use-title";
+import { Skeleton } from "@/components/ui/skeleton";
+
+/** Gray table rows shown while a table's data loads. */
+function SkeletonRows({ rows = 3 }: { rows?: number }) {
+  return Array.from({ length: rows }, (_, index) => (
+    <TableRow key={index} aria-hidden="true">
+      <TableCell colSpan={4}>
+        <Skeleton className="h-6 w-full" />
+      </TableCell>
+    </TableRow>
+  ));
+}
 
 function AdminPage({ selfId }: { selfId: string }) {
   const [people, setPeople] = useState<Account[] | null>(null);
@@ -49,6 +66,7 @@ function AdminPage({ selfId }: { selfId: string }) {
   const [pending, setPending] = useState(false);
   const [adding, setAdding] = useState(false);
   const [resetting, setResetting] = useState<Account | null>(null);
+  const [resetAccount, setResetAccount] = useState<Account | null>(null);
   const [nextPassword, setNextPassword] = useState("");
   const [resetError, setResetError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -109,6 +127,7 @@ function AdminPage({ selfId }: { selfId: string }) {
   };
 
   const openReset = (person: Account) => {
+    setResetAccount(person);
     setResetting(person);
     setNextPassword("");
     setResetError(null);
@@ -116,7 +135,7 @@ function AdminPage({ selfId }: { selfId: string }) {
 
   const savePassword = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!resetting) return;
+    if (!resetAccount) return;
     const next = nextPassword.trim();
     if (next.length < 8) {
       setResetError("Use at least 8 characters");
@@ -124,7 +143,7 @@ function AdminPage({ selfId }: { selfId: string }) {
     }
     setSaving(true);
     setResetError(null);
-    const result = await updatePerson(resetting.id, { password: next });
+    const result = await updatePerson(resetAccount.id, { password: next });
     match(
       result,
       (value) => {
@@ -200,6 +219,7 @@ function AdminPage({ selfId }: { selfId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {people === null && <SkeletonRows />}
             {(people ?? []).map((person) => (
               <TableRow key={person.id}>
                 <TableCell className="font-medium">{person.name}</TableCell>
@@ -207,23 +227,25 @@ function AdminPage({ selfId }: { selfId: string }) {
                   {person.email}
                 </TableCell>
                 <TableCell>
-                  <div className="relative w-32">
-                    <select
+                  <Select
+                    value={person.role === "admin" ? "admin" : "member"}
+                    disabled={person.id === selfId}
+                    onValueChange={(next) => {
+                      if (next === "admin" || next === "member")
+                        changeRole(person, next);
+                    }}
+                  >
+                    <SelectTrigger
                       aria-label={`Role for ${person.name}`}
-                      value={person.role === "admin" ? "admin" : "member"}
-                      disabled={person.id === selfId}
-                      onChange={(event) => {
-                        const next = event.target.value;
-                        if (next === "admin" || next === "member")
-                          changeRole(person, next);
-                      }}
-                      className="h-8 w-full appearance-none rounded-lg border border-input bg-transparent pr-8 pl-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+                      className="w-32"
                     >
-                      <option value="admin">Admin</option>
-                      <option value="member">Member</option>
-                    </select>
-                    <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
@@ -269,6 +291,7 @@ function AdminPage({ selfId }: { selfId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {recipes === null && <SkeletonRows />}
             {(recipes ?? []).map((recipe) => (
               <TableRow key={recipe.id}>
                 <TableCell className="font-medium">
@@ -319,6 +342,12 @@ function AdminPage({ selfId }: { selfId: string }) {
         </Table>
       </section>
 
+      <InvitePanel />
+
+      <AiPanel />
+
+      <BackupPanel />
+
       <Dialog
         open={adding}
         onOpenChange={(open) => {
@@ -363,16 +392,12 @@ function AdminPage({ selfId }: { selfId: string }) {
                 onChange={(event) => setPassword(event.target.value)}
               />
             </div>
-            {formError && (
-              <p className="text-sm text-destructive" role="alert">
-                {formError}
-              </p>
-            )}
-            <DialogFooter>
+            <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={pending}>
                 {pending ? "Adding" : "Add account"}
               </Button>
-            </DialogFooter>
+              <InlineError message={formError} />
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -385,9 +410,9 @@ function AdminPage({ selfId }: { selfId: string }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset password for {resetting?.name}</DialogTitle>
+            <DialogTitle>Reset password for {resetAccount?.name}</DialogTitle>
           </DialogHeader>
-          {resetting && (
+          {resetAccount && (
             <form onSubmit={savePassword} className="space-y-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="account-password">New password</Label>
@@ -399,16 +424,12 @@ function AdminPage({ selfId }: { selfId: string }) {
                   onChange={(event) => setNextPassword(event.target.value)}
                 />
               </div>
-              {resetError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {resetError}
-                </p>
-              )}
-              <DialogFooter>
+              <div className="flex flex-wrap items-center gap-3">
                 <Button type="submit" disabled={saving}>
                   {saving ? "Saving" : "Save"}
                 </Button>
-              </DialogFooter>
+                <InlineError message={resetError} />
+              </div>
             </form>
           )}
         </DialogContent>

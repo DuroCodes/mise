@@ -359,3 +359,16 @@ const scaleNote = (note: string, factor: number, measure: Measure) =>
       return `${scaled.amount} ${scaled.unit}`;
     }
   );
+
+export type UnitInfo = { kind: Kind; system: System; toBase: number };
+
+export const unitInfo = (unit: string) =>
+  catalog.get(normalizeUnit(unit)) ?? null;
+
+export const fromBase = (kind: Kind, base: number, system: System) =>
+  system === "metric" ? pickMetric(kind, base) : pickImperial(kind, base);
+
+export const sameUnit = (left: string, right: string) =>
+  normalizeUnit(unitValue(left)) === normalizeUnit(unitValue(right));
+
+export const pluralCups = adjustUnit;

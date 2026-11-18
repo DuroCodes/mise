@@ -26,6 +26,15 @@ import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { easeOut } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { isListedUnit, unitGroups, unitValue } from "@/lib/units";
@@ -151,26 +160,30 @@ function UnitSelect({
   const selected = unitValue(value);
 
   return (
-    <select
-      aria-label={label}
-      value={selected}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+    <Select
+      value={selected || "none"}
+      onValueChange={(unit) => onChange(unit === "none" ? "" : unit)}
     >
-      <option value="">none</option>
-      {selected && !isListedUnit(selected) && (
-        <option value={selected}>{selected}</option>
-      )}
-      {unitGroups.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.units.map((unit) => (
-            <option key={unit} value={unit}>
-              {unit}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+      <SelectTrigger aria-label={label} className="w-full min-w-0 px-2">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">none</SelectItem>
+        {selected && !isListedUnit(selected) && (
+          <SelectItem value={selected}>{selected}</SelectItem>
+        )}
+        {unitGroups.map((group) => (
+          <SelectGroup key={group.label}>
+            <SelectLabel>{group.label}</SelectLabel>
+            {group.units.map((unit) => (
+              <SelectItem key={unit} value={unit}>
+                {unit}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -194,13 +207,14 @@ function IngredientList({
     notes[item.key] ?? item.note.trim().length > 0;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">Ingredients</h2>
+    <div className="space-y-2">
+      <div className="relative">
+        <h2 className="text-sm leading-none font-medium">Ingredients</h2>
         <Button
           type="button"
           variant="outline"
           size="sm"
+          className="absolute right-0 bottom-0"
           onClick={() =>
             onChange([
               ...items,
@@ -353,13 +367,14 @@ function InstructionList({
   onChange: (items: InstructionDraft[]) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">Instructions</h2>
+    <div className="space-y-2">
+      <div className="relative">
+        <h2 className="text-sm leading-none font-medium">Instructions</h2>
         <Button
           type="button"
           variant="outline"
           size="sm"
+          className="absolute right-0 bottom-0"
           onClick={() =>
             onChange([...items, { key: crypto.randomUUID(), text: "" }])
           }
