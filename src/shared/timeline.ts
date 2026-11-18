@@ -2,10 +2,10 @@ import { findTimers } from "./timers";
 
 export type TimelineStep = {
   index: number;
-  /** Planned start, as epoch ms. */
+  /** planned start, as epoch ms. */
   start: number;
   minutes: number;
-  /** False when the step names no time and the default gap was used. */
+  /** false when the step names no time and the default gap was used. */
   timed: boolean;
 };
 
@@ -16,7 +16,7 @@ export type Timeline = {
   minutes: number;
 };
 
-/** Minutes a step takes: every duration in it, back to back, using the top of any range. */
+/** minutes a step takes: every duration in it, back to back, using the top of any range. */
 export const stepMinutes = (text: string) => {
   const timers = findTimers(text);
   if (timers.length === 0) return null;
@@ -28,7 +28,7 @@ export const stepMinutes = (text: string) => {
 };
 
 /**
- * Lays the steps out on a clock. "start" plans forward from the anchor time;
+ * lays the steps out on a clock. "start" plans forward from the anchor time;
  * "ready" plans backwards so the last step finishes at the anchor. Steps
  * without a time take `gapMinutes`.
  */
@@ -58,8 +58,6 @@ export const buildTimeline = (
   return { steps: planned, start, end: cursor, minutes: total };
 };
 
-// Temperatures ------------------------------------------------------------------
-
 export type Temperature = {
   start: number;
   end: number;
@@ -70,13 +68,13 @@ export type Temperature = {
 const temperaturePattern =
   /(\d{2,3})(?:\s*(?:°|º)\s*|\s*degrees?\s+|)(F|C|Fahrenheit|Celsius)\b/gi;
 
-/** Oven-style temperatures such as "400°F", "425F", "200 °C", or "180 degrees Celsius". */
+/** oven-style temperatures such as "400°F", "425F", "200 °C", or "180 degrees Celsius". */
 export const findTemperatures = (text: string) => {
   const found: Temperature[] = [];
   for (const match of text.matchAll(temperaturePattern)) {
     const value = Number(match[1]);
     const scale = (match[2] ?? "").toUpperCase().startsWith("F") ? "F" : "C";
-    // Skip things that can't be cooking temperatures.
+    // skip things that can't be cooking temperatures.
     if (scale === "F" ? value < 80 || value > 600 : value < 25 || value > 320)
       continue;
     const start = match.index ?? 0;
@@ -85,7 +83,7 @@ export const findTemperatures = (text: string) => {
   return found;
 };
 
-/** Converts and rounds the way recipes print them (oven temps to the nearest 5). */
+/** converts and rounds the way recipes print them (oven temps to the nearest 5). */
 export const convertTemperature = (value: number, from: "F" | "C") => {
   const raw = from === "F" ? ((value - 32) * 5) / 9 : (value * 9) / 5 + 32;
   const rounded = raw >= 100 ? Math.round(raw / 5) * 5 : Math.round(raw);

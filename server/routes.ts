@@ -18,6 +18,7 @@ import {
   savedKeyFor,
   saveSetup,
 } from "./ai";
+import { isReelUrl, recipeFromReel } from "./reel";
 import {
   addToPantry,
   finishShopping,
@@ -84,6 +85,29 @@ import { storeLayout } from "../src/shared/stores";
 const measure = z.enum(["original", "metric", "imperial"]).default("original");
 const servings = z.number().int().min(1).max(999).nullable();
 
+const readAiImage = async (file: FormDataEntryValue | null) => {
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: true as const, value: null };
+
+  const mediaType = aiImageTypes.find((type) => type === file.type);
+  if (!mediaType)
+    return {
+      ok: false as const,
+      error: "Use a JPEG, PNG, GIF, or WebP photo",
+    };
+
+  if (file.size > 5 * 1024 * 1024)
+    return { ok: false as const, error: "Photos must be under 5MB" };
+
+  return {
+    ok: true as const,
+    value: {
+      data: Buffer.from(await file.arrayBuffer()).toString("base64"),
+      mediaType,
+    },
+  };
+};
+
 export const registerRoutes = (api: Api) => {
   // aiAvailable: the server has a model set up. ai: this person also has AI
   // turned on in their settings, so the AI buttons should show.
@@ -95,7 +119,7 @@ export const registerRoutes = (api: Api) => {
     });
   });
 
-  // People who turn AI off never have their recipes or pantry sent anywhere.
+  // people who turn AI off never have their recipes or pantry sent anywhere.
   api.use("/ai/*", async (c, next) => {
     if (!getUserSettings(c.get("user").id).aiEnabled)
       return c.json({ error: "AI is turned off in your settings" }, 403);
@@ -113,8 +137,6 @@ export const registerRoutes = (api: Api) => {
     if (!parsed.success) return c.json({ error: "Check the settings" }, 400);
     return c.json(updateUserSettings(c.get("user").id, parsed.data));
   });
-
-  // Ratings and cooking log -------------------------------------------------
 
   api.post("/recipes/:id/rating", async (c) => {
     const user = c.get("user");
@@ -164,8 +186,6 @@ export const registerRoutes = (api: Api) => {
     return c.json(null);
   });
 
-  // Share links --------------------------------------------------------------
-
   api.post("/recipes/:id/share", (c) => {
     const user = c.get("user");
     const id = c.req.param("id");
@@ -185,9 +205,7 @@ export const registerRoutes = (api: Api) => {
     return c.json(null);
   });
 
-  // Shopping list ------------------------------------------------------------
-
-  // Defaults live only on the create schema: zod applies a field's default
+  // defaults live only on the create schema: zod applies a field's default
   // even inside .partial(), which would blank fields a PATCH didn't send.
   const itemFields = {
     name: z.string().trim().min(1).max(200),
@@ -275,8 +293,6 @@ export const registerRoutes = (api: Api) => {
     clearItems(userId, parsed.data.which);
     return c.json(listShopping(userId));
   });
-
-  // Pantry ----------------------------------------------------------------------
 
   const pantryFields = {
     name: z.string().trim().min(1).max(200),
@@ -406,8 +422,6 @@ export const registerRoutes = (api: Api) => {
     if (!result.product) return c.json({ error: "Product not found" }, 404);
     return c.json(result.product);
   });
-
-  // Push notifications --------------------------------------------------------------
 
   const endpointInput = z
     .string()
@@ -559,8 +573,6 @@ export const registerRoutes = (api: Api) => {
     return c.json(result.value);
   });
 
-  // Stores ----------------------------------------------------------------------
-
   const storeName = z.string().trim().min(1).max(60);
 
   api.get("/stores", (c) => c.json(listStores(c.get("user").id)));
@@ -596,8 +608,6 @@ export const registerRoutes = (api: Api) => {
       return c.json({ error: "Store not found" }, 404);
     return c.json(listStores(userId));
   });
-
-  // Meal plan -----------------------------------------------------------------
 
   const shiftDay = (day: string, by: number) =>
     new Date(Date.parse(`${day}T00:00:00Z`) + by * 86_400_000)
@@ -658,7 +668,7 @@ export const registerRoutes = (api: Api) => {
     return c.json(null);
   });
 
-  // Suggests recipes for empty days and meals. Nothing is saved; the page adds
+  // suggests recipes for empty days and meals. Nothing is saved; the page adds
   // the meals the cook keeps through POST /plan.
   api.post("/ai/plan-week", async (c) => {
     if (!aiEnabled())
@@ -727,8 +737,6 @@ export const registerRoutes = (api: Api) => {
       }),
     });
   });
-
-  // Collections ---------------------------------------------------------------
 
   const collectionFields = {
     name: z.string().trim().min(1).max(80),
@@ -799,9 +807,7 @@ export const registerRoutes = (api: Api) => {
     c.json(collectionsForRecipe(c.get("user").id, c.req.param("id")))
   );
 
-  // Importing files from other apps ---------------------------------------------
-
-  // A page sent from the person's own browser by the "Send to Mise" button.
+  // a page sent from the person's own browser by the "Send to Mise" button.
   api.post("/import/page", async (c) => {
     const parsed = z
       .object({ url: httpUrl, html: z.string().min(1).max(5_000_000) })
@@ -828,7 +834,7 @@ export const registerRoutes = (api: Api) => {
       file.name,
       new Uint8Array(await file.arrayBuffer())
     );
-    // Nothing is saved until the person confirms. One recipe is handed back
+    // nothing is saved until the person confirms. One recipe is handed back
     // to the form; a batch is only listed until they ask to add it.
     if (form?.get("commit") !== "1") {
       const titles = result.recipes.map((entry) => entry.recipe.title);
@@ -868,8 +874,6 @@ export const registerRoutes = (api: Api) => {
     return c.json({ imported, skipped: skipped.slice(0, 200) });
   });
 
-  // Backups ---------------------------------------------------------------------
-
   api.get("/admin/backup", (c) => {
     if (!isAdmin(c.get("user")))
       return c.json({ error: "An admin has to do that" }, 403);
@@ -901,9 +905,7 @@ export const registerRoutes = (api: Api) => {
     return c.json(result.summary);
   });
 
-  // AI ----------------------------------------------------------------------------
-
-  // The key itself never leaves the server; admins see its last four characters.
+  // the key itself never leaves the server; admins see its last four characters.
   api.get("/admin/ai", (c) => {
     if (!isAdmin(c.get("user")))
       return c.json({ error: "An admin has to do that" }, 403);
@@ -917,9 +919,9 @@ export const registerRoutes = (api: Api) => {
       .object({
         provider: z.enum(aiProviders),
         model: z.string().trim().max(200).regex(/^\S*$/).default(""),
-        // Blank keeps the saved key for the same provider.
+        // blank keeps the saved key for the same provider.
         apiKey: z.string().trim().max(400).regex(/^\S*$/).default(""),
-        // Only used for a local server; blank means Ollama on this machine.
+        // only used for a local server; blank means Ollama on this machine.
         baseURL: z.union([httpUrl, z.literal("")]).default(""),
       })
       .safeParse(await readJson(c.req.raw));
@@ -966,30 +968,21 @@ export const registerRoutes = (api: Api) => {
   api.post("/ai/recipe", async (c) => {
     if (!aiEnabled())
       return c.json({ error: "AI is not set up on this server" }, 400);
+
     const form = await c.req.formData().catch(() => null);
     if (!form) return c.json({ error: "Paste a recipe or add a photo" }, 400);
+
     const text = form.get("text");
-    const file = form.get("image");
     const body = typeof text === "string" ? text.slice(0, 60_000) : "";
-    let image: {
-      data: string;
-      mediaType: (typeof aiImageTypes)[number];
-    } | null = null;
-    if (file instanceof File && file.size > 0) {
-      const mediaType = aiImageTypes.find((type) => type === file.type);
-      if (!mediaType)
-        return c.json({ error: "Use a JPEG, PNG, GIF, or WebP photo" }, 400);
-      if (file.size > 5 * 1024 * 1024)
-        return c.json({ error: "Photos must be under 5MB" }, 400);
-      image = {
-        data: Buffer.from(await file.arrayBuffer()).toString("base64"),
-        mediaType,
-      };
-    }
-    if (!body.trim() && !image)
+    const image = await readAiImage(form.get("image"));
+    if (!image.ok) return c.json({ error: image.error }, 400);
+
+    if (!body.trim() && !image.value)
       return c.json({ error: "Paste a recipe or add a photo" }, 400);
-    const result = await extractRecipe({ text: body, image });
+
+    const result = await extractRecipe({ text: body, image: image.value });
     if (!result.ok) return c.json({ error: result.error }, 502);
+
     return c.json({ ...result.value, visibility: "private" });
   });
 
@@ -1001,7 +994,9 @@ export const registerRoutes = (api: Api) => {
       .safeParse(await readJson(c.req.raw));
     if (!parsed.success)
       return c.json({ error: "Paste a public http(s) recipe link" }, 400);
-    const result = await recipeFromUrl(parsed.data.url);
+    const result = isReelUrl(parsed.data.url)
+      ? await recipeFromReel(parsed.data.url)
+      : await recipeFromUrl(parsed.data.url);
     if (!result.ok) return c.json({ error: result.error }, 502);
     return c.json({ ...result.value, visibility: "private" });
   });

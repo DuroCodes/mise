@@ -98,7 +98,7 @@ const plain = (value: unknown) => {
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
-/** Bullets and "2. " prefixes that some sites leave on each line. */
+/** bullets and "2. " prefixes that some sites leave on each line. */
 const listMarker = (value: string) =>
   value
     .replace(/^[\u2022\u2023\u25E6\u2043\u2219\u00B7•·▪▫‣⁃]\s*/, "")
@@ -403,7 +403,7 @@ const urlOf = (value: unknown) => {
   return null;
 };
 
-/** Converts one schema.org Recipe object into mise's recipe shape. */
+/** converts one schema.org Recipe object into mise's recipe shape. */
 export const recipeFromJsonLd = (
   recipe: Record<string, unknown>,
   fallbackTitle = ""
@@ -462,7 +462,7 @@ export const parseRecipeHtml = (html: string) => {
     /<script\b[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
   for (const match of html.matchAll(pattern)) {
     const raw = (match[1] ?? "").trim();
-    // Parse the JSON as published first. Decoding HTML entities up front
+    // parse the JSON as published first. Decoding HTML entities up front
     // turns an escaped &quot; inside a string into a bare quote and breaks
     // valid JSON, so only fall back to decoding for pages that need it.
     for (const text of [raw, decode(raw).trim()]) {

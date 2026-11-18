@@ -58,7 +58,7 @@ function BarcodeScanner({
         )
       );
 
-    // Each barcode is handled once per session (the camera sees it many times
+    // each barcode is handled once per session (the camera sees it many times
     // a second); only a failed lookup can be retried, after a short pause.
     const handle = async (code: string) => {
       if (!/^\d{8,14}$/.test(code)) return;
@@ -91,7 +91,7 @@ function BarcodeScanner({
         try {
           navigator.vibrate?.(40);
         } catch {
-          // Not every device vibrates.
+          // not every device vibrates.
         }
         update(code, {
           label: product.name,
@@ -155,7 +155,7 @@ function BarcodeScanner({
               const found = await detector.detect(element);
               for (const code of found) void handle(code.rawValue);
             } catch {
-              // A frame that can't be read; try the next one.
+              // a frame that can't be read; try the next one.
             }
             busy = false;
           }, 250);

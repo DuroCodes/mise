@@ -1,7 +1,7 @@
 import type * as React from "react";
 import { cn } from "cn";
 
-/** A soft gray block that stands in for content while it loads. */
+/** a soft gray block that stands in for content while it loads. */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -16,11 +16,11 @@ function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-// Varied line widths so a column of placeholders reads like real text.
+// varied line widths so a column of placeholders reads like real text.
 const widths = ["w-3/5", "w-2/5", "w-4/5", "w-1/2", "w-2/3", "w-1/3"];
 const widthAt = (index: number) => widths[index % widths.length];
 
-/** Placeholder recipe cards, shaped like RecipeCard, for card grids. */
+/** placeholder recipe cards, shaped like RecipeCard, for card grids. */
 function CardGridSkeleton({
   count = 6,
   label = "Loading recipes",
@@ -52,7 +52,7 @@ function CardGridSkeleton({
   );
 }
 
-/** Placeholder rows inside a card, for lists like the pantry or stores. */
+/** placeholder rows inside a card, for lists like the pantry or stores. */
 function ListSkeleton({
   rows = 5,
   label = "Loading",
@@ -81,7 +81,7 @@ function ListSkeleton({
   );
 }
 
-/** Bare placeholder lines for small lists such as pickers and sidebars. */
+/** bare placeholder lines for small lists such as pickers and sidebars. */
 function LinesSkeleton({
   rows = 6,
   label = "Loading",

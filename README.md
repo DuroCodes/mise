@@ -51,7 +51,7 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 - **share links**: a read-only link to one recipe for someone without an account. it can be turned off at any time.
 - **collections**: private groups of recipes, like "thanksgiving" or "weeknight dinners".
 - **nutrition**: an estimate per serving from a built-in food table. nothing is sent anywhere.
-- **import**: paste a recipe link, or upload a paprika export (`.paprikarecipes`), a mealie export or backup (`.zip`/`.json`), schema.org json-ld, or a saved recipe page.
+- **import**: paste a recipe link (sites, TikTok, or Instagram), or upload a paprika export (`.paprikarecipes`), a mealie export or backup (`.zip`/`.json`), schema.org json-ld, or a saved recipe page. reels need `MISE_WHISPER_*` when the caption is not the recipe.
 - **backup and restore**: admins download a zip of everything (recipes, images, logs, plans, lists, and a copy of the database) and restore it later.
 - **installable app**: install from settings (or add to home screen on iphone). recipes you have opened stay readable offline, and the shopping list works with no signal, syncing when you're back online. long-press the icon for shortcuts like scan & shop.
 - **scan & shop**: scan barcodes with the camera to check items off (names come from open food facts). done shopping asks how much of each item goes in the pantry.
@@ -71,6 +71,9 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 | `MISE_AI_API_KEY`                                  |                             | turns on the optional model features. one key, for whichever provider the model names                |
 | `MISE_AI_MODEL`                                    | `anthropic:claude-opus-5-5` | `anthropic:`, `openai:`, `openrouter:`, or `local:` plus the model id. the prefix is required        |
 | `MISE_AI_BASE_URL`                                 | Ollama on this machine      | address of a local or openai-compatible server. `local:` uses `http://localhost:11434/v1` when unset |
+| `MISE_WHISPER_API_KEY`                             |                             | speech-to-text for TikTok / Instagram imports (separate from chat; Anthropic has no audio API)       |
+| `MISE_WHISPER_MODEL`                               |                             | `groq:`, `openai:`, or `openrouter:` plus the Whisper model id, e.g. `groq:whisper-large-v3-turbo`   |
+| `MISE_YT_DLP`                                      | `yt-dlp`                    | path to yt-dlp if it is not on `PATH`                                                                |
 | `MISE_VAPID_PUBLIC_KEY` / `MISE_VAPID_PRIVATE_KEY` | generated into `DATA_DIR`   | keys for push notifications                                                                          |
 
 ## backups

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** A scannable QR code for a link. The QR library loads only when one is shown. */
+/** a scannable QR code for a link. The QR library loads only when one is shown. */
 function QrCode({ value, label }: { value: string; label: string }) {
   const [source, setSource] = useState<{ value: string; url: string } | null>(
     null

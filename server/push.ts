@@ -7,8 +7,6 @@ import { pushSubscriptions } from "./db/schema";
 import { listPantry } from "./pantry";
 import { listPlan } from "./plan";
 
-// Keys --------------------------------------------------------------------------
-
 const keyFile = `${dataDir}/vapid.json`;
 
 const loadKeys = () => {
@@ -27,7 +25,7 @@ const loadKeys = () => {
 };
 
 const keys = loadKeys();
-// The VAPID subject must be an https: URL or mailto:. Use the site's own
+// the VAPID subject must be an https: URL or mailto:. Use the site's own
 // address when it's https (never anyone's email); otherwise the project page,
 // so a plain-http install still starts.
 const site = process.env.BETTER_AUTH_URL?.trim() ?? "";
@@ -39,7 +37,7 @@ webpush.setVapidDetails(
 
 export const publicKey = keys.publicKey;
 
-// Only real browser push services, so the server can't be pointed elsewhere.
+// only real browser push services, so the server can't be pointed elsewhere.
 const pushHosts = [
   "fcm.googleapis.com",
   "updates.push.services.mozilla.com",
@@ -62,8 +60,6 @@ export const allowedEndpoint = (raw: string) => {
   }
 };
 
-// Subscriptions ----------------------------------------------------------------------
-
 export type Prefs = { useSoon: boolean; tomorrow: boolean };
 
 export const subscriptionFor = (userId: string, endpoint: string) => {
@@ -80,12 +76,12 @@ export const subscriptionFor = (userId: string, endpoint: string) => {
   return row ? { useSoon: row.useSoon, tomorrow: row.tomorrow } : null;
 };
 
-/** Saves a device's subscription for this person (a shared device moves to whoever enabled it last). */
+/** saves a device's subscription for this person (a shared device moves to whoever enabled it last). */
 export const saveSubscription = (
   userId: string,
   input: { endpoint: string; p256dh: string; auth: string } & Prefs
 ) => {
-  // A new device starts tomorrow for any reminder whose time already passed today.
+  // a new device starts tomorrow for any reminder whose time already passed today.
   const now = new Date();
   const today = dayKey(now);
   db.insert(pushSubscriptions)
@@ -139,8 +135,6 @@ export const removeSubscription = (userId: string, endpoint: string) => {
     .run();
 };
 
-// Sending ------------------------------------------------------------------------------
-
 export type Note = {
   title: string;
   body: string;
@@ -165,7 +159,7 @@ const deliver = async (
     return true;
   } catch (error) {
     const status = (error as { statusCode?: number }).statusCode;
-    // The browser dropped this subscription; forget it.
+    // the browser dropped this subscription; forget it.
     if (status === 404 || status === 410)
       db.delete(pushSubscriptions)
         .where(eq(pushSubscriptions.id, row.id))
@@ -198,8 +192,6 @@ export const hasSubscription = (userId: string) =>
       .where(eq(pushSubscriptions.userId, userId))
       .get()
   );
-
-// Timers -------------------------------------------------------------------------------
 
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 const perUser = new Map<string, Set<string>>();
@@ -236,8 +228,6 @@ export const cancelTimer = (userId: string, id: string) => {
   timers.delete(key);
   perUser.get(userId)?.delete(key);
 };
-
-// Daily reminders -------------------------------------------------------------------------
 
 /** YYYY-MM-DD in the server's time zone. */
 export const dayKey = (date = new Date()) => {
@@ -276,7 +266,7 @@ export const soonNote = (userId: string, today: string) => {
   };
 };
 
-/** Tomorrow's meals, with a thaw reminder when one needs meat or seafood. */
+/** tomorrow's meals, with a thaw reminder when one needs meat or seafood. */
 export const tomorrowNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const meals = listPlan(userId, tomorrow, tomorrow, false);
@@ -343,7 +333,7 @@ const runDaily = async (now = new Date()) => {
   }
 };
 
-/** Checks every few minutes; each reminder goes out at most once a day per device. */
+/** checks every few minutes; each reminder goes out at most once a day per device. */
 export const startReminders = () => {
   const tick = () =>
     void runDaily().catch((error) => console.error("reminders failed", error));

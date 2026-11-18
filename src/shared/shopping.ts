@@ -20,7 +20,7 @@ const singularWord = (word: string) => {
   return word;
 };
 
-/** A normalized key used to decide whether two shopping items are the same thing. */
+/** a normalized key used to decide whether two shopping items are the same thing. */
 export const itemKey = (name: string) => {
   const words = name
     .toLowerCase()
@@ -38,7 +38,7 @@ const isEmpty = (quantity: Quantity) =>
   !quantity.amount.trim() && !quantity.unit.trim();
 
 /**
- * Adds two quantities of the same ingredient. Returns null when they cannot be
+ * adds two quantities of the same ingredient. Returns null when they cannot be
  * combined honestly (different kinds of unit, ranges, or text amounts), so the
  * caller keeps them as separate lines.
  */

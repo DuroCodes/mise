@@ -29,8 +29,13 @@ import {
   plannerRecipes,
   toMealPlan,
   toPhotoItems,
+  scrubModelText,
+  splitMeasure,
   toRecipeInput,
 } from "./ai";
+import { captionLooksLikeRecipe, isReelUrl, thumbnailFromMeta } from "./reel";
+import { whisperSetup } from "./whisper";
+import { isReelUrl as isReelUrlShared } from "../src/shared/reel";
 import { linkToken, linkTokenShape } from "./link-token";
 import {
   gunzipLimited,
@@ -358,7 +363,7 @@ describe("offline outbox", () => {
     await outbox.send({ kind: "remove", id: "local-1" });
     expect(outbox.pendingCount()).toBe(2);
 
-    // Back online: everything is sent in order and the queue empties.
+    // back online: everything is sent in order and the queue empties.
     const calls: string[] = [];
     globalThis.fetch = ((url: string, init?: RequestInit) => {
       calls.push(`${init?.method ?? "GET"} ${url}`);
@@ -803,6 +808,63 @@ describe("Claude output normalization", () => {
       toRecipeInput({ ...base, ingredients: [], instructions: [] })
     ).toBeNull();
   });
+
+  test("strips model markup leaked into ingredient fields", () => {
+    expect(scrubModelText("%Y44I1 teaspoon/I %E")).toBe("1 teaspoon");
+    expect(scrubModelText("%I2/I %E whole eggs")).toBe("2 whole eggs");
+    const recipe = toRecipeInput({
+      ...base,
+      ingredients: [
+        {
+          amount: "%Y44I1",
+          unit: "teaspoon/I %E",
+          name: "%I2/I %E whole eggs",
+          note: "",
+        },
+      ],
+    });
+    expect(recipe?.ingredients[0]).toEqual({
+      amount: "1",
+      unit: "teaspoon",
+      name: "2 whole eggs",
+      note: "",
+    });
+  });
+
+  test("splits combined amount+unit when the model merges them", () => {
+    expect(splitMeasure("", "5 tbsp")).toEqual({
+      amount: "5",
+      unit: "tbsp",
+    });
+    expect(splitMeasure("", "3/4 cup")).toEqual({
+      amount: "3/4",
+      unit: "cup",
+    });
+    expect(splitMeasure("8 g", "")).toEqual({ amount: "8", unit: "g" });
+    const recipe = toRecipeInput({
+      ...base,
+      ingredients: [
+        {
+          amount: "",
+          unit: "16 oz",
+          name: "Cream Cheese",
+          note: "Room Temperature",
+        },
+        { amount: "2", unit: "", name: "eggs", note: "" },
+      ],
+    });
+    expect(recipe?.ingredients[0]).toMatchObject({
+      amount: "16",
+      unit: "oz",
+      name: "cream cheese",
+      note: "room temperature",
+    });
+    expect(recipe?.ingredients[1]).toMatchObject({
+      amount: "2",
+      unit: "",
+      name: "eggs",
+    });
+  });
 });
 
 describe("Claude meal planner", () => {
@@ -881,6 +943,78 @@ describe("local models", () => {
       process.env.MISE_AI_API_KEY = "test-key";
       process.env.MISE_AI_MODEL = "claude-opus-5-5";
       expect(aiStatus().source).not.toBe("environment");
+    } finally {
+      names.forEach((name, index) => {
+        const value = before[index];
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      });
+    }
+  });
+});
+
+describe("social reels", () => {
+  test("recognizes TikTok and Instagram hosts", () => {
+    expect(
+      isReelUrl(
+        "https://www.tiktok.com/@sarahsweets017/video/7636918518134443277"
+      )
+    ).toBe(true);
+    expect(isReelUrl("https://vm.tiktok.com/ZMabcdef/")).toBe(true);
+    expect(isReelUrl("https://www.instagram.com/reel/AbCdEfGhIjK/")).toBe(true);
+    expect(isReelUrl("https://www.allrecipes.com/recipe/123")).toBe(false);
+    expect(isReelUrlShared("https://instagram.com/p/xyz/")).toBe(true);
+  });
+
+  test("detects captions that already list a recipe", () => {
+    expect(captionLooksLikeRecipe("SO creamy 🍓 #dessert")).toBe(false);
+    expect(
+      captionLooksLikeRecipe(`Ingredients:
+1 cup sugar
+2 cups flour
+3 tbsp butter
+Steps:
+1. Mix
+2. Bake`)
+    ).toBe(true);
+  });
+
+  test("picks the largest yt-dlp thumbnail", () => {
+    expect(
+      thumbnailFromMeta({
+        thumbnail: "https://cdn.example/cover.jpg",
+        thumbnails: [
+          { url: "https://cdn.example/small.jpg", width: 100, height: 100 },
+          { url: "https://cdn.example/big.jpg", width: 1080, height: 1920 },
+        ],
+      })
+    ).toBe("https://cdn.example/cover.jpg");
+    expect(
+      thumbnailFromMeta({
+        thumbnails: [
+          { url: "https://cdn.example/small.jpg", width: 100, height: 100 },
+          { url: "https://cdn.example/big.jpg", width: 1080, height: 1920 },
+        ],
+      })
+    ).toBe("https://cdn.example/big.jpg");
+  });
+
+  test("whisper env needs provider:model and a key", () => {
+    const names = ["MISE_WHISPER_MODEL", "MISE_WHISPER_API_KEY"];
+    const before = names.map((name) => process.env[name]);
+    try {
+      for (const name of names) delete process.env[name];
+      expect(whisperSetup()).toBeNull();
+      process.env.MISE_WHISPER_MODEL = "groq:whisper-large-v3-turbo";
+      expect(whisperSetup()).toBeNull();
+      process.env.MISE_WHISPER_API_KEY = "gsk_test";
+      expect(whisperSetup()).toEqual({
+        provider: "groq",
+        model: "whisper-large-v3-turbo",
+        apiKey: "gsk_test",
+      });
+      process.env.MISE_WHISPER_MODEL = "whisper-1";
+      expect(whisperSetup()).toBeNull();
     } finally {
       names.forEach((name, index) => {
         const value = before[index];

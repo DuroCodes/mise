@@ -82,7 +82,7 @@ const saveStoreId = (id: string) => {
     if (id) localStorage.setItem(storeKey, id);
     else localStorage.removeItem(storeKey);
   } catch {
-    // The choice still applies until the page reloads.
+    // the choice still applies until the page reloads.
   }
 };
 
@@ -98,7 +98,7 @@ const saveGrouping = (value: Grouping) => {
   try {
     localStorage.setItem(groupingKey, value);
   } catch {
-    // The choice still applies until the page reloads.
+    // the choice still applies until the page reloads.
   }
 };
 
@@ -107,7 +107,7 @@ const quantity = (item: ShoppingItem) =>
 
 const isOptional = (note: string) => /\boptional\b/i.test(note);
 
-/** The note without the word "optional", which gets its own tag. */
+/** the note without the word "optional", which gets its own tag. */
 const cleanNote = (note: string) =>
   note
     .replace(/\(?\boptional\b\)?[,;:]?\s*/i, "")
@@ -168,7 +168,7 @@ const asText = (groups: Group[]) =>
     ),
   ].join("\n");
 
-// Removals wait a few seconds so they can be undone; this survives leaving the page.
+// removals wait a few seconds so they can be undone; this survives leaving the page.
 const pendingRemovals = new Map<string, number>();
 
 function Row({
@@ -293,7 +293,7 @@ function ShoppingPage() {
     } else if (items === null) setError(result.error);
   };
 
-  // Send waiting offline changes, then refresh, whenever the connection comes back.
+  // send waiting offline changes, then refresh, whenever the connection comes back.
   const sync = async () => {
     if (pendingCount() > 0) await flush();
     await load();
@@ -313,7 +313,7 @@ function ShoppingPage() {
       window.removeEventListener("online", onOnline);
       stop();
     };
-    // Runs once; sync reads the latest state when it's called.
+    // runs once; sync reads the latest state when it's called.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -333,7 +333,7 @@ function ShoppingPage() {
     return result.ok;
   };
 
-  /** Applies a change here right away, then sends it (or keeps it for later). */
+  /** applies a change here right away, then sends it (or keeps it for later). */
   const change = async (
     op: Op,
     local: (list: ShoppingItem[]) => ShoppingItem[]
@@ -435,7 +435,7 @@ function ShoppingPage() {
     else toast.success("Cleared your basket");
   };
 
-  // From the scanner: check an item off (never un-check it).
+  // from the scanner: check an item off (never un-check it).
   const checkOff = (item: ShoppingItem) => {
     if (item.checked) return;
     void toggle(item);
@@ -461,7 +461,7 @@ function ShoppingPage() {
     if (pendingCount() === 0) await load();
   };
 
-  // Finishing needs the server, so send any offline changes first.
+  // finishing needs the server, so send any offline changes first.
   const openFinish = async () => {
     if (pendingCount() > 0 && !(await flush())) {
       toast.error("You're offline. Finish once you're back online.");

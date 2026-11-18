@@ -23,7 +23,7 @@ type Piece =
     };
 
 /**
- * A step's text, with each duration turned into a start-timer button and,
+ * a step's text, with each duration turned into a start-timer button and,
  * when a unit system is chosen, oven temperatures shown in it too.
  */
 function StepText({

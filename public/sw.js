@@ -1,12 +1,12 @@
 // Mise service worker: makes the app installable and keeps recipes you have
 // opened readable without a connection. Cache names match src/lib/offline.ts.
-// Bump the version comment when this file changes so browsers pick it up: v2.
+// bump the version comment when this file changes so browsers pick it up: v2.
 const SHELL = "mise-shell-v1";
 const API = "mise-api-v1";
 const IMAGES = "mise-images-v1";
 const KEEP = [SHELL, API, IMAGES];
 
-// Read-only API routes worth keeping for offline use. Everything else
+// read-only API routes worth keeping for offline use. Everything else
 // (auth, admin, imports, AI, writes) always goes to the network.
 const CACHEABLE_API = [
   /^\/api\/me$/,
@@ -86,8 +86,6 @@ const offlineJson = () =>
     headers: { "content-type": "application/json" },
   });
 
-// Notifications --------------------------------------------------------------
-
 self.addEventListener("push", (event) => {
   let note = {};
   try {
@@ -97,7 +95,7 @@ self.addEventListener("push", (event) => {
   }
   event.waitUntil(
     (async () => {
-      // A timer already chimes in an open, visible tab; don't double up.
+      // a timer already chimes in an open, visible tab; don't double up.
       if (note.kind === "timer") {
         const windows = await self.clients.matchAll({
           type: "window",

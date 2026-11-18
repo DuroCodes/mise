@@ -12,7 +12,7 @@ export const storedMeasure = () => {
     if (stored === "metric" || stored === "imperial" || stored === "original")
       return stored;
   } catch {
-    // Storage can be unavailable in private windows.
+    // storage can be unavailable in private windows.
   }
   return "original";
 };
@@ -21,7 +21,7 @@ export const saveMeasure = (measure: Measure) => {
   try {
     localStorage.setItem("mise-units", measure);
   } catch {
-    // Nothing to do; the choice still applies to this page.
+    // nothing to do; the choice still applies to this page.
   }
 };
 
@@ -33,7 +33,7 @@ export const sourceHost = (url: string) => {
   }
 };
 
-/** The first http(s) link in whatever was shared (apps put it in url, text, or title). */
+/** the first http(s) link in whatever was shared (apps put it in url, text, or title). */
 export const sharedLink = (params: URLSearchParams) => {
   for (const field of ["url", "text", "title"]) {
     const value = params.get(field) ?? "";
@@ -49,7 +49,7 @@ export const sharedLink = (params: URLSearchParams) => {
   return null;
 };
 
-/** A same-site path to return to after signing in, or "/". */
+/** a same-site path to return to after signing in, or "/". */
 export const safeNext = (raw: string | null) =>
   raw &&
   raw.startsWith("/") &&
@@ -61,7 +61,7 @@ export const safeNext = (raw: string | null) =>
 export const isMeasure = (value: string | null): value is Measure =>
   value === "original" || value === "metric" || value === "imperial";
 
-/** Today's date in the viewer's time zone, as YYYY-MM-DD. */
+/** today's date in the viewer's time zone, as YYYY-MM-DD. */
 export const localDay = (date = new Date()) => {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;

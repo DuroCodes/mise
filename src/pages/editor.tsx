@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { HeartMark } from "@/components/heart-mark";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { AiRecipe } from "@/components/ai-recipe";
 import { ImportButton } from "@/components/import-recipe";
 import {
   IngredientList,
@@ -44,6 +43,7 @@ import { useTitle } from "@/lib/use-title";
 import { NotFoundPage } from "@/pages/not-found";
 import { easeOut } from "@/lib/motion";
 import { unitValue } from "@/lib/units";
+import { isReelUrl } from "@/shared/reel";
 import {
   isReservedTag,
   recipeInput,
@@ -100,7 +100,7 @@ const draftFromInput = (imported: RecipeInput) => ({
     : [{ key: crypto.randomUUID(), text: "" }],
 });
 
-/** A recipe handed over by "Send to Mise", used once and then cleared. */
+/** a recipe handed over by "Send to Mise", used once and then cleared. */
 const receivedDraft = () => {
   if (new URLSearchParams(window.location.search).get("received") !== "1")
     return null;
@@ -216,7 +216,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     setDraft(draftFromInput(imported));
   };
 
-  // A link import while this page is already open arrives as ?n=. The first
+  // a link import while this page is already open arrives as ?n=. The first
   // visit still reads the draft in the state initializer above.
   const nonce = params.get("n");
   const [appliedNonce, setAppliedNonce] = useState<string | null>(null);
@@ -229,13 +229,12 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     }
   }
 
-  // Arrived from "Send to Mise" or a link import: the draft was loaded above.
+  // arrived from "Send to Mise" or a link import: the draft was loaded above.
   useEffect(() => {
     if (params.get("received") !== "1") return;
     try {
       sessionStorage.removeItem(receivedKey);
     } catch {
-      // Nothing to clean up.
     }
     const next = new URLSearchParams(params);
     next.delete("received");
@@ -243,10 +242,10 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     setParams(next, { replace: true });
   }, [params, setParams]);
 
-  // Opened from "Import" on a Claude search result: fill the form from that page.
+  // opened from "Import" on a Claude search result: fill the form from that page.
   const importUrl = recipe ? null : params.get("import");
   const [importing, setImporting] = useState<string | null>(importUrl);
-  // Read inside the import effect without restarting it when it loads.
+  // read inside the import effect without restarting it when it loads.
   const aiRef = useRef(ai);
   useEffect(() => {
     aiRef.current = ai;
@@ -254,7 +253,21 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
   useEffect(() => {
     if (!importUrl) return;
     let active = true;
-    importRecipe(importUrl).then((result) => {
+    const finish = () => {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete("import");
+          return next;
+        },
+        { replace: true }
+      );
+    };
+    const load =
+      isReelUrl(importUrl) && aiRef.current
+        ? aiRecipeFromUrl(importUrl)
+        : importRecipe(importUrl);
+    load.then((result) => {
       if (!active) return;
       setImporting(null);
       if (result.ok) fillFrom(result.value);
@@ -275,14 +288,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
               }
             : undefined,
         });
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.delete("import");
-          return next;
-        },
-        { replace: true }
-      );
+      finish();
     });
     return () => {
       active = false;
@@ -401,7 +407,6 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           {!recipe && <ImportButton onImported={fillFrom} />}
-          {!recipe && ai && <AiRecipe onImported={fillFrom} />}
           {(!recipe || recipe.ownerId) && (
             <Button
               type="button"

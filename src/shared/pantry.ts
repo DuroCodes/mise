@@ -1,6 +1,6 @@
 import { matchFood, tokens } from "./nutrition";
 
-/** Things nearly every kitchen has; they never count as "missing". */
+/** things nearly every kitchen has; they never count as "missing". */
 const staples = new Set(
   [
     "salt",
@@ -35,7 +35,7 @@ const contains = (haystack: string[], needle: string[]) => {
 };
 
 /**
- * Whether a pantry item covers a recipe ingredient. When both are in the food
+ * whether a pantry item covers a recipe ingredient. When both are in the food
  * table they must be the same food ("chicken" does not cover "chicken stock",
  * but "chicken broth" covers "chicken stock"); otherwise the pantry item's
  * words have to appear in the ingredient ("eggs" covers "large eggs").
@@ -50,7 +50,7 @@ export const covers = (pantryName: string, ingredientName: string) => {
   return contains(need, have) || contains(have, need);
 };
 
-/** The unchecked shopping-list item a scanned product most likely is. */
+/** the unchecked shopping-list item a scanned product most likely is. */
 export const matchListItem = <T extends { name: string; checked: boolean }>(
   productName: string,
   items: T[]
@@ -72,7 +72,7 @@ type Recipe = {
 type PantryEntry = { name: string; expiresOn: string | null };
 
 /**
- * Ranks recipes by how much of them the pantry covers. Staples and optional
+ * ranks recipes by how much of them the pantry covers. Staples and optional
  * ingredients are ignored. Items expiring within `soonDays` are reported so
  * the page can say "uses up your spinach".
  */

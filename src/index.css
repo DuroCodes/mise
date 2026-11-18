@@ -85,7 +85,7 @@
   --sidebar-ring: oklch(0.62 0.1 60);
 }
 
-/* Warm dark (the original dark theme). */
+/* warm dark (the original dark theme). */
 .espresso {
   --background: oklch(0.18 0.014 55);
   --foreground: oklch(0.96 0.012 85);
@@ -121,7 +121,7 @@
   --sidebar-ring: oklch(0.72 0.08 70);
 }
 
-/* Neutral dark: true greys on near-black, amber accent. */
+/* neutral dark: true greys on near-black, amber accent. */
 .dark {
   --background: oklch(0.155 0 0);
   --foreground: oklch(0.96 0 0);
@@ -157,7 +157,7 @@
   --sidebar-ring: oklch(0.6 0 0);
 }
 
-/* Deep green, so it doesn't read as another brown or grey dark. */
+/* deep green, so it doesn't read as another brown or grey dark. */
 .herb {
   --background: oklch(0.2 0.03 150);
   --foreground: oklch(0.96 0.02 140);
@@ -193,7 +193,7 @@
   --sidebar-ring: oklch(0.7 0.08 145);
 }
 
-/* Tell the browser which way each theme leans, so built-in controls
+/* tell the browser which way each theme leans, so built-in controls
    (select menus, date pickers, scrollbars) are drawn to match. */
 :root,
 .light {
@@ -229,7 +229,7 @@ select optgroup {
     @apply bg-background text-foreground antialiased;
     text-rendering: optimizeLegibility;
   }
-  /* Clip sideways overflow on the app, not on body. overflow on body
+  /* clip sideways overflow on the app, not on body. overflow on body
      makes position:fixed menus (the theme menu) stick to the page top
      instead of the header once you scroll. */
   #root {

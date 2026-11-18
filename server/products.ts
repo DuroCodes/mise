@@ -1,6 +1,6 @@
 /**
- * Barcode lookups through Open Food Facts (a free, public product database).
- * Only the barcode number is sent. Results are cached in memory.
+ * barcode lookups through Open Food Facts (a free, public product database).
+ * only the barcode number is sent. Results are cached in memory.
  */
 export type Product = { name: string; brand: string; quantity: string };
 

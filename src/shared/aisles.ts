@@ -1,6 +1,6 @@
 import { tokens } from "./nutrition";
 
-/** Store sections, in the order most people walk a grocery store. */
+/** store sections, in the order most people walk a grocery store. */
 export const aisles = [
   "Produce",
   "Bakery",
@@ -356,7 +356,7 @@ const contains = (haystack: string[], needle: string[]) => {
 };
 
 /**
- * Picks a store section for an item. The most specific phrase wins, so
+ * picks a store section for an item. The most specific phrase wins, so
  * "chicken stock" is Pantry rather than Meat and "garlic powder" is Spices
  * rather than Produce. Anything marked frozen goes to Frozen.
  */

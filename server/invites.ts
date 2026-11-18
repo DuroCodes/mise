@@ -15,7 +15,7 @@ const inviteTokenTaken = (token: string) =>
       .get()
   );
 
-/** Links created before the short codes are swapped the next time the server starts. */
+/** links created before the short codes are swapped the next time the server starts. */
 export const shortenInviteTokens = () => {
   const rows = db
     .select({ id: invites.id, token: invites.token })
@@ -92,7 +92,7 @@ const openInvite = (token: string) =>
     gt(invites.expiresAt, new Date())
   );
 
-/** What the invite page shows before someone signs up. */
+/** what the invite page shows before someone signs up. */
 export const describeInvite = (token: string) => {
   if (!inviteTokenShape.test(token)) return null;
   const row = db
@@ -116,7 +116,7 @@ export type AcceptResult =
   { ok: true } | { ok: false; status: 400 | 404; error: string };
 
 /**
- * Creates a member account from an invite. The invite is claimed first, so
+ * creates a member account from an invite. The invite is claimed first, so
  * two people can't use the same link at once, and released if sign-up fails.
  */
 export const acceptInvite = async (

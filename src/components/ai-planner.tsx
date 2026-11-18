@@ -39,7 +39,7 @@ const longDay = (day: string) =>
     day: "numeric",
   });
 
-/** Days from today on whose dinner is still open. */
+/** days from today on whose dinner is still open. */
 const openDays = (days: string[], today: string, entries: PlanEntry[]) =>
   days.filter(
     (day) =>
@@ -74,7 +74,7 @@ function AiPlanner({
   } | null>(null);
   const [lastWeek, setLastWeek] = useState<string | null>(null);
 
-  // Reset the request whenever the dialog opens on a different week.
+  // reset the request whenever the dialog opens on a different week.
   const weekKey = days[0] ?? "";
   if (open && weekKey !== lastWeek) {
     setLastWeek(weekKey);

@@ -92,7 +92,7 @@ function CookLog({
   };
 
   return (
-    <section className="min-w-0 space-y-3 print:hidden">
+    <section className="min-w-0 space-y-2 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-medium">Cooking log</h2>
         <Dialog

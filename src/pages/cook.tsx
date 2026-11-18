@@ -51,11 +51,11 @@ const writeSet = (key: string, value: Set<number>) => {
   try {
     sessionStorage.setItem(key, JSON.stringify([...value]));
   } catch {
-    // Progress just won't survive a reload.
+    // progress just won't survive a reload.
   }
 };
 
-/** Keeps the screen on while cooking, where the browser allows it. */
+/** keeps the screen on while cooking, where the browser allows it. */
 const useWakeLock = () => {
   const [state, setState] = useState<"on" | "off" | "unsupported">(() =>
     "wakeLock" in navigator ? "off" : "unsupported"
@@ -174,7 +174,6 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
     try {
       sessionStorage.setItem(stepKey, String(next));
     } catch {
-      // Not important.
     }
   };
 

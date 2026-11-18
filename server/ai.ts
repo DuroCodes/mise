@@ -1,24 +1,32 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
-import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
+import {
+  APICallError,
+  Output,
+  RetryError,
+  generateText,
+  stepCountIs,
+  tool,
+} from "ai";
 import { z } from "zod";
 import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
+import { whisperStatus, type WhisperStatus } from "./whisper";
 
 /**
- * Optional model features. They stay off unless the server has a model set
+ * optional model features. They stay off unless the server has a model set
  * up, so recipes never leave the machine unless the person running mise opts
  * in.
  *
- * Set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
+ * set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
  * is required and chooses the provider. A local model needs no key:
  * `local:hermes3`, with `MISE_AI_BASE_URL` if it isn't Ollama on this
  * machine. Examples: `anthropic:claude-opus-5-5`, `openai:gpt-5`,
  * `openrouter:openai/gpt-5`.
  *
- * Without those, an admin can set the provider, model, and key in Admin > AI.
- * The environment always wins over the saved setting.
+ * without those, an admin can set the provider, model, and key in Admin > AI.
+ * the environment always wins over the saved setting.
  */
 export const aiProviders = [
   "anthropic",
@@ -31,7 +39,7 @@ type ProviderId = (typeof aiProviders)[number];
 type AiSetup = {
   provider: ProviderId;
   model: string;
-  /** Empty for a local server that doesn't ask for one. */
+  /** empty for a local server that doesn't ask for one. */
   apiKey: string;
   baseURL?: string;
 };
@@ -45,30 +53,38 @@ export const localDefaultUrl = "http://localhost:11434/v1";
 export const defaultModel = (provider: ProviderId) =>
   provider === "anthropic" ? "claude-opus-5-5" : "";
 
-/** Only local servers can run without a key. */
+/** only local servers can run without a key. */
 export const needsKey = (provider: ProviderId) => provider !== "local";
 
+const parseEnvModel = (
+  raw: string | undefined
+): { provider: ProviderId; model: string } | null => {
+  if (!raw) return { provider: "anthropic", model: "claude-opus-5-5" };
+
+  const split = raw.indexOf(":");
+  const head = split === -1 ? "" : raw.slice(0, split);
+  if (!providers.has(head as ProviderId) || split >= raw.length - 1)
+    return null;
+
+  return { provider: head as ProviderId, model: raw.slice(split + 1) };
+};
+
 const envSetup = () => {
-  const raw = process.env.MISE_AI_MODEL?.trim();
-  let provider: ProviderId = "anthropic";
-  let model = "claude-opus-5-5";
-  if (raw) {
-    const split = raw.indexOf(":");
-    const head = split === -1 ? "" : raw.slice(0, split);
-    if (!providers.has(head as ProviderId) || split >= raw.length - 1)
-      return null;
-    provider = head as ProviderId;
-    model = raw.slice(split + 1);
-  }
+  const parsed = parseEnvModel(process.env.MISE_AI_MODEL?.trim());
+  if (!parsed) return null;
+
+  const { provider, model } = parsed;
   const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
   if ((needsKey(provider) && !apiKey) || !model) return null;
+
   const baseURL =
     process.env.MISE_AI_BASE_URL?.trim() ||
     (provider === "local" ? localDefaultUrl : undefined);
+
   return { provider, model, apiKey, baseURL };
 };
 
-// Same default as db.ts; read here so importing this module never opens the
+// same default as db.ts; read here so importing this module never opens the
 // database (the tests import it).
 const settingsFile = `${process.env.DATA_DIR ?? "./data"}/ai-settings.json`;
 
@@ -112,7 +128,7 @@ const modelFor = (setup: AiSetup) => {
     })(setup.model);
   }
   const openai = createOpenAI({
-    // Local servers like Ollama ignore the key, but the client wants one.
+    // local servers like Ollama ignore the key, but the client wants one.
     apiKey: setup.apiKey || "local",
     baseURL:
       setup.baseURL ??
@@ -138,9 +154,10 @@ export type AiStatus = {
   model: string | null;
   baseURL: string | null;
   hint: string | null;
+  whisper: WhisperStatus;
 };
 
-/** What admins see. The key itself never leaves the server. */
+/** what admins see. The key itself never leaves the server. */
 export const aiStatus = (): AiStatus => {
   const fromEnv = envSetup();
   const setup = fromEnv ?? savedSetup();
@@ -151,16 +168,17 @@ export const aiStatus = (): AiStatus => {
     model: setup?.model ?? null,
     baseURL: setup?.provider === "local" ? (setup.baseURL ?? null) : null,
     hint: setup?.apiKey ? `…${setup.apiKey.slice(-4)}` : null,
+    whisper: whisperStatus(),
   };
 };
 
-/** The saved key, so an admin can switch models without pasting it again. */
+/** the saved key, so an admin can switch models without pasting it again. */
 export const savedKeyFor = (provider: ProviderId) => {
   const setup = savedSetup();
   return setup?.provider === provider ? setup.apiKey : null;
 };
 
-/** Sends a one-word request to make sure the key and model work. */
+/** sends a one-word request to make sure the key and model work. */
 export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
   const local = setup.provider === "local";
   try {
@@ -169,7 +187,7 @@ export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
       prompt: "Reply with the word ok.",
       maxOutputTokens: 16,
       maxRetries: 0,
-      // A local model may need to load into memory first.
+      // a local model may need to load into memory first.
       abortSignal: AbortSignal.timeout(local ? 120_000 : 30_000),
     });
     return { ok: true, value: null };
@@ -253,30 +271,71 @@ const within = (value: number | null, low: number, high: number) =>
     ? value
     : null;
 
-/** Fits model output to mise's limits. Exported for tests. */
+/**
+ * some models (esp. free Groq/Qwen JSON mode) leak schema junk into strings,
+ * e.g. "%Y44I1 teaspoon/I %E" or "%I2/I %E whole eggs".
+ */
+export const scrubModelText = (value: string) =>
+  value
+    .replace(/%Y\d+I/gi, " ")
+    .replace(/%E\b/gi, " ")
+    // %I before a digit is a marker; keep the digit (content).
+    .replace(/%I(?=\d)/g, " ")
+    .replace(/%[A-Za-z]+\b/g, " ")
+    .replace(/\/I\b/g, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .trim();
+
+const clean = (value: string, max: number) => clip(scrubModelText(value), max);
+
+/**
+ * models often put "5 tbsp" in unit (or amount) and leave the other blank.
+ * pull the leading quantity out when that happens.
+ */
+export const splitMeasure = (amount: string, unit: string) => {
+  const qty = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(.*)$/;
+  if (!amount && unit) {
+    const match = unit.match(qty);
+    if (match?.[1]) return { amount: match[1], unit: (match[2] ?? "").trim() };
+  }
+  if (amount && !unit) {
+    const match = amount.match(qty);
+    if (match?.[1] && match[2])
+      return { amount: match[1], unit: match[2].trim() };
+  }
+  return { amount, unit };
+};
+
+/** fits model output to mise's limits. Exported for tests. */
 export const toRecipeInput = (value: Extracted) => {
   if (!value.found) return null;
   const parsed = recipeInput.safeParse({
-    title: clip(value.title, 200),
-    description: clip(value.description, 4000),
+    title: clean(value.title, 200),
+    description: clean(value.description, 4000),
     prepMinutes: within(value.prepMinutes, 0, 1440),
     cookMinutes: within(value.cookMinutes, 0, 1440),
     servings: within(value.servings, 1, 999),
     tags: value.tags
-      .map((tag) => clip(tag, 40))
+      .map((tag) => clean(tag, 40))
       .filter(Boolean)
       .slice(0, 20),
     ingredients: value.ingredients
-      .map((item) => ({
-        amount: clip(item.amount, 40),
-        unit: clip(item.unit, 40),
-        name: clip(item.name, 200),
-        note: clip(item.note, 200),
-      }))
+      .map((item) => {
+        const split = splitMeasure(
+          clean(item.amount, 40),
+          clean(item.unit, 40)
+        );
+        return {
+          amount: split.amount,
+          unit: split.unit,
+          name: clean(item.name, 200).toLowerCase(),
+          note: clean(item.note, 200).toLowerCase(),
+        };
+      })
       .filter((item) => item.name)
       .slice(0, 80),
     instructions: value.instructions
-      .map((text) => clip(text, 2000))
+      .map((text) => clean(text, 2000))
       .filter(Boolean)
       .slice(0, 80)
       .map((text) => ({ text })),
@@ -289,26 +348,63 @@ export const toRecipeInput = (value: Extracted) => {
   return parsed.data;
 };
 
+const ingredientShape = `Each ingredient is four separate fields — never combine amount and unit:
+  {"amount":"5","unit":"tbsp","name":"unsalted butter","note":"melted"}
+  {"amount":"3/4","unit":"cup","name":"sugar","note":""}
+  {"amount":"2","unit":"","name":"eggs","note":"room temperature"}
+Wrong: {"amount":"","unit":"5 tbsp","name":"butter","note":""}
+Wrong: {"amount":"5 tbsp","unit":"","name":"butter","note":""}`;
+
 const extractionPrompt = `You turn recipes into structured data for a recipe manager.
 The input is pasted text, a photo (a cookbook page, a handwritten card, a screenshot), or both.
 Copy what the recipe says; do not invent ingredients, amounts, or steps that are not there.
-- Split each ingredient into amount (keep fractions like "1/2" or ranges like "2-3" as written), unit (short form such as g, kg, ml, tsp, tbsp, cup, oz, lb, clove, can; empty when there is none), name, and note (preparation such as "finely chopped", or empty).
+- ${ingredientShape}
+- Unit is only the short unit (g, kg, ml, tsp, tbsp, cup, oz, lb, clove, can) or empty.
 - Each instruction is one step, without its leading number.
 - Times are whole minutes, servings a whole number; use null when the recipe does not say.
 - Tags are a few short lowercase words (cuisine, course, main ingredient) and may be empty.
 - If the input does not contain a recipe, set found to false and leave the other fields empty.`;
 
+/** spoken video transcripts: rewrite chatty narration into cookable steps. */
+const spokenExtractionPrompt = `You turn a cooking video transcript into a clean recipe for a recipe manager.
+The input is speech (and maybe a social caption), not a written recipe card. Rewrite it; do not paste the host's wording.
+- Title: a short normal recipe name (e.g. "Strawberry Cheesecake Cupcakes"). Never copy the video caption, hashtags, or emojis.
+- Description: one plain sentence grounded only in the transcript, or empty. No hashtags, emojis, or marketing fluff. Do not invent methods (e.g. do not say "no-bake" if they bake).
+- Ingredients: ${ingredientShape}
+- Instructions: short imperative steps a cook can follow (e.g. "Add 1/2 cup sour cream and mix until smooth."). Merge related chatter into one step.
+- Drop filler, taste reactions, merch plugs, and phrases like "we're going in with", "like that", "mmm".
+- Do not invent ingredients, amounts, steps, or techniques that are not in the transcript.
+- Every field must be plain text only — no markup, XML, or tokens like %I /I %E.
+- Times are whole minutes, servings a whole number; use null when the recipe does not say.
+- Tags are a few short lowercase words and may be empty.
+- If there is no recipe, set found to false and leave the other fields empty.`;
+
 export type AiResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+const apiError = (error: unknown) => {
+  if (APICallError.isInstance(error)) return error;
+  if (RetryError.isInstance(error) && APICallError.isInstance(error.lastError))
+    return error.lastError;
+  return null;
+};
+
 const failure = (error: unknown) => {
-  console.error(error);
-  if (APICallError.isInstance(error)) {
-    if (error.statusCode === 401 || error.statusCode === 403)
+  const api = apiError(error);
+  console.error(api ?? error);
+  if (api) {
+    if (api.statusCode === 401 || api.statusCode === 403)
       return { ok: false as const, error: "The API key was rejected" };
-    if (error.statusCode === 429)
+    if (api.statusCode === 429)
       return {
         ok: false as const,
-        error: "The model is busy. Try again in a minute.",
+        error: "The model is rate-limited. Try again in a minute.",
+      };
+    const body = typeof api.responseBody === "string" ? api.responseBody : "";
+    if (/max_completion_tokens|truncated|json_validate_failed/i.test(body))
+      return {
+        ok: false as const,
+        error:
+          "The model ran out of room writing the recipe. Try again in a moment.",
       };
     return {
       ok: false as const,
@@ -337,7 +433,10 @@ const objectFrom = async <T>(
       },
     ],
     output: Output.object({ schema }),
-    maxOutputTokens: 8000,
+    // Groq free tier is ~8k TPM; 8k completion alone gets truncated mid-JSON.
+    maxOutputTokens: 2500,
+    // free OpenRouter models 429 often; one retry is enough, then surface it.
+    maxRetries: 1,
   });
   return result.output;
 };
@@ -345,6 +444,8 @@ const objectFrom = async <T>(
 export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
+  /** spoken video transcript — rewrite into clear steps instead of copying narration. */
+  spoken?: boolean;
 }) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
@@ -364,7 +465,11 @@ export const extractRecipe = async (input: {
   });
 
   try {
-    const output = await objectFrom(extracted, extractionPrompt, content);
+    const output = await objectFrom(
+      extracted,
+      input.spoken ? spokenExtractionPrompt : extractionPrompt,
+      content
+    );
     if (!output)
       return {
         ok: false as const,
@@ -388,7 +493,7 @@ const pageText = (html: string) =>
     .trim()
     .slice(0, 20_000);
 
-/** Downloads a public page as plain text. Exported for the model tools. */
+/** downloads a public page as plain text. Exported for the model tools. */
 export const readPublicPage = async (raw: string) => {
   let current = await publicRecipeUrl(raw);
   if (!current) return null;
@@ -424,7 +529,7 @@ export const readPublicPage = async (raw: string) => {
   return null;
 };
 
-/** Reads a recipe page the direct importer could not parse. */
+/** reads a recipe page the direct importer could not parse. */
 export const recipeFromUrl = async (url: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
@@ -463,7 +568,7 @@ const photoItems = z.object({
 
 export type PhotoItem = { name: string; amount: string; unit: string };
 
-/** Fits model output to pantry limits. Exported for tests. */
+/** fits model output to pantry limits. Exported for tests. */
 export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
@@ -561,7 +666,7 @@ const normalizeUrl = (raw: string) => {
   }
 };
 
-/** Pulls the JSON array out of the model's final text (a ```json block or a bare array). */
+/** pulls the JSON array out of the model's final text (a ```json block or a bare array). */
 export const parseFound = (text: string, searched: Set<string>) => {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
@@ -577,7 +682,7 @@ export const parseFound = (text: string, searched: Set<string>) => {
   const out: FoundRecipe[] = [];
   for (const item of parsed.data) {
     const url = normalizeUrl(item.url);
-    // Only links that actually came back from a search, so nothing is invented.
+    // only links that actually came back from a search, so nothing is invented.
     if (!url || !searched.has(url) || seen.has(url)) continue;
     seen.add(url);
     out.push({
@@ -595,7 +700,7 @@ export const parseFound = (text: string, searched: Set<string>) => {
   return out;
 };
 
-/** Result links from a DuckDuckGo HTML page, including uddg redirects. */
+/** result links from a DuckDuckGo HTML page, including uddg redirects. */
 export const linksFromSearchHtml = (html: string) => {
   const out: { title: string; url: string }[] = [];
   const seen = new Set<string>();
@@ -732,8 +837,6 @@ export const askAboutRecipe = async (
   }
 };
 
-// Meal planning ---------------------------------------------------------------
-
 export type PlanSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
 export type PlannerRecipe = Pick<
@@ -772,10 +875,10 @@ const mealPlanOutput = z.object({
   summary: z.string(),
 });
 
-/** At most this many recipes go to Claude; favorites and regulars first. */
+/** at most this many recipes go to Claude; favorites and regulars first. */
 const plannerLimit = 300;
 
-/** Picks and orders the recipes Claude sees. Exported for tests. */
+/** picks and orders the recipes Claude sees. Exported for tests. */
 export const plannerRecipes = <T extends PlannerRecipe>(recipes: T[]) =>
   [...recipes]
     .sort(
@@ -806,7 +909,7 @@ const recipeLine = (recipe: PlannerRecipe, key: string) => {
 };
 
 /**
- * Keeps only meals that land on a requested day and meal, use a recipe from
+ * keeps only meals that land on a requested day and meal, use a recipe from
  * the library, and don't double up a slot. Exported for tests.
  */
 export const toMealPlan = (

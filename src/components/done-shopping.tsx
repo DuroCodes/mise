@@ -15,7 +15,7 @@ import { formatAmount, parseAmount } from "@/lib/units";
 
 type Choice = { amount: string; keep: boolean };
 
-/** A count can be stepped; text amounts like "3ish" are just kept or skipped. */
+/** a count can be stepped; text amounts like "3ish" are just kept or skipped. */
 const numeric = (amount: string) => parseAmount(amount);
 
 const step = (amount: string, delta: number) => {

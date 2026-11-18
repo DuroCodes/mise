@@ -73,7 +73,7 @@ const shareTokenTaken = (token: string) =>
       .get()
   );
 
-/** Links created before the short codes are swapped the next time the server starts. */
+/** links created before the short codes are swapped the next time the server starts. */
 export const shortenShareTokens = () => {
   const rows = db
     .select({ id: recipes.id, shareToken: recipes.shareToken })
