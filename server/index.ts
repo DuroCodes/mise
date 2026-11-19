@@ -37,6 +37,7 @@ import {
 import { startReminders } from "./push";
 import { registerRoutes } from "./routes";
 import { seedIfEmpty } from "./seed";
+import { isPreviewBot, sharePreviewHtml } from "./share-preview";
 import { sharedRecipe, shortenShareTokens } from "./social";
 import { imageExtension } from "./uploads";
 
@@ -372,6 +373,32 @@ app.use(
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 app.route("/api", api);
 app.use("/uploads/*", serveStatic({ root: dataDir }));
+
+/** public origin when sitting behind a reverse proxy (Cloudflare, Caddy, …). */
+const publicOrigin = (request: Request) => {
+  const url = new URL(request.url);
+  const host =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host");
+  if (!host) return url.origin;
+  const proto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    url.protocol.replace(":", "");
+  return `${proto}://${host}`;
+};
+
+/** Discord (and other unfurlers) need OG tags + component embeds in the HTML
+ * response. Humans keep the SPA; bots get a tiny server-rendered page. */
+app.get("/s/:token", (c, next) => {
+  if (!isPreviewBot(c.req.header("user-agent"))) return next();
+  const recipe = sharedRecipe(c.req.param("token"));
+  if (!recipe) return c.text("Not found", 404);
+  const origin = publicOrigin(c.req.raw);
+  const pageUrl = `${origin}/s/${c.req.param("token")}`;
+  c.header("cache-control", "public, max-age=300");
+  c.header("x-robots-tag", "noindex");
+  return c.html(sharePreviewHtml(recipe, pageUrl, origin));
+});
 
 if (production) {
   // the service worker and manifest must never be cached (by browsers or a
