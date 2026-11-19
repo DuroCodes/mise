@@ -57,8 +57,7 @@ function ReceivePage() {
     const ping = () => {
       try {
         opener.postMessage("mise-ready", "*");
-      } catch {
-      }
+      } catch {}
     };
     ping();
     const timer = window.setInterval(ping, 500);

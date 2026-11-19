@@ -530,44 +530,38 @@ function ShoppingPage() {
                     : `${open.length} to buy${done.length ? ` · ${done.length} in the basket` : ""}`}
             </p>
           </div>
-          {total > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {open.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setScanning(true)}
-                >
-                  <ScanLineIcon data-icon="inline-start" />
-                  Scan
-                </Button>
-              )}
-              {open.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void shareList()}
-                >
-                  {canShare ? (
-                    <Share2Icon data-icon="inline-start" />
-                  ) : (
-                    <CopyIcon data-icon="inline-start" />
-                  )}
-                  {canShare ? "Share" : "Copy"}
-                </Button>
-              )}
-              {done.length > 0 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => void openFinish()}
-                >
-                  <CheckIcon data-icon="inline-start" />
-                  Done shopping
-                </Button>
-              )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setScanning(true)}
+            >
+              <ScanLineIcon data-icon="inline-start" />
+              Scan
+            </Button>
+            {total > 0 && open.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void shareList()}
+              >
+                {canShare ? (
+                  <Share2Icon data-icon="inline-start" />
+                ) : (
+                  <CopyIcon data-icon="inline-start" />
+                )}
+                {canShare ? "Share" : "Copy"}
+              </Button>
+            )}
+            {done.length > 0 && (
+              <Button type="button" size="sm" onClick={() => void openFinish()}>
+                <CheckIcon data-icon="inline-start" />
+                Done shopping
+              </Button>
+            )}
+            {total > 0 && (
               <Button
                 type="button"
                 variant="outline"
@@ -579,8 +573,8 @@ function ShoppingPage() {
                 <span className="sm:hidden">Clear</span>
                 <span className="max-sm:hidden">Clear all</span>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         {total > 0 && (
           <div
@@ -650,7 +644,8 @@ function ShoppingPage() {
           />
           <h2 className="text-base font-medium">Your list is empty</h2>
           <p className="text-sm text-muted-foreground">
-            Add items above, or send them from a recipe or the meal plan.
+            Scan barcodes while you shop, add items above, or send them from a
+            recipe or the meal plan.
           </p>
           <div className="flex justify-center gap-2">
             <Button asChild variant="outline">

@@ -26,7 +26,7 @@ const baseUrl = (provider: WhisperProvider) => {
   return "https://api.openai.com/v1";
 };
 
-export const whisperSetup = (): WhisperSetup | null => {
+export const whisperSetup = () => {
   const raw = process.env.MISE_WHISPER_MODEL?.trim();
   const apiKey = process.env.MISE_WHISPER_API_KEY?.trim() ?? "";
   if (!raw || !apiKey) return null;
@@ -61,11 +61,10 @@ export const whisperStatus = () => {
 };
 
 export type WhisperResult =
-  | { ok: true; value: string }
-  | { ok: false; error: string };
+  { ok: true; value: string } | { ok: false; error: string };
 
 /** OpenAI-compatible POST /audio/transcriptions. */
-export const transcribeFile = async (path: string): Promise<WhisperResult> => {
+export const transcribeFile = async (path: string) => {
   const setup = whisperSetup();
   if (!setup)
     return {

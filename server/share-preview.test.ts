@@ -9,7 +9,7 @@ import {
   sharePreviewHtml,
 } from "./share-preview";
 
-const recipe = (overrides: Partial<SharedRecipe> = {}): SharedRecipe => ({
+const recipe = (overrides: Partial<SharedRecipe> = {}) => ({
   title: "Tomato Soup",
   description: "A simple pot of soup for cold nights.",
   image: "/uploads/soup.jpg",

@@ -202,6 +202,5 @@ export const clearOutbox = () => {
       const name = localStorage.key(index);
       if (name?.startsWith("mise-outbox:")) localStorage.removeItem(name);
     }
-  } catch {
-  }
+  } catch {}
 };
