@@ -345,16 +345,16 @@ function RecipeView({
               No steps yet.
             </p>
           ) : (
-            <ol className="space-y-1.5 text-sm leading-6">
+            <ol className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-sm leading-6">
               {recipe.instructions.map((item, index) => (
                 <li
                   key={`${index}-${item.text.slice(0, 12)}`}
-                  className="flex gap-3 break-inside-avoid"
+                  className="contents"
                 >
-                  <span className="w-5 shrink-0 text-muted-foreground tabular-nums">
+                  <span className="text-muted-foreground tabular-nums">
                     {index + 1}
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 break-inside-avoid">
                     <StepText
                       text={item.text}
                       step={index + 1}
