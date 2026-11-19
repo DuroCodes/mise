@@ -442,7 +442,7 @@ const aliases: Alias[] = foods.flatMap((entry) =>
 );
 
 const contains = (haystack: string[], needle: string[]) => {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
+  if (!needle.length || needle.length > haystack.length) return false;
   for (let start = 0; start + needle.length <= haystack.length; start += 1) {
     if (needle.every((word, index) => haystack[start + index] === word))
       return true;

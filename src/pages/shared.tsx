@@ -14,6 +14,7 @@ import type { SharedRecipe } from "@/shared/recipe";
 function SharedView({ recipe }: { recipe: SharedRecipe }) {
   const [servings, setServings] = useState(recipe.servings ?? 1);
   const [system, setSystem] = useState<Measure>(storedMeasure);
+
   return (
     <RecipeView
       recipe={recipe}

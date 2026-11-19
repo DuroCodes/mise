@@ -229,7 +229,7 @@ function ImportDialog({
       fillFromLink(response.value.recipe);
       return;
     }
-    if (response.value.titles.length === 0) {
+    if (!response.value.titles.length) {
       setError(response.value.skipped[0] ?? "No recipes found in that file");
       return;
     }
@@ -477,7 +477,7 @@ function ImportDialog({
         {result && (
           <section className="space-y-3" aria-live="polite">
             <h2 className="text-sm font-medium">
-              {result.imported.length === 0
+              {!result.imported.length
                 ? "Nothing was imported"
                 : `Imported ${result.imported.length} ${result.imported.length === 1 ? "recipe" : "recipes"}`}
             </h2>

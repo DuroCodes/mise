@@ -71,7 +71,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
       const finished = latest.current.filter(
         (timer) => timer.endsAt !== null && timer.endsAt <= at
       );
-      if (finished.length === 0) return;
+      if (!finished.length) return;
       const ids = new Set(finished.map((timer) => timer.id));
       latest.current = latest.current.map((timer) =>
         ids.has(timer.id)

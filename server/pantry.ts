@@ -138,7 +138,7 @@ export const moveCheckedToPantry = (userId: string) => {
       and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
     )
     .all();
-  if (checked.length === 0) return 0;
+  if (!checked.length) return 0;
   addToPantry(
     userId,
     checked.map((item) => ({
@@ -196,7 +196,7 @@ export const finishShopping = (
 
 export const pantrySuggestions = (userId: string, today: string) => {
   const pantry = listPantry(userId);
-  if (pantry.length === 0) return [];
+  if (!pantry.length) return [];
   return rankRecipes(listRecipes(userId), pantry, today)
     .slice(0, 30)
     .map((match) => ({

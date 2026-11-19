@@ -21,6 +21,6 @@ export const readPageMessage = (data: unknown) => {
   if (typeof value.url !== "string" || typeof value.html !== "string")
     return null;
   if (!/^https?:\/\//i.test(value.url) || value.url.length > 2000) return null;
-  if (value.html.length === 0 || value.html.length > 5_000_000) return null;
+  if (!value.html.length || value.html.length > 5_000_000) return null;
   return { url: value.url, html: value.html };
 };

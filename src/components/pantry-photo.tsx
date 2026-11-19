@@ -55,7 +55,7 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
 
   const save = async () => {
     const items = (rows ?? []).filter((row) => row.keep && row.name.trim());
-    if (items.length === 0) return;
+    if (!items.length) return;
     setSaving(true);
     const result = await addPantryBatch(
       items.map(({ name, amount, unit }) => ({

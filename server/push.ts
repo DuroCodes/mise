@@ -251,7 +251,7 @@ export const soonNote = (userId: string, today: string) => {
         item.expiresOn >= plusDays(today, -2)
     )
     .sort((a, b) => (a.expiresOn ?? "").localeCompare(b.expiresOn ?? ""));
-  if (soon.length === 0) return null;
+  if (!soon.length) return null;
   const describe = (item: (typeof soon)[number]) =>
     `${item.name} (${item.expiresOn === today ? "today" : item.expiresOn === tomorrow ? "tomorrow" : "expired"})`;
   return {
@@ -270,7 +270,7 @@ export const soonNote = (userId: string, today: string) => {
 export const tomorrowNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const meals = listPlan(userId, tomorrow, tomorrow, false);
-  if (meals.length === 0) return null;
+  if (!meals.length) return null;
   const thaw = new Set<string>();
   for (const meal of meals) {
     const recipe = getRecipe(meal.recipeId, userId);

@@ -525,7 +525,7 @@ function ShoppingPage() {
                 ? "Loading"
                 : total === 0
                   ? "Nothing to buy yet"
-                  : open.length === 0
+                  : !open.length
                     ? "Everything is in the basket"
                     : `${open.length} to buy${done.length ? ` · ${done.length} in the basket` : ""}`}
             </p>

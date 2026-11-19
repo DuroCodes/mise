@@ -104,11 +104,11 @@ function AiPlanner({
   const request = async (event?: SubmitEvent<HTMLFormElement>) => {
     event?.preventDefault();
     if (pending) return;
-    if (pickedDays.length === 0 || pickedSlots.length === 0) {
+    if (!pickedDays.length || !pickedSlots.length) {
       setError("Pick at least one day and one meal");
       return;
     }
-    if (fill.length === 0) {
+    if (!fill.length) {
       setError("Those meals are already planned");
       return;
     }
@@ -263,7 +263,7 @@ function AiPlanner({
                 {plan.summary}
               </p>
             )}
-            {grouped.length === 0 && (
+            {!grouped.length && (
               <p className="text-sm text-muted-foreground">
                 Nothing left to add.
               </p>
@@ -357,7 +357,7 @@ function AiPlanner({
               </Button>
               <Button
                 type="button"
-                disabled={saving || plan.meals.length === 0}
+                disabled={saving || !plan.meals.length}
                 aria-busy={saving}
                 onClick={save}
               >

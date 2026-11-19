@@ -47,11 +47,11 @@ const round = (value: number) =>
 
 function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
   const [open, setOpen] = useState(false);
-  if (recipe.ingredients.length === 0) return null;
+  if (!recipe.ingredients.length) return null;
   const estimate = estimateNutrition(recipe.ingredients, recipe.servings);
   const figures = estimate.perServing ?? estimate.total;
   const label = estimate.perServing ? "per serving" : "whole recipe";
-  if (estimate.counted.length === 0) return null;
+  if (!estimate.counted.length) return null;
   const missing = [...estimate.unmeasured, ...estimate.unknown];
 
   return (
@@ -305,7 +305,7 @@ function RecipeView({
               )}
             </div>
           </div>
-          {ingredients.length === 0 ? (
+          {!ingredients.length ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <CarrotIcon className="size-4" aria-hidden="true" />
               No ingredients yet.
@@ -337,7 +337,7 @@ function RecipeView({
         </section>
         <section className="min-w-0 space-y-2">
           <h2 className="text-sm font-medium">Instructions</h2>
-          {recipe.instructions.length === 0 ? (
+          {!recipe.instructions.length ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <ListOrderedIcon className="size-4" aria-hidden="true" />
               No steps yet.

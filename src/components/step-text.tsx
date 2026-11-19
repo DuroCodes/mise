@@ -50,7 +50,7 @@ function StepText({
       : []),
   ].sort((a, b) => a.start - b.start);
 
-  if (pieces.length === 0) return <>{text}</>;
+  if (!pieces.length) return <>{text}</>;
 
   const parts: ReactNode[] = [];
   let cursor = 0;

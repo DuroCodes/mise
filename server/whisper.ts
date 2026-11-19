@@ -30,10 +30,12 @@ export const whisperSetup = (): WhisperSetup | null => {
   const raw = process.env.MISE_WHISPER_MODEL?.trim();
   const apiKey = process.env.MISE_WHISPER_API_KEY?.trim() ?? "";
   if (!raw || !apiKey) return null;
+
   const split = raw.indexOf(":");
   const head = split === -1 ? "" : raw.slice(0, split);
   const model = split === -1 ? "" : raw.slice(split + 1);
   if (!providers.has(head) || !model) return null;
+
   return { provider: head as WhisperProvider, model, apiKey };
 };
 
@@ -46,9 +48,10 @@ export type WhisperStatus = {
   hint: string | null;
 };
 
-/** what admins see. Env-only for now; the key never leaves the server. */
-export const whisperStatus = (): WhisperStatus => {
+/** what admins see. env-only for now; the key never leaves the server. */
+export const whisperStatus = () => {
   const setup = whisperSetup();
+
   return {
     enabled: Boolean(setup),
     provider: setup?.provider ?? null,
@@ -58,7 +61,8 @@ export const whisperStatus = (): WhisperStatus => {
 };
 
 export type WhisperResult =
-  { ok: true; value: string } | { ok: false; error: string };
+  | { ok: true; value: string }
+  | { ok: false; error: string };
 
 /** OpenAI-compatible POST /audio/transcriptions. */
 export const transcribeFile = async (path: string): Promise<WhisperResult> => {
@@ -85,21 +89,26 @@ export const transcribeFile = async (path: string): Promise<WhisperResult> => {
         signal: AbortSignal.timeout(90_000),
       }
     );
+
     if (response.status === 401 || response.status === 403)
       return { ok: false, error: "The Whisper API key was rejected" };
+
     if (response.status === 429)
       return {
         ok: false,
         error: "Whisper is rate-limited. Try again in a minute.",
       };
+
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 200);
       console.error("whisper failed", response.status, detail);
       return { ok: false, error: "Could not transcribe that audio" };
     }
+
     const body = (await response.json()) as { text?: unknown };
     const text = typeof body.text === "string" ? body.text.trim() : "";
     if (!text) return { ok: false, error: "No speech found in that video" };
+
     return { ok: true, value: text };
   } catch (error) {
     console.error(error);

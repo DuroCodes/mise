@@ -334,30 +334,27 @@ export const toRecipeInput = (value: Extracted) => {
     cookMinutes: within(value.cookMinutes, 0, 1440),
     servings: within(value.servings, 1, 999),
     tags: value.tags
-      .map((tag) => clean(tag, 40))
+      .map((t) => clean(t, 40))
       .filter(Boolean)
       .slice(0, 20),
     ingredients: value.ingredients
-      .map((item) => {
-        const split = splitMeasure(
-          clean(item.amount, 40),
-          clean(item.unit, 40)
-        );
+      .map((i) => {
+        const split = splitMeasure(clean(i.amount, 40), clean(i.unit, 40));
 
         return {
           amount: split.amount,
           unit: split.unit,
-          name: clean(item.name, 200).toLowerCase(),
-          note: clean(item.note, 200).toLowerCase(),
+          name: clean(i.name, 200).toLowerCase(),
+          note: clean(i.note, 200).toLowerCase(),
         };
       })
-      .filter((item) => item.name)
+      .filter((i) => i.name)
       .slice(0, 80),
     instructions: value.instructions
-      .map((text) => clean(text, 2000))
+      .map((t) => clean(t, 2000))
       .filter(Boolean)
       .slice(0, 80)
-      .map((text) => ({ text })),
+      .map((t) => ({ text: t })),
   });
 
   if (
@@ -412,14 +409,17 @@ const apiError = (error: unknown) => {
 const failure = (error: unknown) => {
   const api = apiError(error);
   console.error(api ?? error);
+
   if (api) {
     if (api.statusCode === 401 || api.statusCode === 403)
       return { ok: false as const, error: "The API key was rejected" };
+
     if (api.statusCode === 429)
       return {
         ok: false as const,
         error: "The model is rate-limited. Try again in a minute.",
       };
+
     const body = typeof api.responseBody === "string" ? api.responseBody : "";
     if (/max_completion_tokens|truncated|json_validate_failed/i.test(body))
       return {
@@ -427,11 +427,13 @@ const failure = (error: unknown) => {
         error:
           "The model ran out of room writing the recipe. Try again in a moment.",
       };
+
     return {
       ok: false as const,
       error: "The model could not answer that right now",
     };
   }
+
   return { ok: false as const, error: "Could not reach the model" };
 };
 
@@ -470,6 +472,7 @@ export const extractRecipe = async (input: {
 }) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const content: Part[] = [];
   if (input.image) {
     content.push({
@@ -478,6 +481,7 @@ export const extractRecipe = async (input: {
       mediaType: input.image.mediaType,
     });
   }
+
   content.push({
     type: "text",
     text: input.text.trim()
@@ -496,9 +500,11 @@ export const extractRecipe = async (input: {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const recipe = toRecipeInput(output);
     if (!recipe)
       return { ok: false as const, error: "No recipe was found in that" };
+
     return { ok: true as const, value: recipe };
   } catch (error) {
     return failure(error);
@@ -518,6 +524,7 @@ const pageText = (html: string) =>
 export const readPublicPage = async (raw: string) => {
   let current = await publicRecipeUrl(raw);
   if (!current) return null;
+
   try {
     for (let hop = 0; hop < 4; hop += 1) {
       const response = await fetch(current, {
@@ -528,25 +535,32 @@ export const readPublicPage = async (raw: string) => {
           "user-agent": "Mise/0.1 (recipe import)",
         },
       });
+
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location");
         if (!location) return null;
+
         const next = await publicRecipeUrl(
           new URL(location, current).toString()
         );
         if (!next) return null;
+
         current = next;
         continue;
       }
+
       if (!response.ok) return null;
+
       const html = await response.text();
       if (html.length > 2_000_000) return null;
+
       const text = pageText(html);
-      return text.length > 0 ? text : null;
+      return text.length ? text : null;
     }
   } catch {
     return null;
   }
+
   return null;
 };
 
@@ -554,6 +568,7 @@ export const readPublicPage = async (raw: string) => {
 export const recipeFromUrl = async (url: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const page = await readPublicPage(url);
   if (!page)
     return {
@@ -561,6 +576,7 @@ export const recipeFromUrl = async (url: string) => {
       error:
         "That site blocked the download. Save the page and import the file instead.",
     };
+
   try {
     const output = await objectFrom(
       extracted,
@@ -572,9 +588,11 @@ export const recipeFromUrl = async (url: string) => {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const recipe = toRecipeInput(output);
     if (!recipe)
       return { ok: false as const, error: "No recipe was found on that page" };
+
     return { ok: true as const, value: { ...recipe, sourceUrl: url } };
   } catch (error) {
     return failure(error);
@@ -593,9 +611,11 @@ export type PhotoItem = { name: string; amount: string; unit: string };
 export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
+
   for (const item of value.items) {
     const name = clip(item.name, 200).toLowerCase();
     if (!name || seen.has(name)) continue;
+
     seen.add(name);
     out.push({
       name,
@@ -604,6 +624,7 @@ export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
     });
     if (out.length >= 80) break;
   }
+
   return out;
 };
 
@@ -624,6 +645,7 @@ export const readPantryPhoto = async (input: {
 }) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   try {
     const output = await objectFrom(photoItems, photoPrompts[input.kind], [
       {
@@ -644,8 +666,9 @@ export const readPantryPhoto = async (input: {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const items = toPhotoItems(output);
-    if (items.length === 0)
+    if (!items.length)
       return {
         ok: false as const,
         error:
@@ -653,6 +676,7 @@ export const readPantryPhoto = async (input: {
             ? "No groceries found on that receipt"
             : "No food found in that photo",
       };
+
     return { ok: true as const, value: items };
   } catch (error) {
     return failure(error);
@@ -691,20 +715,25 @@ const normalizeUrl = (raw: string) => {
 export const parseFound = (text: string, searched: Set<string>) => {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
+
   let raw: unknown;
   try {
     raw = JSON.parse((fenced ?? bare).trim());
   } catch {
     return [];
   }
+
   const parsed = foundSchema.safeParse(raw);
   if (!parsed.success) return [];
+
   const seen = new Set<string>();
   const out: FoundRecipe[] = [];
+
   for (const item of parsed.data) {
     const url = normalizeUrl(item.url);
     // only links that actually came back from a search, so nothing is invented.
     if (!url || !searched.has(url) || seen.has(url)) continue;
+
     seen.add(url);
     out.push({
       title: clip(item.title, 200) || new URL(url).hostname,
@@ -712,12 +741,13 @@ export const parseFound = (text: string, searched: Set<string>) => {
       site: new URL(url).hostname.replace(/^www\./, ""),
       why: clip(item.why, 300),
       uses: item.uses
-        .map((use) => clip(use, 60))
+        .map((u) => clip(u, 60))
         .filter(Boolean)
         .slice(0, 12),
     });
     if (out.length >= 6) break;
   }
+
   return out;
 };
 
@@ -725,6 +755,7 @@ export const parseFound = (text: string, searched: Set<string>) => {
 export const linksFromSearchHtml = (html: string) => {
   const out: { title: string; url: string }[] = [];
   const seen = new Set<string>();
+
   for (const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const href = (match[1].match(/href="([^"]+)"/i)?.[1] ?? "").replace(
       /&amp;/g,
@@ -733,17 +764,21 @@ export const linksFromSearchHtml = (html: string) => {
     const uddg = href.match(/[?&]uddg=([^&]+)/);
     const raw = uddg ? decodeURIComponent(uddg[1]) : href;
     if (!/^https?:\/\//i.test(raw) || /duckduckgo\.com/i.test(raw)) continue;
+
     const url = normalizeUrl(raw);
     if (!url || seen.has(url)) continue;
+
     const title = match[2]
       .replace(/<[^>]+>/g, "")
       .replace(/\s+/g, " ")
       .trim();
     if (!title) continue;
+
     seen.add(url);
     out.push({ title: title.slice(0, 200), url });
     if (out.length >= 8) break;
   }
+
   return out;
 };
 
@@ -752,6 +787,7 @@ const searchWeb = async (query: string) => {
     `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
   );
   if (!target) return [];
+
   try {
     const response = await fetch(target, {
       signal: AbortSignal.timeout(12_000),
@@ -761,6 +797,7 @@ const searchWeb = async (query: string) => {
       },
     });
     if (!response.ok) return [];
+
     return linksFromSearchHtml(await response.text());
   } catch {
     return [];
@@ -777,9 +814,10 @@ Finish with only a JSON array in a \`\`\`json code block, 3 to 6 items, each:
 export const findRecipes = async (pantry: string[], focus: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const list = pantry
     .slice(0, 80)
-    .map((name) => `- ${name}`)
+    .map((n) => `- ${n}`)
     .join("\n");
   const searched = new Set<string>();
   let searches = 0;
@@ -796,6 +834,7 @@ export const findRecipes = async (pantry: string[], focus: string) => {
           execute: async ({ query }) => {
             if (searches >= 5) return [];
             searches += 1;
+
             const links = await searchWeb(query);
             for (const link of links) searched.add(link.url);
             return links;
@@ -810,12 +849,14 @@ export const findRecipes = async (pantry: string[], focus: string) => {
         ok: false as const,
         error: "The model declined to search for that",
       };
+
     const found = parseFound(result.text, searched);
-    if (found.length === 0)
+    if (!found.length)
       return {
         ok: false as const,
         error: "No recipes came back this time. Try again or change the focus.",
       };
+
     return { ok: true as const, value: found };
   } catch (error) {
     return failure(error);
@@ -828,15 +869,16 @@ export const askAboutRecipe = async (
 ) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const ingredients = recipe.ingredients
-    .map((item) =>
-      [item.amount, item.unit, item.name, item.note ? `(${item.note})` : ""]
+    .map((i) =>
+      [i.amount, i.unit, i.name, i.note ? `(${i.note})` : ""]
         .filter(Boolean)
         .join(" ")
     )
     .join("\n");
   const steps = recipe.instructions
-    .map((step, index) => `${index + 1}. ${step.text}`)
+    .map((s, i) => `${i + 1}. ${s.text}`)
     .join("\n");
 
   try {
@@ -849,9 +891,11 @@ export const askAboutRecipe = async (
     });
     if (result.finishReason === "content-filter")
       return { ok: false as const, error: "The model declined to answer that" };
+
     const answer = result.text.trim();
     if (!answer)
       return { ok: false as const, error: "The model did not answer" };
+
     return { ok: true as const, value: answer };
   } catch (error) {
     return failure(error);
@@ -923,9 +967,10 @@ const recipeLine = (recipe: PlannerRecipe, key: string) => {
       : "never cooked",
     `ingredients: ${recipe.ingredients
       .slice(0, 15)
-      .map((item) => item.name)
+      .map((i) => i.name)
       .join(", ")}`,
   ].filter(Boolean);
+
   return `${key} | ${recipe.title.replace(/\s+/g, " ")} | ${facts.join(" | ")}`;
 };
 
@@ -940,15 +985,18 @@ export const toMealPlan = (
 ): MealPlanIdea => {
   const taken = new Set<string>();
   const meals: PlannedMeal[] = [];
+
   for (const meal of value.meals) {
     const day = meal.day.trim();
     const slot = meal.slot.trim().toLowerCase() as PlanSlot;
     const recipeId = keys.get(meal.recipe.trim().toLowerCase());
     if (!recipeId || !wanted.get(day)?.has(slot)) continue;
     if (taken.has(`${day} ${slot}`)) continue;
+
     taken.add(`${day} ${slot}`);
     meals.push({ day, slot, recipeId, why: clip(meal.why, 200) });
   }
+
   return { meals, summary: clip(value.summary, 600) };
 };
 
@@ -1026,6 +1074,7 @@ export const planMeals = async (input: {
         ok: false,
         error: "Couldn't find recipes that fit. Try different meals or notes.",
       };
+
     return { ok: true, value: plan };
   } catch (error) {
     return failure(error);

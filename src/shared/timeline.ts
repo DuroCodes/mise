@@ -19,7 +19,7 @@ export type Timeline = {
 /** minutes a step takes: every duration in it, back to back, using the top of any range. */
 export const stepMinutes = (text: string) => {
   const timers = findTimers(text);
-  if (timers.length === 0) return null;
+  if (!timers.length) return null;
   const seconds = timers.reduce(
     (total, timer) => total + timer.upperSeconds,
     0

@@ -33,6 +33,11 @@ import { isMeasure, parenthetical, storedMeasure } from "@/lib/view";
 import { NotFoundPage } from "@/pages/not-found";
 import type { Recipe } from "@/shared/recipe";
 
+export type CookableRecipe = Pick<
+  Recipe,
+  "title" | "servings" | "ingredients" | "instructions"
+>;
+
 const readSet = (key: string) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -94,7 +99,15 @@ const useWakeLock = () => {
   return state;
 };
 
-function CookScreen({ recipe }: { recipe: Recipe }) {
+function CookScreen({
+  recipe,
+  storageKey,
+  backTo,
+}: {
+  recipe: CookableRecipe;
+  storageKey: string;
+  backTo: string;
+}) {
   const [params] = useSearchParams();
   const units = params.get("units");
   const system = isMeasure(units) ? units : storedMeasure();
@@ -111,8 +124,8 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
     scaleIngredient(item, factor, system)
   );
 
-  const doneKey = `mise-cook-${recipe.id}-ingredients`;
-  const stepKey = `mise-cook-${recipe.id}-step`;
+  const doneKey = `mise-cook-${storageKey}-ingredients`;
+  const stepKey = `mise-cook-${storageKey}-step`;
   const [checked, setChecked] = useState(() => readSet(doneKey));
   const [step, setStep] = useState(() => {
     try {
@@ -129,7 +142,9 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   const [view, setView] = useState<"steps" | "ingredients" | "timing">(
     recipe.instructions.length ? "steps" : "ingredients"
   );
-  const [plan, setPlan] = useState<CookPlan | null>(() => readPlan(recipe.id));
+  const [plan, setPlan] = useState<CookPlan | null>(() =>
+    readPlan(storageKey)
+  );
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -139,7 +154,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
 
   const choosePlan = (next: CookPlan) => {
     setPlan(next);
-    savePlan(recipe.id, next);
+    savePlan(storageKey, next);
   };
 
   const openTiming = () => {
@@ -392,7 +407,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
                 );
               })}
             </ul>
-            {ingredients.length === 0 && (
+            {!ingredients.length && (
               <p className="text-center text-muted-foreground">
                 No ingredients listed.
               </p>

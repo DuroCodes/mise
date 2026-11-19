@@ -166,7 +166,7 @@ const run = async () => {
  */
 export const flush = async () => {
   if (flushing) await flushing;
-  if (read().length === 0) return true;
+  if (!read().length) return true;
   flushing ??= run();
   return flushing;
 };

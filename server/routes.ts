@@ -256,7 +256,7 @@ export const registerRoutes = (api: Api) => {
         ? recipeLines(recipe, entry.servings, parsed.data.measure)
         : [];
     });
-    if (lines.length === 0)
+    if (!lines.length)
       return c.json({ error: "Those recipes have no ingredients" }, 400);
     mergeLines(user.id, lines);
     return c.json(listShopping(user.id));
@@ -268,7 +268,7 @@ export const registerRoutes = (api: Api) => {
     const patch = Object.fromEntries(
       Object.entries(parsed.data).filter(([, value]) => value !== undefined)
     );
-    if (Object.keys(patch).length === 0)
+    if (!Object.keys(patch).length)
       return c.json({ error: "Nothing to change" }, 400);
     const userId = c.get("user").id;
     if (!updateItem(userId, c.req.param("id"), patch))
@@ -550,7 +550,7 @@ export const registerRoutes = (api: Api) => {
       recipe.servings,
       parsed.data.measure
     ).filter((_, index) => missing.has(recipe.ingredients[index]?.name ?? ""));
-    if (lines.length === 0)
+    if (!lines.length)
       return c.json({ error: "You already have everything for this one" }, 400);
     mergeLines(user.id, lines);
     return c.json({ added: lines.length, shopping: listShopping(user.id) });
@@ -565,7 +565,7 @@ export const registerRoutes = (api: Api) => {
     if (!parsed.success)
       return c.json({ error: "Keep the request short" }, 400);
     const pantry = listPantry(c.get("user").id).map((item) => item.name);
-    if (pantry.length === 0 && !parsed.data.focus)
+    if (!pantry.length && !parsed.data.focus)
       return c.json({ error: "Add a few things to your pantry first" }, 400);
     const result = await findRecipes(pantry, parsed.data.focus);
     if (!result.ok) return c.json({ error: result.error }, 502);
@@ -691,7 +691,7 @@ export const registerRoutes = (api: Api) => {
       return c.json({ error: "Pick the days and meals to plan" }, 400);
     const user = c.get("user");
     const recipes = listRecipes(user.id);
-    if (recipes.length === 0)
+    if (!recipes.length)
       return c.json({ error: "Add a few recipes first" }, 400);
     const days = parsed.data.fill.map((entry) => entry.day).sort();
     const from = days[0] ?? parsed.data.today;

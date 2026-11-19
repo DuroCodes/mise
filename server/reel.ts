@@ -106,6 +106,7 @@ const reelMeta = async (url: string): Promise<ReelMeta | null> => {
 const storeThumbnail = async (raw: string) => {
   const url = await publicRecipeUrl(raw);
   if (!url) return null;
+
   try {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(15_000),
@@ -113,10 +114,13 @@ const storeThumbnail = async (raw: string) => {
       redirect: "follow",
     });
     if (!response.ok) return null;
+
     const type = response.headers.get("content-type") ?? "";
     if (!type.startsWith("image/")) return null;
+
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.length === 0 || bytes.length > 5 * 1024 * 1024) return null;
+    if (!bytes.length || bytes.length > 5 * 1024 * 1024) return null;
+
     return saveUpload(bytes, imageExtension(type));
   } catch (error) {
     console.error(error);
@@ -132,15 +136,18 @@ export const captionLooksLikeRecipe = (text: string) => {
     /\b(steps?|directions?|method|instructions?)\b/i.test(body)
   )
     return true;
+
   if (body.length < 80) return false;
-  const lines = body.split(/\n+/).filter((line) => line.trim().length > 0);
+
+  const lines = body.split(/\n+/).filter((l) => l.trim().length > 0);
   const measured = lines.filter(
-    (line) =>
-      /\d/.test(line) &&
+    (l) =>
+      /\d/.test(l) &&
       /\b(cup|cups|tsp|tbsp|oz|lb|g|kg|ml|gram|eggs?|butter|flour|sugar)\b/i.test(
-        line
+        l
       )
   );
+
   return measured.length >= 3;
 };
 

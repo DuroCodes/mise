@@ -247,7 +247,7 @@ function BarcodeScanner({
         className="max-h-[40svh] space-y-2 overflow-y-auto bg-neutral-950 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         aria-live="polite"
       >
-        {scans.length === 0 ? (
+        {!scans.length ? (
           <p className="py-2 text-center text-sm text-white/60">
             Scanned items get checked off your list.
           </p>

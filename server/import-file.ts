@@ -380,7 +380,7 @@ export const sniffImage = (bytes: Uint8Array) => {
 
 const imageFromZip = (files: Unzipped, hints: string[]) => {
   const wanted = hints.filter(Boolean);
-  if (wanted.length === 0) return null;
+  if (!wanted.length) return null;
   const candidates = Object.keys(files)
     .filter((path) => {
       const parts = path.toLowerCase().split("/");
@@ -460,7 +460,7 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
     const found: Record<string, unknown>[] = [];
     collectRecipes(object, found);
     if (Array.isArray(object.items)) collectRecipes(object.items, found);
-    if (found.length === 0) {
+    if (!found.length) {
       result.skipped.push(`${label}: no recipe found`);
       continue;
     }
@@ -541,7 +541,7 @@ export const readImportFile = (name: string, bytes: Uint8Array) => {
         else result.skipped.push(`${path}: ${parsed.error}`);
       }
     }
-    if (result.recipes.length === 0 && result.skipped.length === 0)
+    if (!result.recipes.length && !result.skipped.length)
       result.skipped.push(`${name}: no recipes found in the zip file`);
     return result;
   }

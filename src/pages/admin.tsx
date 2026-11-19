@@ -331,7 +331,7 @@ function AdminPage({ selfId }: { selfId: string }) {
                 </TableCell>
               </TableRow>
             ))}
-            {recipes?.length === 0 && (
+            {recipes && !recipes.length && (
               <TableRow>
                 <TableCell colSpan={4} className="text-muted-foreground">
                   No recipes yet.

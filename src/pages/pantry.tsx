@@ -307,7 +307,7 @@ function PantryList({
         </div>
       )}
 
-      {items.length === 0 ? (
+      {!items.length ? (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <PackageOpenIcon
             className="mx-auto size-6 text-muted-foreground"
@@ -563,7 +563,7 @@ function Suggestions({
 
   return (
     <div className="space-y-5">
-      {suggestions && suggestions.length === 0 && (
+      {suggestions && !suggestions.length && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-8 text-center ring-1 ring-foreground/10">
           <UtensilsCrossedIcon
             className="mx-auto size-6 text-muted-foreground"

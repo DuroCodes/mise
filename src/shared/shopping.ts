@@ -28,7 +28,7 @@ export const itemKey = (name: string) => {
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean);
-  if (words.length === 0) return "";
+  if (!words.length) return "";
   const last = words.length - 1;
   words[last] = singularWord(words[last] ?? "");
   return words.join(" ");
