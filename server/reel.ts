@@ -151,22 +151,40 @@ export const captionLooksLikeRecipe = (text: string) => {
   return measured.length >= 3;
 };
 
+const downloadFailMessage = (stderr: string) => {
+  if (/IP address is blocked/i.test(stderr))
+    return "TikTok blocked this download. Try again in a bit, or from another network.";
+
+  if (/Private video|login required|members only|not available/i.test(stderr))
+    return "That video is private or restricted.";
+
+  if (/ffmpeg is not installed|ffprobe.*not found/i.test(stderr))
+    return "ffmpeg is required to import reels. Install it on the server.";
+
+  if (/Unsupported URL|No video formats/i.test(stderr))
+    return "Could not read that video. Update yt-dlp and try again.";
+
+  return "Could not download that video. Is the link public?";
+};
+
 /**
- * downloads media for Whisper into a temp dir. Caller must delete `dir`.
- * TikTok's standalone `audio` format is often music-only (no voiceover), so
- * prefer a progressive mp4 that muxes speech. Whisper accepts video files.
- * shortcut: needs a host-ready format; if yt-dlp demands remux, install ffmpeg
+ * downloads speech audio for Whisper. TikTok's bare `audio` format is often
+ * music-only, so we take a progressive video and extract its muxed track
+ * with ffmpeg (-x). Caller must delete `dir`.
  */
 const downloadForTranscript = async (url: string) => {
   const dir = await mkdtemp(join(tmpdir(), "mise-reel-"));
   const { code, stderr } = await runYtDlp([
     "--no-playlist",
     "--no-warnings",
+    // portrait clips report the long edge as height; cap width for ~720p.
     "-f",
-    // progressive video+audio first; bare `ba`/`audio` on TikTok is usually music.
-    "best[height<=720][ext=mp4][vcodec!=none][acodec!=none]/best[ext=mp4][vcodec!=none][acodec!=none]/best[ext=mp4]/best/ba",
+    "best[width<=720][ext=mp4][vcodec!=none]/best[ext=mp4][vcodec!=none]/best",
+    "-x",
+    "--audio-format",
+    "m4a",
     "-o",
-    join(dir, "media.%(ext)s"),
+    join(dir, "audio.%(ext)s"),
     "--no-write-thumbnail",
     "--no-embed-thumbnail",
     "--no-embed-metadata",
@@ -176,17 +194,17 @@ const downloadForTranscript = async (url: string) => {
   if (code !== 0) {
     await rm(dir, { recursive: true, force: true });
     console.error("yt-dlp media failed", stderr.slice(0, 500));
-    return null;
+    return { ok: false as const, error: downloadFailMessage(stderr) };
   }
 
   const files = (await readdir(dir)).filter((name) => !name.startsWith("."));
   const file = files[0];
   if (!file) {
     await rm(dir, { recursive: true, force: true });
-    return null;
+    return { ok: false as const, error: "Could not download that video." };
   }
 
-  return { dir, path: join(dir, file) };
+  return { ok: true as const, dir, path: join(dir, file) };
 };
 
 const spokenFromReel = async (href: string, caption: string) => {
@@ -201,12 +219,7 @@ const spokenFromReel = async (href: string, caption: string) => {
     };
 
   const media = await downloadForTranscript(href);
-  if (!media)
-    return {
-      ok: false as const,
-      error:
-        "Could not download the video audio. Update yt-dlp, or install ffmpeg if remux is required.",
-    };
+  if (!media.ok) return media;
 
   try {
     return await transcribeFile(media.path);
