@@ -61,10 +61,10 @@ describe("share preview markup", () => {
     expect(ogDescription(recipe())).toContain("by Ada");
   });
 
-  test("html includes open graph tags, json-ld, and a discord component embed", () => {
+  test("html includes open graph tags, json-ld, and a simple discord embed", () => {
     const html = sharePreviewHtml(
       recipe(),
-      "https://mise.test/s/rdHor_WL",
+      "https://mise.test/s/Ab12Cd34",
       "https://mise.test"
     );
     expect(html).toContain('property="og:title" content="Tomato Soup"');
@@ -74,8 +74,21 @@ describe("share preview markup", () => {
     expect(html).toContain('type="application/ld+json"');
     expect(html).toContain('"@type":"Recipe"');
     expect(html).toContain('id="discord:component-embed"');
-    expect(html).toContain("Open recipe");
     expect(html).toContain("Tomato Soup");
+  });
+
+  test("discord embed is a short card with title, author, and timing", () => {
+    const json = componentEmbedJson(recipe(), "https://mise.test/s/Ab12Cd34");
+    const payload = JSON.parse(json) as {
+      component: { components: { content: string }[] };
+    };
+    const content = payload.component.components[0]?.content ?? "";
+    expect(content).toContain("-# Mise");
+    expect(content).toContain("Tomato Soup");
+    expect(content).toContain("by Ada");
+    expect(content).toContain("A simple pot of soup");
+    expect(content).toContain("10 min prep · 25 min cook · serves 4");
+    expect(content).not.toContain("Ingredients");
   });
 
   test("json-ld round-trips through the normal html importer", () => {
@@ -86,7 +99,7 @@ describe("share preview markup", () => {
           { amount: "1", unit: "can", name: "tomatoes", note: "" },
         ],
       }),
-      "https://mise.test/s/rdHor_WL",
+      "https://mise.test/s/Ab12Cd34",
       "https://mise.test"
     );
     const parsed = parseRecipeHtml(html);
@@ -114,29 +127,10 @@ describe("share preview markup", () => {
     );
     const html = sharePreviewHtml(
       recipe({ title: `Chips & "Salsa" <3` }),
-      "https://mise.test/s/abc",
+      "https://mise.test/s/Ab12Cd34",
       "https://mise.test"
     );
     expect(html).toContain("Chips &amp; &quot;Salsa&quot; &lt;3");
     expect(html).not.toContain("<3");
-  });
-
-  test("component embed stays under discord's byte limit", () => {
-    const long = recipe({
-      description: "y".repeat(2000),
-      ingredients: Array.from({ length: 40 }, (_, i) => ({
-        amount: "1",
-        unit: "cup",
-        name: `ingredient-${i}-${"x".repeat(80)}`,
-        note: "",
-      })),
-    });
-    const json = componentEmbedJson(
-      long,
-      "https://mise.test/s/rdHor_WL",
-      "https://mise.test/uploads/soup.jpg"
-    );
-    expect(json.length).toBeGreaterThan(0);
-    expect(new TextEncoder().encode(json).length).toBeLessThanOrEqual(3000);
   });
 });

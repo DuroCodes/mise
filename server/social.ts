@@ -73,14 +73,14 @@ const shareTokenTaken = (token: string) =>
       .get()
   );
 
-/** links created before the short codes are swapped the next time the server starts. */
+/** older codes (long or with -_/symbols) are swapped the next time the server starts. */
 export const shortenShareTokens = () => {
   const rows = db
     .select({ id: recipes.id, shareToken: recipes.shareToken })
     .from(recipes)
     .all();
   for (const row of rows) {
-    if (!row.shareToken || row.shareToken.length === 8) continue;
+    if (!row.shareToken || linkTokenShape.test(row.shareToken)) continue;
     db.update(recipes)
       .set({ shareToken: freshToken(shareTokenTaken) })
       .where(eq(recipes.id, row.id))
@@ -95,7 +95,8 @@ export const createShare = (recipeId: string) => {
     .where(eq(recipes.id, recipeId))
     .get();
   if (!row) return null;
-  if (row.shareToken?.length === 8) return row.shareToken;
+  if (row.shareToken && linkTokenShape.test(row.shareToken))
+    return row.shareToken;
   const token = freshToken(shareTokenTaken);
   db.update(recipes)
     .set({ shareToken: token })

@@ -6,13 +6,8 @@ import { formatMinutes, ingredientLine } from "../src/lib/format";
 export const PREVIEW_BOT =
   /Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Mise\//i;
 
-const MAX_EMBED_BYTES = 3000;
-const ACCENT = 0xb8762b;
-
 export const isPreviewBot = (userAgent: string | undefined) =>
   PREVIEW_BOT.test(userAgent ?? "");
-
-const bytes = (value: string) => new TextEncoder().encode(value).length;
 
 export const escapeHtml = (value: string) =>
   value
@@ -35,12 +30,6 @@ const shorten = (value: string, limit: number) => {
   return kept ? `${kept}…` : "";
 };
 
-/** discord markdown labels cannot keep link/emphasis markup. */
-const mdLabel = (value: string) =>
-  oneLine(value)
-    .replaceAll(/[[\]*()\\]/g, "")
-    .slice(0, 120) || "Recipe";
-
 export const absoluteImageUrl = (
   image: string | null,
   origin: string
@@ -57,7 +46,7 @@ export const absoluteImageUrl = (
   }
 };
 
-const metaBits = (recipe: SharedRecipe) =>
+const timingBits = (recipe: SharedRecipe) =>
   [
     recipe.prepMinutes !== null
       ? `${formatMinutes(recipe.prepMinutes)} prep`
@@ -66,126 +55,44 @@ const metaBits = (recipe: SharedRecipe) =>
       ? `${formatMinutes(recipe.cookMinutes)} cook`
       : null,
     recipe.servings !== null ? `serves ${recipe.servings}` : null,
-    recipe.ownerName ? `by ${recipe.ownerName}` : null,
   ].filter((bit): bit is string => Boolean(bit));
 
 export const ogDescription = (recipe: SharedRecipe) => {
-  const bits = metaBits(recipe);
+  const bits = [
+    ...timingBits(recipe),
+    recipe.ownerName ? `by ${recipe.ownerName}` : null,
+  ].filter((bit): bit is string => Boolean(bit));
   const body = oneLine(recipe.description);
   const joined = [...bits, body].filter(Boolean).join(" · ");
   return shorten(joined || "A shared recipe on Mise.", 200);
 };
 
-const ingredientLines = (recipe: SharedRecipe, limit: number) =>
-  recipe.ingredients
-    .slice(0, limit)
-    .map((item) => `- ${ingredientLine(item)}`)
-    .filter((line) => line.length > 2);
+/** Discord markdown cannot keep link/emphasis markup in labels. */
+const mdLabel = (value: string) =>
+  oneLine(value)
+    .replaceAll(/[[\]*()\\]/g, "")
+    .slice(0, 120) || "Recipe";
 
-const headerText = (
-  recipe: SharedRecipe,
-  pageUrl: string,
-  description: string,
-  ingredientLimit: number
-) => {
-  const lines = [`## [${mdLabel(recipe.title)}](${pageUrl})`];
-  const bits = metaBits(recipe);
+const ACCENT = 0xb8762b;
 
-  if (bits.length) lines.push(`-# ${bits.join(" · ")}`);
-  if (description) lines.push(description);
-
-  const ingredients = ingredientLines(recipe, ingredientLimit);
-
-  if (ingredients.length) {
-    lines.push("### Ingredients", ...ingredients);
-    if (recipe.ingredients.length > ingredientLimit) lines.push("- …");
-  }
-
-  return lines.join("\n");
-};
-
-const embedDocument = (
-  recipe: SharedRecipe,
-  pageUrl: string,
-  description: string,
-  image: string | null,
-  ingredientLimit: number
-) => ({
-  component: {
-    type: 17,
-    accent_color: ACCENT,
-    components: [
-      {
-        type: 10,
-        content: headerText(recipe, pageUrl, description, ingredientLimit),
-      },
-      ...(image
-        ? [
-            {
-              type: 12,
-              items: [{ media: { url: image } }],
-            },
-          ]
-        : []),
-      { type: 14, spacing: 1 },
-      {
-        type: 1,
-        components: [
-          {
-            type: 2,
-            style: 5,
-            label: "Open recipe",
-            url: pageUrl,
-          },
-        ],
-      },
-    ],
-  },
-});
-
-const serializeEmbed = (
-  recipe: SharedRecipe,
-  pageUrl: string,
-  description: string,
-  image: string | null,
-  ingredientLimit: number
-) =>
-  JSON.stringify(
-    embedDocument(recipe, pageUrl, description, image, ingredientLimit)
-  ).replaceAll("<", "\\u003c");
-
-/** shrink description / ingredients / image until the JSON fits discord's 3kb cap. */
-export const componentEmbedJson = (
-  recipe: SharedRecipe,
-  pageUrl: string,
-  image: string | null
-) => {
-  let description = oneLine(recipe.description)
+export const componentEmbedJson = (recipe: SharedRecipe, pageUrl: string) => {
+  const title = mdLabel(recipe.title);
+  const lines = ["-# Mise", `## [${title}](${pageUrl})`];
+  if (recipe.ownerName) lines.push(`by ${mdLabel(recipe.ownerName)}`);
+  const description = oneLine(recipe.description)
     ? shorten(recipe.description, 280)
     : "";
-  let media = image;
-  let ingredientLimit = Math.min(8, recipe.ingredients.length);
+  if (description) lines.push("", description);
+  const timing = timingBits(recipe);
+  if (timing.length) lines.push("", `-# ${timing.join(" · ")}`);
 
-  const size = () =>
-    bytes(serializeEmbed(recipe, pageUrl, description, media, ingredientLimit));
-
-  while (size() > MAX_EMBED_BYTES && ingredientLimit > 0) ingredientLimit -= 1;
-
-  while (size() > MAX_EMBED_BYTES && description) {
-    const next = shorten(description, description.length - 40);
-    description = next.length < description.length ? next : "";
-  }
-
-  if (size() > MAX_EMBED_BYTES) media = null;
-
-  const json = serializeEmbed(
-    recipe,
-    pageUrl,
-    description,
-    media,
-    ingredientLimit
-  );
-  return bytes(json) <= MAX_EMBED_BYTES ? json : "";
+  return JSON.stringify({
+    component: {
+      type: 17,
+      accent_color: ACCENT,
+      components: [{ type: 10, content: lines.join("\n") }],
+    },
+  }).replaceAll("<", "\\u003c");
 };
 
 const isoDuration = (minutes: number | null) => {
@@ -244,8 +151,8 @@ export const sharePreviewHtml = (
   const title = oneLine(recipe.title) || "Recipe";
   const description = ogDescription(recipe);
   const image = absoluteImageUrl(recipe.image, origin);
-  const payload = componentEmbedJson(recipe, pageUrl, image);
   const jsonLd = recipeJsonLd(recipe, pageUrl, origin);
+  const embed = componentEmbedJson(recipe, pageUrl);
   const card = image ? "summary_large_image" : "summary";
 
   return `<!DOCTYPE html>
@@ -265,11 +172,7 @@ export const sharePreviewHtml = (
   <meta name="twitter:description" content="${escapeHtml(description)}">
   ${image ? `<meta name="twitter:image" content="${escapeHtml(image)}">` : ""}
   <script type="application/ld+json">${jsonLd}</script>
-  ${
-    payload
-      ? `<script id="discord:component-embed" type="application/json">${payload}</script>`
-      : ""
-  }
+  <script id="discord:component-embed" type="application/json">${embed}</script>
 </head>
 <body>
   <p><a href="${escapeHtml(pageUrl)}">${escapeHtml(title)}</a></p>
