@@ -34,6 +34,7 @@ export const aiProviders = [
   "openrouter",
   "local",
 ] as const;
+
 type ProviderId = (typeof aiProviders)[number];
 
 type AiSetup = {
@@ -49,17 +50,13 @@ const providers = new Set<ProviderId>(aiProviders);
 /** Ollama's OpenAI-compatible endpoint on the same machine. */
 export const localDefaultUrl = "http://localhost:11434/v1";
 
-/** Claude has a sensible default; the others need a model named. */
-export const defaultModel = (provider: ProviderId) =>
-  provider === "anthropic" ? "claude-opus-5-5" : "";
-
 /** only local servers can run without a key. */
 export const needsKey = (provider: ProviderId) => provider !== "local";
 
 const parseEnvModel = (
   raw: string | undefined
 ): { provider: ProviderId; model: string } | null => {
-  if (!raw) return { provider: "anthropic", model: "claude-opus-5-5" };
+  if (!raw) return null;
 
   const split = raw.indexOf(":");
   const head = split === -1 ? "" : raw.slice(0, split);

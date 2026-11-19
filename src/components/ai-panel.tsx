@@ -32,7 +32,7 @@ const providerHelp: Record<
     keys: "https://platform.claude.com/settings/keys",
     site: "platform.claude.com",
     model: "claude-opus-5-5",
-    modelHint: "Leave blank for claude-opus-5-5.",
+    modelHint: "The Claude model id, like claude-opus-5-5.",
   },
   openai: {
     keys: "https://platform.openai.com/api-keys",
@@ -106,7 +106,7 @@ function AiPanel() {
       setError("Paste the API key");
       return;
     }
-    if (provider !== "anthropic" && !model.trim()) {
+    if (!model.trim()) {
       setError("Name the model to use");
       return;
     }

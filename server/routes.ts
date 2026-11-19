@@ -7,7 +7,6 @@ import {
   aiStatus,
   askAboutRecipe,
   checkSetup,
-  defaultModel,
   localDefaultUrl,
   needsKey,
   extractRecipe,
@@ -938,8 +937,7 @@ export const registerRoutes = (api: Api) => {
         },
         409
       );
-    const { provider } = parsed.data;
-    const model = parsed.data.model || defaultModel(provider);
+    const { provider, model } = parsed.data;
     if (!model) return c.json({ error: "Name the model to use" }, 400);
     const apiKey = parsed.data.apiKey || savedKeyFor(provider) || "";
     if (needsKey(provider)) {
