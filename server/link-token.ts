@@ -1,13 +1,15 @@
-/** eight characters from 6 random bytes. Unguessable here, short enough to read. */
-const tokenBytes = 6;
+const tokenLength = 8;
+const alphabet =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-export const linkToken = () =>
-  Buffer.from(crypto.getRandomValues(new Uint8Array(tokenBytes))).toString(
-    "base64url"
-  );
+export const linkToken = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(tokenLength));
+  let token = "";
+  for (const byte of bytes) token += alphabet[byte % alphabet.length];
+  return token;
+};
 
-/** old links were longer. Both lengths still match until those are reissued. */
-export const linkTokenShape = /^[A-Za-z0-9_-]{8,64}$/;
+export const linkTokenShape = /^[A-Za-z0-9]{8}$/;
 
 export const freshToken = (taken: (token: string) => boolean) => {
   for (let attempt = 0; attempt < 5; attempt += 1) {

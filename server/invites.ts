@@ -15,14 +15,14 @@ const inviteTokenTaken = (token: string) =>
       .get()
   );
 
-/** links created before the short codes are swapped the next time the server starts. */
+/** older codes (long or with -_/symbols) are swapped the next time the server starts. */
 export const shortenInviteTokens = () => {
   const rows = db
     .select({ id: invites.id, token: invites.token })
     .from(invites)
     .all();
   for (const row of rows) {
-    if (row.token.length === 8) continue;
+    if (linkTokenShape.test(row.token)) continue;
     db.update(invites)
       .set({ token: freshToken(inviteTokenTaken) })
       .where(eq(invites.id, row.id))

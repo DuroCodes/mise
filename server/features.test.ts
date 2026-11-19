@@ -257,11 +257,13 @@ describe("scanning", () => {
 });
 
 describe("share links", () => {
-  test("codes are short and still unguessable", () => {
+  test("codes are short alphanumeric", () => {
     const token = linkToken();
     expect(token).toHaveLength(8);
+    expect(token).toMatch(/^[A-Za-z0-9]{8}$/);
     expect(linkTokenShape.test(token)).toBe(true);
     expect(linkTokenShape.test("short")).toBe(false);
+    expect(linkTokenShape.test("rdHor_WL")).toBe(false);
   });
 });
 
