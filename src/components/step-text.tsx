@@ -24,9 +24,34 @@ type Piece =
 
 const chipClass = (large: boolean) =>
   cn(
-    "mx-0.5 inline-flex items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground underline decoration-brand/50 decoration-dotted underline-offset-4 print:bg-transparent print:p-0 print:no-underline",
+    "mx-0.5 inline-flex items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground print:bg-transparent print:p-0",
     large ? "py-0.5" : "py-0"
   );
+
+/**
+ * round dots via ::after — `decoration-dotted` paints squares and hugs glyphs.
+ * one span for F + C so the line stays continuous without a flex gap.
+ */
+const chipTextClass = cn(
+  "relative",
+  "after:pointer-events-none after:absolute after:inset-x-0 after:top-[1.4em] after:h-[3px]",
+  "after:bg-[radial-gradient(circle,color-mix(in_oklab,var(--brand)_50%,transparent)_1px,transparent_1.05px)]",
+  "after:bg-size-[3.5px_3px] after:bg-repeat-x print:after:hidden"
+);
+
+/** split plain text so cook mode can flex-wrap with a real row gap. */
+const textItems = (value: string, keyPrefix: string) => {
+  const items: ReactNode[] = [];
+  for (const [index, token] of value.split(/(\s+)/).entries()) {
+    if (!token || /^\s+$/.test(token)) continue;
+    items.push(
+      <span key={`${keyPrefix}-${index}`} className="whitespace-pre">
+        {token}
+      </span>
+    );
+  }
+  return items;
+};
 
 /**
  * a step's text, with each duration turned into a start-timer button and
@@ -55,13 +80,24 @@ function StepText({
     })),
   ].sort((a, b) => a.start - b.start);
 
-  if (!pieces.length) return <>{text}</>;
+  if (!pieces.length) {
+    if (!large) return <>{text}</>;
+    return (
+      <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-2">
+        {textItems(text, "t")}
+      </span>
+    );
+  }
 
   const parts: ReactNode[] = [];
   let cursor = 0;
   pieces.forEach((piece, index) => {
     if (piece.start < cursor) return;
-    if (piece.start > cursor) parts.push(text.slice(cursor, piece.start));
+    if (piece.start > cursor) {
+      const slice = text.slice(cursor, piece.start);
+      if (large) parts.push(...textItems(slice, `s-${piece.start}`));
+      else parts.push(slice);
+    }
     if (piece.kind === "temp") {
       const converted =
         want && piece.scale !== want
@@ -76,12 +112,15 @@ function StepText({
             )}
             aria-hidden="true"
           />
-          {text.slice(piece.start, piece.end)}
-          {converted && (
-            <span className="font-normal text-muted-foreground">
-              ({converted.value}°{converted.scale})
-            </span>
-          )}
+          <span className={chipTextClass}>
+            {text.slice(piece.start, piece.end)}
+            {converted && (
+              <span className="font-normal text-muted-foreground">
+                {" "}
+                ({converted.value}°{converted.scale})
+              </span>
+            )}
+          </span>
         </span>
       );
     } else {
@@ -105,13 +144,25 @@ function StepText({
             )}
             aria-hidden="true"
           />
-          {piece.label}
+          <span className={chipTextClass}>{piece.label}</span>
         </button>
       );
     }
     cursor = piece.end;
   });
-  if (cursor < text.length) parts.push(text.slice(cursor));
+  if (cursor < text.length) {
+    const slice = text.slice(cursor);
+    if (large) parts.push(...textItems(slice, "e"));
+    else parts.push(slice);
+  }
+
+  if (large) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-2">
+        {parts}
+      </span>
+    );
+  }
 
   return (
     <>

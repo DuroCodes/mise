@@ -106,8 +106,9 @@ function SignedInApp() {
   if (!account) return <AppSkeleton path={location.pathname} />;
 
   const hideTabs = fullScreen.test(location.pathname);
-  // cook mode draws its own fullscreen shell over the header; keep the header
-  // mounted so a cook-route 404 still matches other pages.
+  // cook is its own fullscreen UI; main's `isolate` would trap its z-index
+  // under the sticky header, so hide the chrome instead of overlaying it.
+  const cooking = /\/cook\/?$/.test(location.pathname);
 
   return (
     <SessionContext.Provider
@@ -125,13 +126,15 @@ function SignedInApp() {
       >
         Skip to content
       </a>
-      <AppHeader account={account} offline={!online} />
+      {!cooking && <AppHeader account={account} offline={!online} />}
       <main
         id="content"
         className={
-          hideTabs
-            ? "isolate mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10"
-            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 sm:py-10 print:pb-0"
+          cooking
+            ? "isolate"
+            : hideTabs
+              ? "isolate mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10"
+              : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 sm:py-10 print:pb-0"
         }
       >
         <Routes>
@@ -183,7 +186,13 @@ function App() {
               <Route path="/*" element={<SignedInApp />} />
             </Routes>
           </TimerProvider>
-          <Toaster position="bottom-right" mobileOffset={{ bottom: 72 }} />
+          <Toaster
+            position="bottom-right"
+            mobileOffset={{
+              bottom:
+                "calc(3.25rem + max(0.5rem, env(safe-area-inset-bottom) - 0.5rem) + 1rem)",
+            }}
+          />
         </BrowserRouter>
       </MotionConfig>
     </ThemeProvider>
