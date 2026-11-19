@@ -45,7 +45,7 @@ export const thumbnailFromMeta = (data: {
 
   if (!Array.isArray(data.thumbnails)) return null;
 
-  const thumbs = data.thumbnails.flatMap((item): ThumbCandidate[] => {
+  const thumbs = data.thumbnails.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
 
     const row = item as { url?: unknown; width?: unknown; height?: unknown };
@@ -66,7 +66,7 @@ export const thumbnailFromMeta = (data: {
   return best?.url ?? null;
 };
 
-const reelMeta = async (url: string): Promise<ReelMeta | null> => {
+const reelMeta = async (url: string) => {
   const { code, stdout, stderr } = await runYtDlp([
     "--no-playlist",
     "--no-warnings",

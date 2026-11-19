@@ -234,8 +234,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     if (params.get("received") !== "1") return;
     try {
       sessionStorage.removeItem(receivedKey);
-    } catch {
-    }
+    } catch {}
     const next = new URLSearchParams(params);
     next.delete("received");
     next.delete("n");

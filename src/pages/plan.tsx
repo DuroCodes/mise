@@ -647,9 +647,7 @@ function PlanPage() {
               ))}
               {!shown.length && (
                 <li className="px-2 py-2 text-sm text-muted-foreground">
-                  {!recipes.length
-                    ? "No recipes yet."
-                    : "No recipes match."}
+                  {!recipes.length ? "No recipes yet." : "No recipes match."}
                 </li>
               )}
             </ul>

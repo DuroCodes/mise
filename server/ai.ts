@@ -3,12 +3,14 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
   APICallError,
+  NoObjectGeneratedError,
   Output,
   RetryError,
   generateText,
   stepCountIs,
   tool,
 } from "ai";
+import { TypeValidationError } from "@ai-sdk/provider";
 import { z } from "zod";
 import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
@@ -53,9 +55,7 @@ export const localDefaultUrl = "http://localhost:11434/v1";
 /** only local servers can run without a key. */
 export const needsKey = (provider: ProviderId) => provider !== "local";
 
-const parseEnvModel = (
-  raw: string | undefined
-): { provider: ProviderId; model: string } | null => {
+const parseEnvModel = (raw: string | undefined) => {
   if (!raw) return null;
 
   const split = raw.indexOf(":");
@@ -182,7 +182,7 @@ export const savedKeyFor = (provider: ProviderId) => {
 };
 
 /** sends a one-word request to make sure the key and model work. */
-export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
+export const checkSetup = async (setup: AiSetup) => {
   const local = setup.provider === "local";
 
   try {
@@ -258,6 +258,7 @@ export const aiImageTypes = [
 
 type AiImageType = (typeof aiImageTypes)[number];
 
+/** exact shape sent as json_schema — free models still sometimes ignore it. */
 const extracted = z.object({
   found: z.boolean(),
   title: z.string(),
@@ -278,6 +279,9 @@ const extracted = z.object({
 });
 
 type Extracted = z.infer<typeof extracted>;
+
+const extractedKeys =
+  "found, title, description, prepMinutes, cookMinutes, servings, tags, ingredients[{amount,unit,name,note}], instructions[]";
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 const within = (value: number | null, low: number, high: number) =>
@@ -379,7 +383,7 @@ Copy what the recipe says; do not invent ingredients, amounts, or steps that are
 - ${ingredientShape}
 - Unit is only the short unit (g, kg, ml, tsp, tbsp, cup, oz, lb, clove, can) or empty.
 - Each instruction is one step, without its leading number.
-- Times are whole minutes, servings a whole number; use null when the recipe does not say.
+- Times are whole minutes (prepMinutes, cookMinutes); servings a whole number; use null when the recipe does not say.
 - Tags are a few short lowercase words (cuisine, course, main ingredient) and may be empty.
 - If the input does not contain a recipe, set found to false and leave the other fields empty.`;
 
@@ -409,6 +413,15 @@ const apiError = (error: unknown) => {
 const failure = (error: unknown) => {
   const api = apiError(error);
   console.error(api ?? error);
+
+  if (
+    NoObjectGeneratedError.isInstance(error) ||
+    TypeValidationError.isInstance(error)
+  )
+    return {
+      ok: false as const,
+      error: "The model's answer could not be read. Try again.",
+    };
 
   if (api) {
     if (api.statusCode === 401 || api.statusCode === 403)
@@ -441,27 +454,66 @@ type Part =
   | { type: "text"; text: string }
   | { type: "image"; image: string; mediaType: AiImageType };
 
-const objectFrom = async <T>(
+const structuredCall = async <T>(
   schema: z.ZodType<T>,
   system: string,
-  content: Part[] | string
+  prompt: Part[] | string
 ) => {
   const result = await generateText({
     model: languageModel(),
     system,
-    messages: [
-      {
-        role: "user",
-        content,
-      },
-    ],
-    output: Output.object({ schema }),
+    ...(typeof prompt === "string"
+      ? { prompt }
+      : { messages: [{ role: "user" as const, content: prompt }] }),
+    output: Output.object({
+      schema,
+      name: "recipe",
+      description: `Recipe extraction. Keys must be exactly: ${extractedKeys}`,
+    }),
+    providerOptions: {
+      openai: { strictJsonSchema: true },
+    },
     // Groq free tier is ~8k TPM; 8k completion alone gets truncated mid-JSON.
     maxOutputTokens: 2500,
     // free OpenRouter models 429 often; one retry is enough, then surface it.
     maxRetries: 1,
   });
   return result.output;
+};
+
+/**
+ * ask for a json_schema object (strict when the provider supports it).
+ * if the model still invents keys, one repair pass rewrites to the schema —
+ * no silent field aliasing.
+ */
+const objectFrom = async <T>(
+  schema: z.ZodType<T>,
+  system: string,
+  content: Part[] | string
+) => {
+  try {
+    return await structuredCall(schema, system, content);
+  } catch (error) {
+    if (
+      !NoObjectGeneratedError.isInstance(error) &&
+      !TypeValidationError.isInstance(error)
+    )
+      throw error;
+
+    const bad =
+      NoObjectGeneratedError.isInstance(error) && typeof error.text === "string"
+        ? error.text
+        : TypeValidationError.isInstance(error)
+          ? JSON.stringify(error.value)
+          : null;
+    if (!bad) throw error;
+
+    return await structuredCall(
+      schema,
+      `The previous JSON failed schema validation. Emit the same recipe using only these keys: ${extractedKeys}. Map prepTime→prepMinutes and cookTime→cookMinutes if present. Invent nothing; title is required (use a short name from the content if missing). description may be "".`,
+      `Invalid JSON:\n${bad}\n\nError:\n${error.message}\n\nReturn a valid object only.`
+    );
+  }
 };
 
 export const extractRecipe = async (input: {
@@ -982,7 +1034,7 @@ export const toMealPlan = (
   value: z.infer<typeof mealPlanOutput>,
   keys: Map<string, string>,
   wanted: Map<string, Set<PlanSlot>>
-): MealPlanIdea => {
+) => {
   const taken = new Set<string>();
   const meals: PlannedMeal[] = [];
 
@@ -1024,7 +1076,7 @@ export const planMeals = async (input: {
   planned: { day: string; slot: string; title: string }[];
   fill: { day: string; slots: PlanSlot[] }[];
   notes: string;
-}): Promise<AiResult<MealPlanIdea>> => {
+}) => {
   if (!aiEnabled())
     return { ok: false, error: "AI is not set up on this server" };
 

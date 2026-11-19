@@ -53,6 +53,28 @@ function DoneShopping({
     return choice?.keep && numeric(choice.amount) !== 0;
   });
 
+  const allKept = items.every((item) => {
+    const choice = choices[item.id];
+    return choice?.keep && numeric(choice.amount) !== 0;
+  });
+  const allSkipped = items.every((item) => {
+    const choice = choices[item.id];
+    return !choice?.keep || numeric(choice.amount) === 0;
+  });
+
+  const keepAll = () =>
+    setChoices(
+      Object.fromEntries(
+        items.map((item) => [item.id, { amount: item.amount, keep: true }])
+      )
+    );
+  const skipAll = () =>
+    setChoices(
+      Object.fromEntries(
+        items.map((item) => [item.id, { amount: item.amount, keep: false }])
+      )
+    );
+
   const save = () =>
     onSave(
       keeping.map((item) => ({
@@ -68,46 +90,36 @@ function DoneShopping({
         <DialogHeader>
           <DialogTitle>Done shopping</DialogTitle>
           <DialogDescription>
-            How much goes in the pantry? Set tonight's dinner to 0.
+            How much of each goes in the pantry? Use 0 to skip an item.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-end gap-1 text-xs">
+        <div
+          className="flex gap-2"
+          role="group"
+          aria-label="Pantry for every item"
+        >
           <Button
             type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() =>
-              setChoices(
-                Object.fromEntries(
-                  items.map((item) => [
-                    item.id,
-                    { amount: item.amount, keep: true },
-                  ])
-                )
-              )
-            }
+            variant={allKept ? "secondary" : "outline"}
+            size="sm"
+            className="flex-1"
+            aria-pressed={allKept}
+            onClick={keepAll}
           >
-            All
+            Keep all
           </Button>
           <Button
             type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() =>
-              setChoices(
-                Object.fromEntries(
-                  items.map((item) => [
-                    item.id,
-                    { amount: item.amount, keep: false },
-                  ])
-                )
-              )
-            }
+            variant={allSkipped ? "secondary" : "outline"}
+            size="sm"
+            className="flex-1"
+            aria-pressed={allSkipped}
+            onClick={skipAll}
           >
-            None
+            Skip all
           </Button>
         </div>
-        <ul className="-mt-2 divide-y rounded-xl ring-1 ring-foreground/10">
+        <ul className="divide-y rounded-xl ring-1 ring-foreground/10">
           {items.map((item) => {
             const choice = choices[item.id] ?? {
               amount: item.amount,

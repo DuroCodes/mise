@@ -42,9 +42,7 @@ function SharedView({
       toolbar={
         <>
           <Button asChild size="sm">
-            <Link
-              to={`/s/${token}/cook${cookQuery ? `?${cookQuery}` : ""}`}
-            >
+            <Link to={`/s/${token}/cook${cookQuery ? `?${cookQuery}` : ""}`}>
               <ChefHatIcon data-icon="inline-start" />
               <span className="sm:hidden">Cook</span>
               <span className="max-sm:hidden">Cook mode</span>

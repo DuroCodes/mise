@@ -141,10 +141,7 @@ function StepText({
       );
       parts.push(
         punct ? (
-          <span
-            key={`t-${piece.start}`}
-            className="inline-flex items-baseline"
-          >
+          <span key={`t-${piece.start}`} className="inline-flex items-baseline">
             {chip}
             {punct}
           </span>

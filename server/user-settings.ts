@@ -6,7 +6,7 @@ export type UserSettings = { aiEnabled: boolean };
 
 const defaults: UserSettings = { aiEnabled: true };
 
-export const getUserSettings = (userId: string): UserSettings => {
+export const getUserSettings = (userId: string) => {
   const row = db
     .select()
     .from(userSettings)

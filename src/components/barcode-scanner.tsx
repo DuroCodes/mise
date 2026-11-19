@@ -249,7 +249,7 @@ function BarcodeScanner({
       >
         {!scans.length ? (
           <p className="py-2 text-center text-sm text-white/60">
-            Scanned items get checked off your list.
+            Match a list item to check it off, or add anything new.
           </p>
         ) : (
           scans.map((scan) => (

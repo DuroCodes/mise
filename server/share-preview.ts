@@ -30,10 +30,7 @@ const shorten = (value: string, limit: number) => {
   return kept ? `${kept}…` : "";
 };
 
-export const absoluteImageUrl = (
-  image: string | null,
-  origin: string
-): string | null => {
+export const absoluteImageUrl = (image: string | null, origin: string) => {
   if (!image) return null;
   try {
     const url = new URL(image, origin);
