@@ -60,6 +60,7 @@ const parseEnvModel = (
 
   const split = raw.indexOf(":");
   const head = split === -1 ? "" : raw.slice(0, split);
+
   if (!providers.has(head as ProviderId) || split >= raw.length - 1)
     return null;
 
@@ -72,6 +73,7 @@ const envSetup = () => {
 
   const { provider, model } = parsed;
   const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
+
   if ((needsKey(provider) && !apiKey) || !model) return null;
 
   const baseURL =
@@ -81,8 +83,7 @@ const envSetup = () => {
   return { provider, model, apiKey, baseURL };
 };
 
-// same default as db.ts; read here so importing this module never opens the
-// database (the tests import it).
+// same default as db.ts; read here so importing this module never opens the db
 const settingsFile = `${process.env.DATA_DIR ?? "./data"}/ai-settings.json`;
 
 const savedShape = z.object({
@@ -93,14 +94,16 @@ const savedShape = z.object({
 });
 
 let saved: AiSetup | null | undefined;
-const savedSetup = (): AiSetup | null => {
+const savedSetup = () => {
   if (saved !== undefined) return saved;
   saved = null;
+
   if (existsSync(settingsFile)) {
     try {
       const parsed = savedShape.safeParse(
         JSON.parse(readFileSync(settingsFile, "utf8"))
       );
+
       if (
         parsed.success &&
         (parsed.data.apiKey || !needsKey(parsed.data.provider))
@@ -110,11 +113,11 @@ const savedSetup = (): AiSetup | null => {
       saved = null;
     }
   }
+
   return saved;
 };
 
-export const aiSetup = (): AiSetup | null => envSetup() ?? savedSetup();
-
+export const aiSetup = () => envSetup() ?? savedSetup();
 export const aiEnabled = () => aiSetup() !== null;
 
 const modelFor = (setup: AiSetup) => {
@@ -124,6 +127,7 @@ const modelFor = (setup: AiSetup) => {
       baseURL: setup.baseURL,
     })(setup.model);
   }
+
   const openai = createOpenAI({
     // local servers like Ollama ignore the key, but the client wants one.
     apiKey: setup.apiKey || "local",
@@ -135,6 +139,7 @@ const modelFor = (setup: AiSetup) => {
           ? localDefaultUrl
           : undefined),
   });
+
   return openai.chat(setup.model);
 };
 
@@ -154,10 +159,11 @@ export type AiStatus = {
   whisper: WhisperStatus;
 };
 
-/** what admins see. The key itself never leaves the server. */
-export const aiStatus = (): AiStatus => {
+/** what admins see. the key itself never leaves the server. */
+export const aiStatus = () => {
   const fromEnv = envSetup();
   const setup = fromEnv ?? savedSetup();
+
   return {
     enabled: Boolean(setup),
     source: fromEnv ? "environment" : setup ? "saved" : null,
@@ -178,6 +184,7 @@ export const savedKeyFor = (provider: ProviderId) => {
 /** sends a one-word request to make sure the key and model work. */
 export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
   const local = setup.provider === "local";
+
   try {
     await generateText({
       model: modelFor(setup),
@@ -190,9 +197,11 @@ export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
     return { ok: true, value: null };
   } catch (error) {
     console.error(error);
+
     if (APICallError.isInstance(error)) {
       if (error.statusCode === 401 || error.statusCode === 403)
         return { ok: false, error: "The provider didn't accept that key" };
+
       if (error.statusCode === 404)
         return {
           ok: false,
@@ -200,28 +209,34 @@ export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
             ? "The server doesn't have that model. Pull it first, e.g. ollama pull hermes3."
             : "The provider doesn't know that model",
         };
+
       if (error.statusCode === 400)
         return { ok: false, error: "The provider rejected that model or key" };
+
       if (error.statusCode === 429)
         return {
           ok: false,
           error: "The provider is busy. Try again in a minute.",
         };
+
       if (!error.statusCode && local)
         return {
           ok: false,
           error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
         };
+
       return {
         ok: false,
         error: "Couldn't check the key with the provider right now",
       };
     }
+
     if (local)
       return {
         ok: false,
         error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
       };
+
     return { ok: false, error: "Couldn't reach the provider to check the key" };
   }
 };
@@ -230,6 +245,7 @@ export const saveSetup = (setup: AiSetup | null) => {
   if (setup)
     writeFileSync(settingsFile, JSON.stringify(setup), { mode: 0o600 });
   else if (existsSync(settingsFile)) unlinkSync(settingsFile);
+
   saved = setup;
 };
 
@@ -239,6 +255,7 @@ export const aiImageTypes = [
   "image/gif",
   "image/webp",
 ] as const;
+
 type AiImageType = (typeof aiImageTypes)[number];
 
 const extracted = z.object({
@@ -291,21 +308,25 @@ const clean = (value: string, max: number) => clip(scrubModelText(value), max);
  */
 export const splitMeasure = (amount: string, unit: string) => {
   const qty = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(.*)$/;
+
   if (!amount && unit) {
     const match = unit.match(qty);
     if (match?.[1]) return { amount: match[1], unit: (match[2] ?? "").trim() };
   }
+
   if (amount && !unit) {
     const match = amount.match(qty);
     if (match?.[1] && match[2])
       return { amount: match[1], unit: match[2].trim() };
   }
+
   return { amount, unit };
 };
 
 /** fits model output to mise's limits. Exported for tests. */
 export const toRecipeInput = (value: Extracted) => {
   if (!value.found) return null;
+
   const parsed = recipeInput.safeParse({
     title: clean(value.title, 200),
     description: clean(value.description, 4000),
@@ -322,6 +343,7 @@ export const toRecipeInput = (value: Extracted) => {
           clean(item.amount, 40),
           clean(item.unit, 40)
         );
+
         return {
           amount: split.amount,
           unit: split.unit,
@@ -337,11 +359,13 @@ export const toRecipeInput = (value: Extracted) => {
       .slice(0, 80)
       .map((text) => ({ text })),
   });
+
   if (
     !parsed.success ||
     (!parsed.data.ingredients.length && !parsed.data.instructions.length)
   )
     return null;
+
   return parsed.data;
 };
 
@@ -955,33 +979,28 @@ export const planMeals = async (input: {
 }): Promise<AiResult<MealPlanIdea>> => {
   if (!aiEnabled())
     return { ok: false, error: "AI is not set up on this server" };
+
   const chosen = plannerRecipes(input.recipes);
-  const keys = new Map(
-    chosen.map((recipe, index) => [`r${index + 1}`, recipe.id])
-  );
-  const wanted = new Map(
-    input.fill.map((entry) => [entry.day, new Set(entry.slots)])
-  );
+  const keys = new Map(chosen.map((r, i) => [`r${i + 1}`, r.id]));
+  const wanted = new Map(input.fill.map((e) => [e.day, new Set(e.slots)]));
 
   const recipeList = chosen
-    .map((recipe, index) => recipeLine(recipe, `r${index + 1}`))
+    .map((r, i) => recipeLine(r, `r${i + 1}`))
     .join("\n");
+
   const pantry = input.pantry
     .slice(0, 150)
-    .map(
-      (item) =>
-        `- ${item.name}${item.expiresOn ? ` (use by ${item.expiresOn})` : ""}`
-    )
+    .map((i) => `- ${i.name}${i.expiresOn ? ` (use by ${i.expiresOn})` : ""}`)
     .join("\n");
+
   const planned = input.planned
-    .map((entry) => `- ${entry.day} ${entry.slot}: ${entry.title}`)
+    .map((e) => `- ${e.day} ${e.slot}: ${e.title}`)
     .join("\n");
+
   const fill = input.fill
-    .map(
-      (entry) =>
-        `- ${entry.day} (${weekday(entry.day)}): ${entry.slots.join(", ")}`
-    )
+    .map((e) => `- ${e.day} (${weekday(e.day)}): ${e.slots.join(", ")}`)
     .join("\n");
+
   const notes = input.notes.trim();
 
   const content = [
@@ -999,8 +1018,10 @@ export const planMeals = async (input: {
     const output = await objectFrom(mealPlanOutput, planPrompt, content);
     if (!output)
       return { ok: false, error: "The model's answer could not be read" };
+
     const plan = toMealPlan(output, keys, wanted);
-    if (plan.meals.length === 0)
+
+    if (!plan.meals.length)
       return {
         ok: false,
         error: "Couldn't find recipes that fit. Try different meals or notes.",
