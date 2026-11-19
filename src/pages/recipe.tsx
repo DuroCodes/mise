@@ -233,7 +233,18 @@ function RecipeBody({
           <Button
             type="button"
             variant="outline"
+            size="icon-sm"
+            className="sm:hidden"
+            aria-label="Print"
+            onClick={() => window.print()}
+          >
+            <PrinterIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
             size="sm"
+            className="max-sm:hidden"
             onClick={() => window.print()}
           >
             <PrinterIcon data-icon="inline-start" />
