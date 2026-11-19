@@ -275,7 +275,7 @@ function RecipeView({
                     label="Servings"
                     className="text-muted-foreground **:data-[slot=label]:font-normal"
                   />
-                  <NumberFieldGroup className="w-28">
+                  <NumberFieldGroup className="w-24">
                     <NumberFieldDecrement />
                     <NumberFieldInput />
                     <NumberFieldIncrement />

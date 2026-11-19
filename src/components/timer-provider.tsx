@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { toast } from "sonner";
+import { useLocation } from "react-router";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { easeOut } from "@/lib/motion";
@@ -53,6 +53,8 @@ const chime = () => {
 };
 
 function TimerProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const cooking = /\/cook\/?$/.test(pathname);
   const [timers, setTimers] = useState<KitchenTimer[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const running = timers.some((timer) => timer.endsAt !== null);
@@ -79,12 +81,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
           : timer
       );
       setTimers(latest.current);
-      for (const timer of finished) {
-        toast(`${timer.label} is done`, {
-          description: timer.recipe ?? undefined,
-          icon: <BellRingIcon className="size-4" />,
-        });
-      }
+      // sound + the floating chip are enough; a toast just covers the chip.
       chime();
       try {
         navigator.vibrate?.([300, 150, 300]);
@@ -171,7 +168,12 @@ function TimerProvider({ children }: { children: ReactNode }) {
     <TimerContext.Provider value={api}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-4 z-[60] flex w-max max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2 sm:bottom-6 sm:left-6 print:hidden"
+        className={cn(
+          "pointer-events-none fixed inset-x-4 z-60 flex w-auto flex-col items-stretch gap-2 sm:inset-x-auto sm:left-6 sm:w-max sm:max-w-[calc(100vw-3rem)] print:hidden",
+          cooking
+            ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-28"
+            : "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-6"
+        )}
         aria-live="polite"
       >
         <AnimatePresence initial={false}>
