@@ -21,6 +21,10 @@ const trustedOrigins = [
   "http://127.0.0.1:5173",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+  // phone on the same wifi / tailscale (bun dev exposes vite with --host).
+  "http://192.168.*.*:5173",
+  "http://10.*.*.*:5173",
+  "http://100.*.*.*:5173",
 ];
 if (process.env.BETTER_AUTH_URL)
   trustedOrigins.push(process.env.BETTER_AUTH_URL);

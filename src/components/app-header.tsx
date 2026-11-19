@@ -54,7 +54,7 @@ function AppHeader({
           Offline. Saved recipes still work.
         </p>
       )}
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-12 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
         <div className="flex min-w-0 items-center gap-5">
           <NavLink
             to="/"
@@ -142,9 +142,9 @@ function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background sm:hidden print:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background pb-[max(0.5rem,calc(env(safe-area-inset-bottom)-0.5rem))] sm:hidden print:hidden"
     >
-      <ul className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+      <ul className="grid grid-cols-5">
         {links.map((link) => (
           <li key={link.to}>
             <NavLink
@@ -153,7 +153,7 @@ function BottomNav() {
               aria-label={link.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-12 items-center justify-center outline-none focus-visible:bg-muted",
+                  "flex h-11 items-center justify-center outline-none focus-visible:bg-muted",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )
               }
