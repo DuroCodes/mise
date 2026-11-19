@@ -3,7 +3,6 @@ import type { SharedRecipe } from "../src/shared/recipe";
 import { parseRecipeHtml } from "./recipe-page";
 import {
   absoluteImageUrl,
-  componentEmbedJson,
   escapeHtml,
   isPreviewBot,
   ogDescription,
@@ -55,13 +54,13 @@ describe("share preview markup", () => {
     );
   });
 
-  test("og description prefers timing and servings", () => {
-    expect(ogDescription(recipe())).toContain("10 min prep");
-    expect(ogDescription(recipe())).toContain("serves 4");
-    expect(ogDescription(recipe())).toContain("by Ada");
+  test("og description is a compact byline and timing line", () => {
+    expect(ogDescription(recipe())).toBe(
+      "by Ada · 10 min prep · 25 min cook · serves 4"
+    );
   });
 
-  test("html includes open graph tags, json-ld, and a simple discord embed", () => {
+  test("html uses a compact summary card with thumbnail", () => {
     const html = sharePreviewHtml(
       recipe(),
       "https://mise.test/s/Ab12Cd34",
@@ -69,26 +68,14 @@ describe("share preview markup", () => {
     );
     expect(html).toContain('property="og:title" content="Tomato Soup"');
     expect(html).toContain(
+      'property="og:description" content="by Ada · 10 min prep · 25 min cook · serves 4"'
+    );
+    expect(html).toContain(
       'property="og:image" content="https://mise.test/uploads/soup.jpg"'
     );
+    expect(html).toContain('name="twitter:card" content="summary"');
     expect(html).toContain('type="application/ld+json"');
-    expect(html).toContain('"@type":"Recipe"');
-    expect(html).toContain('id="discord:component-embed"');
-    expect(html).toContain("Tomato Soup");
-  });
-
-  test("discord embed is a short card with title, author, and timing", () => {
-    const json = componentEmbedJson(recipe(), "https://mise.test/s/Ab12Cd34");
-    const payload = JSON.parse(json) as {
-      component: { components: { content: string }[] };
-    };
-    const content = payload.component.components[0]?.content ?? "";
-    expect(content).toContain("-# Mise");
-    expect(content).toContain("Tomato Soup");
-    expect(content).toContain("by Ada");
-    expect(content).toContain("A simple pot of soup");
-    expect(content).toContain("10 min prep · 25 min cook · serves 4");
-    expect(content).not.toContain("Ingredients");
+    expect(html).not.toContain("discord:component-embed");
   });
 
   test("json-ld round-trips through the normal html importer", () => {

@@ -57,42 +57,16 @@ const timingBits = (recipe: SharedRecipe) =>
     recipe.servings !== null ? `serves ${recipe.servings}` : null,
   ].filter((bit): bit is string => Boolean(bit));
 
+/** one short line for Discord's compact summary card (like spongebin). */
 export const ogDescription = (recipe: SharedRecipe) => {
   const bits = [
-    ...timingBits(recipe),
     recipe.ownerName ? `by ${recipe.ownerName}` : null,
+    ...timingBits(recipe),
   ].filter((bit): bit is string => Boolean(bit));
+
+  if (bits.length) return shorten(bits.join(" · "), 200);
   const body = oneLine(recipe.description);
-  const joined = [...bits, body].filter(Boolean).join(" · ");
-  return shorten(joined || "A shared recipe on Mise.", 200);
-};
-
-/** Discord markdown cannot keep link/emphasis markup in labels. */
-const mdLabel = (value: string) =>
-  oneLine(value)
-    .replaceAll(/[[\]*()\\]/g, "")
-    .slice(0, 120) || "Recipe";
-
-const ACCENT = 0xb8762b;
-
-export const componentEmbedJson = (recipe: SharedRecipe, pageUrl: string) => {
-  const title = mdLabel(recipe.title);
-  const lines = ["-# Mise", `## [${title}](${pageUrl})`];
-  if (recipe.ownerName) lines.push(`by ${mdLabel(recipe.ownerName)}`);
-  const description = oneLine(recipe.description)
-    ? shorten(recipe.description, 280)
-    : "";
-  if (description) lines.push("", description);
-  const timing = timingBits(recipe);
-  if (timing.length) lines.push("", `-# ${timing.join(" · ")}`);
-
-  return JSON.stringify({
-    component: {
-      type: 17,
-      accent_color: ACCENT,
-      components: [{ type: 10, content: lines.join("\n") }],
-    },
-  }).replaceAll("<", "\\u003c");
+  return shorten(body || "A shared recipe on Mise.", 200);
 };
 
 const isoDuration = (minutes: number | null) => {
@@ -152,8 +126,6 @@ export const sharePreviewHtml = (
   const description = ogDescription(recipe);
   const image = absoluteImageUrl(recipe.image, origin);
   const jsonLd = recipeJsonLd(recipe, pageUrl, origin);
-  const embed = componentEmbedJson(recipe, pageUrl);
-  const card = image ? "summary_large_image" : "summary";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -167,12 +139,11 @@ export const sharePreviewHtml = (
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:url" content="${escapeHtml(pageUrl)}">
   ${image ? `<meta property="og:image" content="${escapeHtml(image)}">` : ""}
-  <meta name="twitter:card" content="${card}">
+  <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   ${image ? `<meta name="twitter:image" content="${escapeHtml(image)}">` : ""}
   <script type="application/ld+json">${jsonLd}</script>
-  <script id="discord:component-embed" type="application/json">${embed}</script>
 </head>
 <body>
   <p><a href="${escapeHtml(pageUrl)}">${escapeHtml(title)}</a></p>

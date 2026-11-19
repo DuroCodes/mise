@@ -48,5 +48,6 @@ export default defineConfig({
         },
       },
     },
+    allowedHosts: ["pmid-memorial-pendant-quote.trycloudflare.com"],
   },
 });
