@@ -24,8 +24,8 @@ type Piece =
 
 const chipClass = (large: boolean) =>
   cn(
-    "mx-0.5 inline-flex items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground print:bg-transparent print:p-0",
-    large ? "py-0.5" : "py-0"
+    "inline-flex w-max shrink-0 items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground print:bg-transparent print:p-0",
+    large ? "py-0.5" : "mx-0.5 py-0"
   );
 
 /**
@@ -46,13 +46,26 @@ const textItems = (value: string, keyPrefix: string) => {
   const items: ReactNode[] = [];
   for (const [index, token] of value.split(/(\s+)/).entries()) {
     if (!token || /^\s+$/.test(token)) continue;
+    // keep trailing punctuation glued so gap-x doesn't float " ." after a chip
     items.push(
-      <span key={`${keyPrefix}-${index}`} className="whitespace-pre">
+      <span
+        key={`${keyPrefix}-${index}`}
+        className={cn(
+          "whitespace-pre",
+          /^[.,;:!?)]+$/.test(token) && "-ml-1.5"
+        )}
+      >
         {token}
       </span>
     );
   }
   return items;
+};
+
+/** pull `,` / `.` / etc. that sit right after a chip so they don't get a flex gap. */
+const takeTrailingPunct = (value: string, from: number) => {
+  const match = value.slice(from).match(/^[.,;:!?]+/);
+  return match?.[0] ?? "";
 };
 
 /**
@@ -100,13 +113,14 @@ function StepText({
       if (large) parts.push(...textItems(slice, `s-${piece.start}`));
       else parts.push(slice);
     }
+    const punct = large ? takeTrailingPunct(text, piece.end) : "";
     if (piece.kind === "temp") {
       const converted =
         want && piece.scale !== want
           ? convertTemperature(piece.value, piece.scale)
           : null;
-      parts.push(
-        <span key={`t-${piece.start}`} className={chipClass(large)}>
+      const chip = (
+        <span className={chipClass(large)}>
           <ThermometerIcon
             className={cn(
               "shrink-0 self-center text-brand print:hidden",
@@ -125,10 +139,22 @@ function StepText({
           </span>
         </span>
       );
-    } else {
       parts.push(
+        punct ? (
+          <span
+            key={`t-${piece.start}`}
+            className="inline-flex items-baseline"
+          >
+            {chip}
+            {punct}
+          </span>
+        ) : (
+          <Fragment key={`t-${piece.start}`}>{chip}</Fragment>
+        )
+      );
+    } else {
+      const chip = (
         <button
-          key={`${piece.start}-${index}`}
           type="button"
           className={cn(
             chipClass(large),
@@ -149,8 +175,21 @@ function StepText({
           <span className={chipTextClass(large)}>{piece.label}</span>
         </button>
       );
+      parts.push(
+        punct ? (
+          <span
+            key={`${piece.start}-${index}`}
+            className="inline-flex items-baseline"
+          >
+            {chip}
+            {punct}
+          </span>
+        ) : (
+          <Fragment key={`${piece.start}-${index}`}>{chip}</Fragment>
+        )
+      );
     }
-    cursor = piece.end;
+    cursor = piece.end + punct.length;
   });
   if (cursor < text.length) {
     const slice = text.slice(cursor);
