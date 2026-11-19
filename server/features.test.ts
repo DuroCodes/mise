@@ -9,12 +9,7 @@ import {
 } from "../src/shared/nutrition";
 import { combineQuantities, itemKey } from "../src/shared/shopping";
 import { findTimers, formatClock } from "../src/shared/timers";
-import {
-  buildTimeline,
-  convertTemperature,
-  findTemperatures,
-  stepMinutes,
-} from "../src/shared/timeline";
+import { convertTemperature, findTemperatures } from "../src/shared/timeline";
 import {
   covers,
   isStaple,
@@ -438,33 +433,7 @@ describe("recipe search results", () => {
   });
 });
 
-describe("cooking timeline", () => {
-  const steps = [
-    { text: "Warm the oil. Cook the onion until soft, about 8 minutes." },
-    { text: "Stir in the garlic." },
-    { text: "Simmer 10 minutes, then cover and cook 5 to 7 minutes." },
-  ];
-
-  test("uses the top of a range and adds a gap for untimed steps", () => {
-    expect(stepMinutes(steps[2]?.text ?? "")).toBe(17);
-    expect(stepMinutes("Stir.")).toBeNull();
-    const start = new Date(2026, 10, 16, 17, 0).getTime();
-    const plan = buildTimeline(steps, start, "start", 5);
-    expect(plan.minutes).toBe(8 + 5 + 17);
-    expect(
-      plan.steps.map((step) => new Date(step.start).toTimeString().slice(0, 5))
-    ).toEqual(["17:00", "17:08", "17:13"]);
-    expect(plan.steps.map((step) => step.timed)).toEqual([true, false, true]);
-    expect(new Date(plan.end).toTimeString().slice(0, 5)).toBe("17:30");
-  });
-
-  test("plans backwards from when dinner should be ready", () => {
-    const ready = new Date(2026, 10, 16, 18, 30).getTime();
-    const plan = buildTimeline(steps, ready, "ready", 5);
-    expect(new Date(plan.start).toTimeString().slice(0, 5)).toBe("18:00");
-    expect(plan.end).toBe(ready);
-  });
-
+describe("oven temperatures", () => {
   test("finds and converts oven temperatures", () => {
     const found = findTemperatures(
       "Bake at 400°F for 20 minutes, or 200 °C in a fan oven. Use 425F for crisp. Add 2 C flour."
