@@ -132,6 +132,7 @@ export const sharePreviewHtml = (
 <head>
   <meta charset="utf-8">
   <title>${escapeHtml(title)} · Mise</title>
+  <meta name="theme-color" content="#b8762b">
   <meta name="description" content="${escapeHtml(description)}">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Mise">

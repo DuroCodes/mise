@@ -74,6 +74,7 @@ describe("share preview markup", () => {
       'property="og:image" content="https://mise.test/uploads/soup.jpg"'
     );
     expect(html).toContain('name="twitter:card" content="summary"');
+    expect(html).toContain('name="theme-color" content="#b8762b"');
     expect(html).toContain('type="application/ld+json"');
     expect(html).not.toContain("discord:component-embed");
   });
