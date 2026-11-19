@@ -30,14 +30,16 @@ const chipClass = (large: boolean) =>
 
 /**
  * round dots via ::after — `decoration-dotted` paints squares and hugs glyphs.
- * one span for F + C so the line stays continuous without a flex gap.
+ * regular stays put; cook mode (`large`) gets bigger dots a bit higher.
  */
-const chipTextClass = cn(
-  "relative",
-  "after:pointer-events-none after:absolute after:inset-x-0 after:top-[1.4em] after:h-[3px]",
-  "after:bg-[radial-gradient(circle,color-mix(in_oklab,var(--brand)_50%,transparent)_1px,transparent_1.05px)]",
-  "after:bg-size-[3.5px_3px] after:bg-repeat-x print:after:hidden"
-);
+const chipTextClass = (large: boolean) =>
+  cn(
+    "relative",
+    "after:pointer-events-none after:absolute after:inset-x-0 after:bg-repeat-x print:after:hidden",
+    large
+      ? "after:top-[1.08em] after:h-[5px] after:bg-size-[5px_5px] after:bg-[radial-gradient(circle,color-mix(in_oklab,var(--brand)_50%,transparent)_1.5px,transparent_1.6px)]"
+      : "after:top-[1.4em] after:h-[3px] after:bg-size-[3.5px_3px] after:bg-[radial-gradient(circle,color-mix(in_oklab,var(--brand)_50%,transparent)_1px,transparent_1.05px)]"
+  );
 
 /** split plain text so cook mode can flex-wrap with a real row gap. */
 const textItems = (value: string, keyPrefix: string) => {
@@ -112,7 +114,7 @@ function StepText({
             )}
             aria-hidden="true"
           />
-          <span className={chipTextClass}>
+          <span className={chipTextClass(large)}>
             {text.slice(piece.start, piece.end)}
             {converted && (
               <span className="font-normal text-muted-foreground">
@@ -144,7 +146,7 @@ function StepText({
             )}
             aria-hidden="true"
           />
-          <span className={chipTextClass}>{piece.label}</span>
+          <span className={chipTextClass(large)}>{piece.label}</span>
         </button>
       );
     }
