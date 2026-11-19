@@ -13,7 +13,7 @@ const examples = [
   "I'm out of fresh garlic. What now?",
 ];
 
-// Only simple text formatting is rendered; anything else (raw HTML, images,
+// only simple text formatting is rendered; anything else (raw HTML, images,
 // tables) is dropped or unwrapped to its text.
 const allowed = [
   "p",

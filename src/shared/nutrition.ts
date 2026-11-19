@@ -1,7 +1,7 @@
 import { parseAmount, unitInfo } from "../lib/units";
 
 /**
- * A small, bundled food table so nutrition estimates work offline and never
+ * a small, bundled food table so nutrition estimates work offline and never
  * send recipes anywhere. Values are per 100 g, approximated from USDA
  * FoodData Central (SR Legacy). `density` is grams per millilitre, `each` is
  * grams for one whole item, and `units` holds grams for named units.
@@ -28,7 +28,7 @@ const food = (
 ) => ({ names, kcal, protein, carbs, fat, fiber, density, ...extra });
 
 const foods: Food[] = [
-  // Grains, flours, and starches (dry weight)
+  // grains, flours, and starches (dry weight)
   food(
     [
       "spaghetti",
@@ -82,7 +82,7 @@ const foods: Food[] = [
     each: 45,
   }),
 
-  // Sweeteners
+  // sweeteners
   food(
     ["sugar", "granulated sugar", "white sugar", "caster sugar"],
     [387, 0, 100, 0, 0],
@@ -97,7 +97,7 @@ const foods: Food[] = [
   food(["honey"], [304, 0.3, 82, 0, 0.2], 1.42),
   food(["maple syrup"], [260, 0, 67, 0.1, 0], 1.32),
 
-  // Fats and oils
+  // fats and oils
   food(["butter"], [717, 0.9, 0.1, 81, 0], 0.96, { units: { stick: 113 } }),
   food(
     [
@@ -115,7 +115,7 @@ const foods: Food[] = [
     0.92
   ),
 
-  // Dairy and eggs
+  // dairy and eggs
   food(["milk", "whole milk"], [61, 3.2, 4.8, 3.3, 0], 1.03),
   food(
     ["heavy cream", "double cream", "whipping cream", "cream"],
@@ -141,7 +141,7 @@ const foods: Food[] = [
   food(["egg yolk"], [322, 16, 3.6, 27, 0], 1.03, { each: 17 }),
   food(["egg white"], [52, 11, 0.7, 0.2, 0], 1.03, { each: 33 }),
 
-  // Meat, fish, and plant proteins (raw)
+  // meat, fish, and plant proteins (raw)
   food(["chicken", "chicken breast"], [120, 22.5, 0, 2.6, 0], 0.6, {
     each: 175,
   }),
@@ -191,7 +191,7 @@ const foods: Food[] = [
   food(["almonds"], [579, 21, 22, 50, 12.5], 0.6),
   food(["walnuts", "pecans"], [654, 15, 14, 65, 6.7], 0.5),
 
-  // Vegetables
+  // vegetables
   food(
     ["onion", "yellow onion", "white onion", "red onion"],
     [40, 1.1, 9.3, 0.1, 1.7],
@@ -316,7 +316,7 @@ const foods: Food[] = [
   ),
   food(["wakame", "seaweed", "nori"], [45, 3, 9, 0.6, 0.5], 0.2),
 
-  // Spices, seasonings, and condiments
+  // spices, seasonings, and condiments
   food(
     ["black pepper", "white pepper", "peppercorns"],
     [251, 10.4, 64, 3.3, 25],
@@ -397,7 +397,7 @@ const foods: Food[] = [
   food(["ketchup"], [101, 1, 27, 0.1, 0.3], 1.15),
   food(["mustard", "dijon mustard", "dijon"], [60, 3.7, 5.8, 3.3, 4], 1.05),
 
-  // Fruit, chocolate, and baking extras
+  // fruit, chocolate, and baking extras
   food(
     ["dark chocolate", "chocolate", "chocolate chips"],
     [598, 7.8, 46, 43, 11],
@@ -442,7 +442,7 @@ const aliases: Alias[] = foods.flatMap((entry) =>
 );
 
 const contains = (haystack: string[], needle: string[]) => {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
+  if (!needle.length || needle.length > haystack.length) return false;
   for (let start = 0; start + needle.length <= haystack.length; start += 1) {
     if (needle.every((word, index) => haystack[start + index] === word))
       return true;
@@ -450,7 +450,7 @@ const contains = (haystack: string[], needle: string[]) => {
   return false;
 };
 
-/** Picks the most specific food whose name appears in the ingredient name. */
+/** picks the most specific food whose name appears in the ingredient name. */
 export const matchFood = (name: string) => {
   const words = tokens(name);
   let best: Alias | null = null;
@@ -523,7 +523,7 @@ const amountOf = (raw: string) => {
   return parseAmount(raw);
 };
 
-/** Grams for one ingredient line, or null when the amount cannot be measured. */
+/** grams for one ingredient line, or null when the amount cannot be measured. */
 export const gramsFor = (
   item: { amount: string; unit: string; note?: string },
   entry: Food

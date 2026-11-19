@@ -227,7 +227,7 @@ function DayRow({
       </div>
       {loading ? (
         <Skeleton className="h-15 sm:w-[calc(50%-0.25rem)]" />
-      ) : entries.length === 0 ? (
+      ) : !entries.length ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDaysIcon className="size-3.5" aria-hidden="true" />
           Nothing planned.
@@ -374,7 +374,7 @@ function PlanPage() {
   };
 
   const toShopping = async () => {
-    if (!entries || entries.length === 0) return;
+    if (!entries || !entries.length) return;
     setAdding(true);
     const result = await addRecipesToShopping(
       entries.map((entry) => ({
@@ -464,7 +464,7 @@ function PlanPage() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={!entries || !recipes || recipes.length === 0}
+                disabled={!entries || !recipes || !recipes.length}
                 onClick={() => setPlanning(true)}
               >
                 <SparklesIcon data-icon="inline-start" />
@@ -474,7 +474,7 @@ function PlanPage() {
             )}
             <Button
               type="button"
-              disabled={adding || !entries || entries.length === 0}
+              disabled={adding || !entries || !entries.length}
               aria-busy={adding}
               onClick={toShopping}
             >
@@ -522,9 +522,9 @@ function PlanPage() {
                     {shown.map((recipe) => (
                       <DraggableRecipe key={recipe.id} recipe={recipe} />
                     ))}
-                    {shown.length === 0 && (
+                    {!shown.length && (
                       <li className="text-xs text-muted-foreground">
-                        {recipes.length === 0
+                        {!recipes.length
                           ? "No recipes yet."
                           : "No recipes match."}
                       </li>
@@ -645,9 +645,9 @@ function PlanPage() {
                   </button>
                 </li>
               ))}
-              {shown.length === 0 && (
+              {!shown.length && (
                 <li className="px-2 py-2 text-sm text-muted-foreground">
-                  {recipes.length === 0
+                  {!recipes.length
                     ? "No recipes yet."
                     : "No recipes match."}
                 </li>

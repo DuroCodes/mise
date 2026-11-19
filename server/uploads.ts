@@ -11,7 +11,7 @@ export const imageExtension = (type: string) =>
           ? "avif"
           : "jpg";
 
-/** Stores image bytes under a random name and returns its public path. */
+/** stores image bytes under a random name and returns its public path. */
 export const saveUpload = async (
   data: Blob | Uint8Array,
   extension: string

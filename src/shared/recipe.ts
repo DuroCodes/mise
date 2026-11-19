@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const reservedTags = new Set(["favorites"]);
 
-/** The library already uses this word for the favorite filter. */
+/** the library already uses this word for the favorite filter. */
 export const isReservedTag = (name: string) =>
   reservedTags.has(name.trim().toLowerCase().replace(/\s+/g, " "));
 

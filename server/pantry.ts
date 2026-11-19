@@ -31,7 +31,7 @@ export const listPantry = (userId: string) =>
     .map(toItem);
 
 /**
- * Adds lines to the pantry, joining an existing item with the same name when
+ * adds lines to the pantry, joining an existing item with the same name when
  * the amounts add up. The earliest expiry date wins.
  */
 export const addToPantry = (userId: string, lines: PantryLine[]) => {
@@ -129,7 +129,7 @@ export const removePantryItem = (userId: string, id: string) => {
   return true;
 };
 
-/** Moves the checked items on the shopping list into the pantry. */
+/** moves the checked items on the shopping list into the pantry. */
 export const moveCheckedToPantry = (userId: string) => {
   const checked = db
     .select()
@@ -138,7 +138,7 @@ export const moveCheckedToPantry = (userId: string) => {
       and(eq(shoppingItems.userId, userId), eq(shoppingItems.checked, true))
     )
     .all();
-  if (checked.length === 0) return 0;
+  if (!checked.length) return 0;
   addToPantry(
     userId,
     checked.map((item) => ({
@@ -157,7 +157,7 @@ export const moveCheckedToPantry = (userId: string) => {
 };
 
 /**
- * Finishes a shopping trip: adds the amounts you chose to keep to the pantry
+ * finishes a shopping trip: adds the amounts you chose to keep to the pantry
  * and clears every checked item from the list.
  */
 export const finishShopping = (
@@ -196,7 +196,7 @@ export const finishShopping = (
 
 export const pantrySuggestions = (userId: string, today: string) => {
   const pantry = listPantry(userId);
-  if (pantry.length === 0) return [];
+  if (!pantry.length) return [];
   return rankRecipes(listRecipes(userId), pantry, today)
     .slice(0, 30)
     .map((match) => ({
@@ -212,7 +212,7 @@ export const pantrySuggestions = (userId: string, today: string) => {
     }));
 };
 
-/** The ingredients of a recipe that the pantry doesn't cover. */
+/** the ingredients of a recipe that the pantry doesn't cover. */
 export const missingFor = (
   userId: string,
   recipe: { ingredients: { name: string; note: string }[] }

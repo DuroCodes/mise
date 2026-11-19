@@ -14,7 +14,7 @@ type State =
   | { kind: "failed"; error: string; url: string | null }
   | { kind: "alone" };
 
-/** Opened by the "Send to Mise" bookmark: receives the page and opens it in the editor. */
+/** opened by the "Send to Mise" bookmark: receives the page and opens it in the editor. */
 function ReceivePage() {
   const navigate = useNavigate();
   const { ai } = useSession();
@@ -42,7 +42,7 @@ function ReceivePage() {
     if (!opener) return;
     let done = false;
     const onMessage = async (event: MessageEvent) => {
-      // Only the tab that opened this one, and only a well-formed page.
+      // only the tab that opened this one, and only a well-formed page.
       if (done || event.source !== opener) return;
       const page = readPageMessage(event.data);
       if (!page) return;
@@ -53,12 +53,11 @@ function ReceivePage() {
       else setState({ kind: "failed", error: result.error, url: page.url });
     };
     window.addEventListener("message", onMessage);
-    // Tell the bookmark we're ready (repeated in case it's still setting up).
+    // tell the bookmark we're ready (repeated in case it's still setting up).
     const ping = () => {
       try {
         opener.postMessage("mise-ready", "*");
       } catch {
-        // The opener closed.
       }
     };
     ping();
@@ -77,7 +76,7 @@ function ReceivePage() {
       window.clearInterval(timer);
       window.clearTimeout(giveUp);
     };
-    // Runs once for this tab.
+    // runs once for this tab.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/skeleton";
 
 /**
- * The whole app in gray, shown while the session loads. It matches the real
+ * the whole app in gray, shown while the session loads. It matches the real
  * header and page width so nothing jumps when the app appears, and guesses
  * the page's shape from the address.
  */
@@ -17,7 +17,7 @@ function AppSkeleton({ path }: { path: string }) {
   return (
     <div aria-busy="true">
       <div className="sticky top-0 z-40 border-b bg-background/80 print:hidden">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
           <Skeleton className="h-6 w-24" />
           <div className="flex items-center gap-2">
             <Skeleton className="hidden h-8 w-20 md:block" />
@@ -28,7 +28,7 @@ function AppSkeleton({ path }: { path: string }) {
           </div>
         </div>
       </div>
-      <main className="mx-auto w-full max-w-6xl px-4 pt-8 pb-28 sm:px-6 sm:py-10">
+      <main className="mx-auto w-full max-w-7xl px-4 pt-8 pb-28 sm:px-6 sm:py-10">
         {recipe ? (
           <RecipePlaceholder />
         ) : (

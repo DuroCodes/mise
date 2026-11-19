@@ -5,9 +5,9 @@ export type Session = {
   account: Account;
   /** AI buttons should show: the server has a model and this person wants AI. */
   ai: boolean;
-  /** The server has a model set up, whatever this person's setting is. */
+  /** the server has a model set up, whatever this person's setting is. */
   aiAvailable: boolean;
-  /** Re-reads both after an admin or personal setting changes. */
+  /** re-reads both after an admin or personal setting changes. */
   refreshFeatures: () => void;
   offline: boolean;
 };

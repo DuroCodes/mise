@@ -1,6 +1,6 @@
 import { matchFood, tokens } from "./nutrition";
 
-/** Things nearly every kitchen has; they never count as "missing". */
+/** things nearly every kitchen has; they never count as "missing". */
 const staples = new Set(
   [
     "salt",
@@ -26,7 +26,7 @@ export const isStaple = (name: string) => staples.has(tokens(name).join(" "));
 const isOptional = (note: string) => /\boptional\b/i.test(note);
 
 const contains = (haystack: string[], needle: string[]) => {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
+  if (!needle.length || needle.length > haystack.length) return false;
   for (let start = 0; start + needle.length <= haystack.length; start += 1) {
     if (needle.every((word, index) => haystack[start + index] === word))
       return true;
@@ -35,7 +35,7 @@ const contains = (haystack: string[], needle: string[]) => {
 };
 
 /**
- * Whether a pantry item covers a recipe ingredient. When both are in the food
+ * whether a pantry item covers a recipe ingredient. When both are in the food
  * table they must be the same food ("chicken" does not cover "chicken stock",
  * but "chicken broth" covers "chicken stock"); otherwise the pantry item's
  * words have to appear in the ingredient ("eggs" covers "large eggs").
@@ -43,14 +43,14 @@ const contains = (haystack: string[], needle: string[]) => {
 export const covers = (pantryName: string, ingredientName: string) => {
   const have = tokens(pantryName);
   const need = tokens(ingredientName);
-  if (have.length === 0 || need.length === 0) return false;
+  if (!have.length || !need.length) return false;
   const haveFood = matchFood(pantryName);
   const needFood = matchFood(ingredientName);
   if (haveFood && needFood) return haveFood === needFood;
   return contains(need, have) || contains(have, need);
 };
 
-/** The unchecked shopping-list item a scanned product most likely is. */
+/** the unchecked shopping-list item a scanned product most likely is. */
 export const matchListItem = <T extends { name: string; checked: boolean }>(
   productName: string,
   items: T[]
@@ -72,7 +72,7 @@ type Recipe = {
 type PantryEntry = { name: string; expiresOn: string | null };
 
 /**
- * Ranks recipes by how much of them the pantry covers. Staples and optional
+ * ranks recipes by how much of them the pantry covers. Staples and optional
  * ingredients are ignored. Items expiring within `soonDays` are reported so
  * the page can say "uses up your spinach".
  */
@@ -91,13 +91,13 @@ export const rankRecipes = <R extends Recipe>(
     const needed = recipe.ingredients.filter(
       (item) => !isStaple(item.name) && !isOptional(item.note)
     );
-    if (needed.length === 0) continue;
+    if (!needed.length) continue;
     const have: string[] = [];
     const missing: string[] = [];
     const expiring = new Set<string>();
     for (const item of needed) {
       const hits = pantry.filter((entry) => covers(entry.name, item.name));
-      if (hits.length === 0) {
+      if (!hits.length) {
         missing.push(item.name);
         continue;
       }
@@ -105,7 +105,7 @@ export const rankRecipes = <R extends Recipe>(
       for (const hit of hits)
         if (hit.expiresOn && hit.expiresOn <= soon) expiring.add(hit.name);
     }
-    if (have.length === 0) continue;
+    if (!have.length) continue;
     matches.push({
       recipe,
       have,

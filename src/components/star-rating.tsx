@@ -24,7 +24,7 @@ function Stars({ value, className }: { value: number; className?: string }) {
   );
 }
 
-/** Your own 1-5 rating, plus the household average. Click a star again to clear it. */
+/** your own 1-5 rating, plus the household average. Click a star again to clear it. */
 function StarRating({
   rating,
   disabled,

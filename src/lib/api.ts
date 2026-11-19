@@ -205,8 +205,6 @@ export const discardUpload = (url: string) =>
     ...json({ url }),
   });
 
-// Features ----------------------------------------------------------------
-
 export const getFeatures = () =>
   zodFetch(
     // aiAvailable is optional so an older cached answer still reads offline.
@@ -243,6 +241,15 @@ export const aiProviderLabel: Record<AiProvider, string> = {
   local: "Local model (Ollama…)",
 };
 
+export const whisperProviders = ["groq", "openai", "openrouter"] as const;
+export type WhisperProvider = (typeof whisperProviders)[number];
+
+export const whisperProviderLabel: Record<WhisperProvider, string> = {
+  groq: "Groq",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+};
+
 const aiStatusSchema = z.object({
   enabled: z.boolean(),
   source: z.enum(["environment", "saved"]).nullable(),
@@ -250,6 +257,12 @@ const aiStatusSchema = z.object({
   model: z.string().nullable(),
   baseURL: z.string().nullable(),
   hint: z.string().nullable(),
+  whisper: z.object({
+    enabled: z.boolean(),
+    provider: z.enum(whisperProviders).nullable(),
+    model: z.string().nullable(),
+    hint: z.string().nullable(),
+  }),
 });
 
 export type AiStatus = z.infer<typeof aiStatusSchema>;
@@ -272,8 +285,6 @@ export const removeAiKey = () =>
   zodFetch(aiStatusSchema, "Could not turn AI off", "/api/admin/ai", {
     method: "DELETE",
   });
-
-// Ratings and cooking log ---------------------------------------------------
 
 export const rateRecipe = async (id: string, stars: number | null) => {
   const result = await zodFetch(
@@ -322,8 +333,6 @@ export const removeCookLog = (id: string) =>
     method: "DELETE",
   });
 
-// Share links ---------------------------------------------------------------
-
 export const createShareLink = (id: string) =>
   zodFetch(
     z.object({ token: z.string() }),
@@ -346,8 +355,6 @@ export const getSharedRecipe = (token: string) =>
     "This link no longer works",
     `/api/share/${encodeURIComponent(token)}`
   );
-
-// Shopping list ---------------------------------------------------------------
 
 const shoppingItemSchema = z.object({
   id: z.string(),
@@ -408,8 +415,6 @@ export const clearShopping = (which: "checked" | "all") =>
     method: "POST",
     ...json({ which }),
   });
-
-// Meal plan -----------------------------------------------------------------
 
 export const mealSlots = ["breakfast", "lunch", "dinner", "snack"] as const;
 export type MealSlot = (typeof mealSlots)[number];
@@ -494,8 +499,6 @@ export const planWeekWithAi = (input: {
     { method: "POST", ...json(input) }
   );
 
-// Collections ---------------------------------------------------------------
-
 const collectionSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -577,8 +580,6 @@ export const recipeCollections = (recipeId: string) =>
     `/api/recipes/${recipeId}/collections`
   );
 
-// Importing files and backups ---------------------------------------------------
-
 const importResultSchema = z.object({
   imported: z.array(z.object({ id: z.string(), title: z.string() })),
   skipped: z.array(z.string()),
@@ -641,8 +642,6 @@ export const restoreBackup = (file: File) => {
     { method: "POST", body }
   );
 };
-
-// Pantry ------------------------------------------------------------------------
 
 const pantryItemSchema = z.object({
   id: z.string(),
@@ -710,7 +709,7 @@ export type Product = z.infer<typeof productSchema>;
 
 const products = new Map<string, Product | null>();
 
-/** Looks up a barcode; null means the product isn't in the database. */
+/** looks up a barcode; null means the product isn't in the database. */
 export const lookupProduct = async (code: string) => {
   if (products.has(code)) return Ok(products.get(code) ?? null);
   const response = await fetch(`/api/products/${code}`).catch(() => null);
@@ -811,8 +810,6 @@ export const findRecipesWithClaude = (focus: string) =>
     { method: "POST", ...json({ focus }) }
   );
 
-// Stores ------------------------------------------------------------------------
-
 const storeList = z.array(storeSchema);
 
 export const listStores = () =>
@@ -839,8 +836,6 @@ export const deleteStore = (id: string) =>
   zodFetch(storeList, "Could not delete the store", `/api/stores/${id}`, {
     method: "DELETE",
   });
-
-// Invite links ------------------------------------------------------------------
 
 const inviteSchema = z.object({
   id: z.string(),
@@ -898,8 +893,6 @@ export const acceptInvite = (
       ...json(input),
     }
   );
-
-// Claude ----------------------------------------------------------------------
 
 export const aiRecipe = (text: string, image: File | null) => {
   const body = new FormData();

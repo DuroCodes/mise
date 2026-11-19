@@ -26,7 +26,7 @@ const maxUnpacked = 300 * 1024 * 1024;
 const maxGzipEntry = 40 * 1024 * 1024;
 
 /**
- * Inflates gzip data but stops once the output passes `max`, so a small
+ * inflates gzip data but stops once the output passes `max`, so a small
  * compressed file can't expand into gigabytes and exhaust memory.
  */
 export const gunzipLimited = (data: Uint8Array, max = maxGzipEntry) => {
@@ -61,7 +61,7 @@ const multiline = (value: unknown) =>
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
-/** Reads "15 minutes", "1 hr 10 min", "1:30", or ISO 8601 "PT15M". */
+/** reads "15 minutes", "1 hr 10 min", "1:30", or ISO 8601 "PT15M". */
 export const minutesFromText = (value: unknown) => {
   const iso = minutesOf(value);
   if (iso !== null) return iso;
@@ -148,8 +148,6 @@ const stepsFromLines = (raw: string[]) =>
     .slice(0, 80)
     .map((step) => ({ text: step }));
 
-// Paprika ---------------------------------------------------------------
-
 const isPaprika = (value: Record<string, unknown>) =>
   typeof value.name === "string" &&
   (typeof value.ingredients === "string" ||
@@ -191,8 +189,6 @@ const fromPaprika = (value: Record<string, unknown>) => {
   }
   return { recipe, image };
 };
-
-// Mealie ----------------------------------------------------------------
 
 const isMealie = (value: Record<string, unknown>) =>
   typeof value.name === "string" &&
@@ -364,8 +360,6 @@ const fromMealieDatabase = (database: Row) => {
   });
 };
 
-// Images ----------------------------------------------------------------
-
 export const sniffImage = (bytes: Uint8Array) => {
   if (bytes.length < 12) return null;
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
@@ -386,7 +380,7 @@ export const sniffImage = (bytes: Uint8Array) => {
 
 const imageFromZip = (files: Unzipped, hints: string[]) => {
   const wanted = hints.filter(Boolean);
-  if (wanted.length === 0) return null;
+  if (!wanted.length) return null;
   const candidates = Object.keys(files)
     .filter((path) => {
       const parts = path.toLowerCase().split("/");
@@ -407,8 +401,6 @@ const imageFromZip = (files: Unzipped, hints: string[]) => {
   }
   return null;
 };
-
-// Detection ---------------------------------------------------------------
 
 const parseJson = (raw: string) => {
   try {
@@ -468,7 +460,7 @@ const fromJsonValue = (value: unknown, label: string, result: ImportResult) => {
     const found: Record<string, unknown>[] = [];
     collectRecipes(object, found);
     if (Array.isArray(object.items)) collectRecipes(object.items, found);
-    if (found.length === 0) {
+    if (!found.length) {
       result.skipped.push(`${label}: no recipe found`);
       continue;
     }
@@ -500,7 +492,7 @@ const isGzip = (bytes: Uint8Array) =>
   bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
 
 /**
- * Turns an uploaded file into recipes. Understands Paprika exports
+ * turns an uploaded file into recipes. Understands Paprika exports
  * (.paprikarecipes / .paprikarecipe), Mealie recipe exports and backups (.zip
  * or .json), schema.org JSON-LD (.json), and saved recipe pages (.html).
  */
@@ -549,7 +541,7 @@ export const readImportFile = (name: string, bytes: Uint8Array) => {
         else result.skipped.push(`${path}: ${parsed.error}`);
       }
     }
-    if (result.recipes.length === 0 && result.skipped.length === 0)
+    if (!result.recipes.length && !result.skipped.length)
       result.skipped.push(`${name}: no recipes found in the zip file`);
     return result;
   }

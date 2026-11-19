@@ -1,8 +1,8 @@
-/** Where a received recipe waits for the editor to pick it up. */
+/** where a received recipe waits for the editor to pick it up. */
 export const receivedKey = "mise-received";
 
 /**
- * The "Send to Mise" bookmark. On a recipe page it opens Mise's /receive page
+ * the "Send to Mise" bookmark. On a recipe page it opens Mise's /receive page
  * and, once that page says it's ready, hands it the page's URL and HTML. The
  * message only goes to this Mise origin, and only to the window it opened.
  */
@@ -13,7 +13,7 @@ export const bookmarkletFor = (origin: string) => {
 
 export type ReceivedPage = { url: string; html: string };
 
-/** Accepts only a well-formed page message (it comes from an untrusted site). */
+/** accepts only a well-formed page message (it comes from an untrusted site). */
 export const readPageMessage = (data: unknown) => {
   if (!data || typeof data !== "object") return null;
   const value = data as Record<string, unknown>;
@@ -21,6 +21,6 @@ export const readPageMessage = (data: unknown) => {
   if (typeof value.url !== "string" || typeof value.html !== "string")
     return null;
   if (!/^https?:\/\//i.test(value.url) || value.url.length > 2000) return null;
-  if (value.html.length === 0 || value.html.length > 5_000_000) return null;
+  if (!value.html.length || value.html.length > 5_000_000) return null;
   return { url: value.url, html: value.html };
 };

@@ -1,4 +1,4 @@
-/** Browser side of push notifications. */
+/** browser side of push notifications. */
 
 const flagKey = "mise-push";
 
@@ -20,7 +20,7 @@ const setFlag = (on: boolean) => {
     if (on) localStorage.setItem(flagKey, "on");
     else localStorage.removeItem(flagKey);
   } catch {
-    // Timers just won't be mirrored to the server.
+    // timers just won't be mirrored to the server.
   }
 };
 
@@ -59,7 +59,7 @@ const post = (path: string, method: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-/** This device's saved settings, or null when notifications are off here. */
+/** this device's saved settings, or null when notifications are off here. */
 export const loadPushPrefs = async () => {
   const subscription = await currentSubscription();
   if (!subscription) {
@@ -118,7 +118,7 @@ export const updatePushPrefs = async (prefs: Partial<PushPrefs>) => {
   return Boolean(response?.ok);
 };
 
-/** Turns notifications off for this device (also used on sign-out). */
+/** turns notifications off for this device (also used on sign-out). */
 export const disablePush = async () => {
   setFlag(false);
   const subscription = await currentSubscription().catch(() => null);
@@ -140,7 +140,7 @@ export const sendTestPush = async () => {
   return body?.error ?? "Couldn't send a test.";
 };
 
-/** Mirrors a kitchen timer to the server so it can ring while the phone is locked. */
+/** mirrors a kitchen timer to the server so it can ring while the phone is locked. */
 export const syncTimer = (
   action: "start" | "stop",
   timer: { id: string; label: string; recipe: string | null; seconds?: number }

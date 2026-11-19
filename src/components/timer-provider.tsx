@@ -48,7 +48,7 @@ const chime = () => {
       osc.stop(at + 0.35);
     }
   } catch {
-    // Sound is a nicety; the visual alert still shows.
+    // sound is a nicety; the visual alert still shows.
   }
 };
 
@@ -71,7 +71,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
       const finished = latest.current.filter(
         (timer) => timer.endsAt !== null && timer.endsAt <= at
       );
-      if (finished.length === 0) return;
+      if (!finished.length) return;
       const ids = new Set(finished.map((timer) => timer.id));
       latest.current = latest.current.map((timer) =>
         ids.has(timer.id)
@@ -89,7 +89,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
       try {
         navigator.vibrate?.([300, 150, 300]);
       } catch {
-        // Not every device can vibrate.
+        // not every device can vibrate.
       }
     }, 250);
     return () => window.clearInterval(tick);
@@ -121,7 +121,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
           done: false,
         },
       ]);
-      // Also ring through a notification if the phone is locked.
+      // also ring through a notification if the phone is locked.
       syncTimer("start", { id, label, recipe, seconds });
     },
     pause: (id: string) => {

@@ -33,6 +33,11 @@ import { isMeasure, parenthetical, storedMeasure } from "@/lib/view";
 import { NotFoundPage } from "@/pages/not-found";
 import type { Recipe } from "@/shared/recipe";
 
+export type CookableRecipe = Pick<
+  Recipe,
+  "title" | "servings" | "ingredients" | "instructions"
+>;
+
 const readSet = (key: string) => {
   try {
     const raw = sessionStorage.getItem(key);
@@ -51,11 +56,11 @@ const writeSet = (key: string, value: Set<number>) => {
   try {
     sessionStorage.setItem(key, JSON.stringify([...value]));
   } catch {
-    // Progress just won't survive a reload.
+    // progress just won't survive a reload.
   }
 };
 
-/** Keeps the screen on while cooking, where the browser allows it. */
+/** keeps the screen on while cooking, where the browser allows it. */
 const useWakeLock = () => {
   const [state, setState] = useState<"on" | "off" | "unsupported">(() =>
     "wakeLock" in navigator ? "off" : "unsupported"
@@ -94,7 +99,15 @@ const useWakeLock = () => {
   return state;
 };
 
-function CookScreen({ recipe }: { recipe: Recipe }) {
+function CookScreen({
+  recipe,
+  storageKey,
+  backTo,
+}: {
+  recipe: CookableRecipe;
+  storageKey: string;
+  backTo: string;
+}) {
   const [params] = useSearchParams();
   const units = params.get("units");
   const system = isMeasure(units) ? units : storedMeasure();
@@ -111,8 +124,8 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
     scaleIngredient(item, factor, system)
   );
 
-  const doneKey = `mise-cook-${recipe.id}-ingredients`;
-  const stepKey = `mise-cook-${recipe.id}-step`;
+  const doneKey = `mise-cook-${storageKey}-ingredients`;
+  const stepKey = `mise-cook-${storageKey}-step`;
   const [checked, setChecked] = useState(() => readSet(doneKey));
   const [step, setStep] = useState(() => {
     try {
@@ -129,7 +142,9 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
   const [view, setView] = useState<"steps" | "ingredients" | "timing">(
     recipe.instructions.length ? "steps" : "ingredients"
   );
-  const [plan, setPlan] = useState<CookPlan | null>(() => readPlan(recipe.id));
+  const [plan, setPlan] = useState<CookPlan | null>(() =>
+    readPlan(storageKey)
+  );
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -139,7 +154,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
 
   const choosePlan = (next: CookPlan) => {
     setPlan(next);
-    savePlan(recipe.id, next);
+    savePlan(storageKey, next);
   };
 
   const openTiming = () => {
@@ -174,7 +189,6 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
     try {
       sessionStorage.setItem(stepKey, String(next));
     } catch {
-      // Not important.
     }
   };
 
@@ -261,7 +275,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
           </Button>
         ) : (
           <Button asChild size="lg" className="min-w-28">
-            <Link to={`/recipes/${recipe.id}`}>
+            <Link to={backTo}>
               Done
               <CheckIcon data-icon="inline-end" />
             </Link>
@@ -280,7 +294,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
           size="icon"
           aria-label="Leave cook mode"
         >
-          <Link to={`/recipes/${recipe.id}`}>
+          <Link to={backTo}>
             <XIcon />
           </Link>
         </Button>
@@ -393,7 +407,7 @@ function CookScreen({ recipe }: { recipe: Recipe }) {
                 );
               })}
             </ul>
-            {ingredients.length === 0 && (
+            {!ingredients.length && (
               <p className="text-center text-muted-foreground">
                 No ingredients listed.
               </p>
@@ -478,7 +492,15 @@ function CookPage() {
 
   if (missing) return <NotFoundPage />;
   if (!recipe) return <RecipePlaceholder />;
-  return <CookScreen key={recipe.id} recipe={recipe} />;
+
+  return (
+    <CookScreen
+      key={recipe.id}
+      recipe={recipe}
+      storageKey={recipe.id}
+      backTo={`/recipes/${recipe.id}`}
+    />
+  );
 }
 
-export { CookPage };
+export { CookPage, CookScreen };

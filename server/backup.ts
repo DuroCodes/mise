@@ -24,7 +24,7 @@ const maxUnpacked = 1024 * 1024 * 1024;
 
 const stamp = (value: Date) => value.toISOString();
 
-/** Everything except accounts, as portable JSON that `restoreBackup` reads. */
+/** everything except accounts, as portable JSON that `restoreBackup` reads. */
 export const exportData = () => {
   const people = db.select().from(user).all();
   const emailOf = new Map(people.map((person) => [person.id, person.email]));
@@ -180,7 +180,7 @@ export const exportData = () => {
 };
 
 /**
- * A zip with mise.json (portable data), every referenced upload, and a
+ * a zip with mise.json (portable data), every referenced upload, and a
  * consistent copy of the SQLite database (which includes accounts).
  */
 export const createBackupZip = () => {
@@ -342,7 +342,7 @@ export type RestoreSummary = {
 };
 
 /**
- * Merges a backup into this site. Recipes and other rows keep their ids, so
+ * merges a backup into this site. Recipes and other rows keep their ids, so
  * restoring the same backup twice updates instead of duplicating. People are
  * matched by email; rows for people who do not have an account here are
  * skipped, and recipes whose owner is missing go to the restoring admin.

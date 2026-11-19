@@ -6,7 +6,7 @@ export const clock = (ms: number) =>
     minute: "2-digit",
   });
 
-/** Today at HH:MM as epoch ms (tomorrow if a ready-by time has already passed). */
+/** today at HH:MM as epoch ms (tomorrow if a ready-by time has already passed). */
 export const anchorFor = (plan: CookPlan, now = Date.now()) => {
   const [hours, minutes] = plan.time.split(":").map(Number);
   const date = new Date(now);
@@ -16,7 +16,7 @@ export const anchorFor = (plan: CookPlan, now = Date.now()) => {
   return date.getTime();
 };
 
-/** Now, rounded up to the next five minutes, as HH:MM. */
+/** now, rounded up to the next five minutes, as HH:MM. */
 export const nextFiveMinutes = (now = new Date()) => {
   const date = new Date(now);
   date.setMinutes(Math.ceil(date.getMinutes() / 5) * 5, 0, 0);
@@ -42,7 +42,6 @@ export const readPlan = (recipeId: string) => {
         gap: Math.min(60, Math.max(1, Math.round(value.gap))),
       };
   } catch {
-    // Start fresh.
   }
   return null;
 };
@@ -51,6 +50,6 @@ export const savePlan = (recipeId: string, plan: CookPlan) => {
   try {
     sessionStorage.setItem(key(recipeId), JSON.stringify(plan));
   } catch {
-    // The plan still applies until the page reloads.
+    // the plan still applies until the page reloads.
   }
 };

@@ -54,7 +54,7 @@ function AppHeader({
           Offline. Saved recipes still work.
         </p>
       )}
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex min-w-0 items-center gap-5">
           <NavLink
             to="/"
@@ -137,7 +137,7 @@ function AppHeader({
   );
 }
 
-/** Tab bar for phones; the header carries these links on wider screens. */
+/** tab bar for phones; the header carries these links on wider screens. */
 function BottomNav() {
   return (
     <nav

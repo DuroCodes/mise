@@ -159,7 +159,7 @@ function CollectionsPage() {
         />
       )}
 
-      {collections && collections.length === 0 && (
+      {collections && !collections.length && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <FolderIcon
             className="mx-auto size-6 text-muted-foreground"
@@ -180,7 +180,7 @@ function CollectionsPage() {
               className="block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 outline-none focus-visible:ring-3 focus-visible:ring-ring"
             >
               <div className="grid aspect-[2/1] grid-cols-2 grid-rows-2 gap-0.5 bg-muted">
-                {collection.images.length === 0 ? (
+                {!collection.images.length ? (
                   <div className="col-span-2 row-span-2 flex items-center justify-center">
                     <FolderIcon
                       className="size-8 text-muted-foreground/50"
@@ -326,7 +326,7 @@ function CollectionPage() {
         </div>
       </div>
 
-      {collection.recipes.length === 0 ? (
+      {!collection.recipes.length ? (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <FolderOpenIcon
             className="mx-auto size-6 text-muted-foreground"

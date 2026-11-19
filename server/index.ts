@@ -66,7 +66,7 @@ const api = new Hono<{ Variables: { user: SessionUser } }>();
 
 const megabytes = (count: number) => count * 1024 * 1024;
 
-/** Largest request body each route accepts; most only take small JSON. */
+/** largest request body each route accepts; most only take small JSON. */
 const bodyCap = (path: string) => {
   if (path === "/api/admin/restore") return megabytes(512);
   if (path === "/api/import/file") return megabytes(101);
@@ -374,7 +374,7 @@ app.route("/api", api);
 app.use("/uploads/*", serveStatic({ root: dataDir }));
 
 if (production) {
-  // The service worker and manifest must never be cached (by browsers or a
+  // the service worker and manifest must never be cached (by browsers or a
   // CDN like Cloudflare), or phones keep running an old version for hours.
   app.use("/*", async (c, next) => {
     await next();

@@ -1,9 +1,9 @@
 export type StepTimer = {
   start: number;
   end: number;
-  /** Low end of a range: when to start checking. */
+  /** low end of a range: when to start checking. */
   seconds: number;
-  /** High end of a range (same as seconds otherwise): for planning. */
+  /** high end of a range (same as seconds otherwise): for planning. */
   upperSeconds: number;
   label: string;
 };
@@ -67,7 +67,7 @@ const unitSeconds = (unit: string) => {
 };
 
 /**
- * Finds durations such as "10 minutes", "5 to 7 min", or "1 hour 30 minutes"
+ * finds durations such as "10 minutes", "5 to 7 min", or "1 hour 30 minutes"
  * in a step. A range uses its low end, so the timer goes off when it is time
  * to start checking.
  */

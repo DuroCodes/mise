@@ -237,7 +237,7 @@ function LibraryPage() {
 
       {recipes === null && !error && <CardGridSkeleton />}
 
-      {recipes && shown.length === 0 && (
+      {recipes && !shown.length && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

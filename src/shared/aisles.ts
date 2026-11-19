@@ -1,6 +1,6 @@
 import { tokens } from "./nutrition";
 
-/** Store sections, in the order most people walk a grocery store. */
+/** store sections, in the order most people walk a grocery store. */
 export const aisles = [
   "Produce",
   "Bakery",
@@ -347,7 +347,7 @@ const entries: Entry[] = Object.entries(sections).flatMap(([aisle, names]) =>
 );
 
 const contains = (haystack: string[], needle: string[]) => {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
+  if (!needle.length || needle.length > haystack.length) return false;
   for (let start = 0; start + needle.length <= haystack.length; start += 1) {
     if (needle.every((word, index) => haystack[start + index] === word))
       return true;
@@ -356,7 +356,7 @@ const contains = (haystack: string[], needle: string[]) => {
 };
 
 /**
- * Picks a store section for an item. The most specific phrase wins, so
+ * picks a store section for an item. The most specific phrase wins, so
  * "chicken stock" is Pantry rather than Meat and "garlic powder" is Spices
  * rather than Produce. Anything marked frozen goes to Frozen.
  */

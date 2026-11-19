@@ -1,5 +1,5 @@
 /**
- * Offline changes to the shopping list. Each change is tried right away; if
+ * offline changes to the shopping list. Each change is tried right away; if
  * the network is down it's saved on the device and replayed in order once the
  * connection is back. The list on screen always includes waiting changes.
  */
@@ -40,7 +40,7 @@ const write = (ops: Op[]) => {
     if (ops.length) localStorage.setItem(key(), JSON.stringify(ops));
     else localStorage.removeItem(key());
   } catch {
-    // Storage full or blocked; the change stays on screen until reload.
+    // storage full or blocked; the change stays on screen until reload.
   }
   listeners.forEach((listener) => listener(ops.length));
 };
@@ -55,7 +55,7 @@ export const onOutboxChange = (listener: (count: number) => void) => {
 
 export const pendingCount = () => read().length;
 
-/** Adds a change, folding it into earlier ones for the same item. */
+/** adds a change, folding it into earlier ones for the same item. */
 const enqueue = (op: Op) => {
   let ops = read();
   if (op.kind === "add") ops.push(op);
@@ -74,7 +74,7 @@ const enqueue = (op: Op) => {
   write(ops);
 };
 
-/** The server's list with waiting changes applied on top. */
+/** the server's list with waiting changes applied on top. */
 export const withOutbox = (items: ShoppingItem[]) => {
   let list = [...items];
   for (const op of read()) {
@@ -110,7 +110,7 @@ const request = async (method: string, path: string, body?: unknown) => {
   } catch {
     return { network: false };
   }
-  // The service worker answers 503 when there's no connection.
+  // the service worker answers 503 when there's no connection.
   if (response.status === 503) return { network: false };
   const data = (await response.json().catch(() => null)) as unknown;
   return {
@@ -149,7 +149,7 @@ const run = async () => {
       if (!next) break;
       const sent = await perform(next);
       if (!sent.network) return false;
-      // Sent, or rejected for good (e.g. the item was deleted elsewhere): either way it's done.
+      // sent, or rejected for good (e.g. the item was deleted elsewhere): either way it's done.
       ops = read().slice(1);
       write(ops);
     }
@@ -160,19 +160,19 @@ const run = async () => {
 };
 
 /**
- * Sends waiting changes in order. Resolves true once nothing is left. If an
+ * sends waiting changes in order. Resolves true once nothing is left. If an
  * earlier attempt is still running (and may fail), waits for it, then tries
  * again rather than reporting its stale result.
  */
 export const flush = async () => {
   if (flushing) await flushing;
-  if (read().length === 0) return true;
+  if (!read().length) return true;
   flushing ??= run();
   return flushing;
 };
 
 /**
- * Sends one change, or saves it for later when offline. Returns the fresh
+ * sends one change, or saves it for later when offline. Returns the fresh
  * list when the server answered with one.
  */
 export const send = async (op: Op) => {
@@ -203,6 +203,5 @@ export const clearOutbox = () => {
       if (name?.startsWith("mise-outbox:")) localStorage.removeItem(name);
     }
   } catch {
-    // Nothing to clear.
   }
 };
