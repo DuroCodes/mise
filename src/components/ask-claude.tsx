@@ -130,6 +130,7 @@ function AskClaude({ recipeId }: { recipeId: string }) {
           maxLength={500}
           placeholder="Ask about swaps, allergies, or missing ingredients"
           aria-label="Question about this recipe"
+          className="text-sm"
           onChange={(event) => setQuestion(event.target.value)}
         />
         <Button type="submit" disabled={pending}>

@@ -89,7 +89,10 @@ function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
           ).map(([Icon, name, value]) => (
             <div
               key={name}
-              className="rounded-lg bg-muted/60 px-3 py-2 print:bg-transparent print:px-0"
+              className={cn(
+                "rounded-lg bg-muted/60 px-3 py-2 print:bg-transparent print:px-0",
+                name === "Calories" && "col-span-2 sm:col-span-1"
+              )}
             >
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon className="size-3.5 print:hidden" aria-hidden="true" />
@@ -345,16 +348,16 @@ function RecipeView({
               No steps yet.
             </p>
           ) : (
-            <ol className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-sm leading-6">
+            <ol className="space-y-1.5 text-sm leading-6">
               {recipe.instructions.map((item, index) => (
                 <li
                   key={`${index}-${item.text.slice(0, 12)}`}
-                  className="contents"
+                  className="flex gap-2 break-inside-avoid"
                 >
-                  <span className="text-muted-foreground tabular-nums">
+                  <span className="shrink-0 text-muted-foreground tabular-nums">
                     {index + 1}
                   </span>
-                  <span className="min-w-0 break-inside-avoid">
+                  <span className="min-w-0">
                     <StepText
                       text={item.text}
                       step={index + 1}

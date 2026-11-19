@@ -10,7 +10,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { cn } from "cn";
@@ -62,12 +62,23 @@ function OptionalDate({
   onChange: (value: string) => void;
   className?: string;
 }) {
+  const input = useRef<HTMLInputElement>(null);
   const label = value
     ? dayFromKey(value).toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
       })
     : "Use by";
+
+  const openPicker = () => {
+    const el = input.current;
+    if (!el) return;
+    try {
+      el.showPicker();
+    } catch {
+      // older browsers open from the native control instead.
+    }
+  };
 
   return (
     <div
@@ -87,12 +98,14 @@ function OptionalDate({
         {label}
       </span>
       <input
+        ref={input}
         id={id}
         type="date"
         value={value}
         aria-label="Use by (optional)"
         title="Use by (optional)"
         className="absolute inset-0 cursor-pointer opacity-0"
+        onClick={openPicker}
         onChange={(event) => onChange(event.target.value)}
       />
     </div>

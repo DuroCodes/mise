@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { cn } from "cn";
 import { RecipePlaceholder } from "@/components/recipe-placeholder";
 import { StepText } from "@/components/step-text";
@@ -98,6 +98,7 @@ function CookScreen({
   storageKey: string;
   backTo: string;
 }) {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const units = params.get("units");
   const system = isMeasure(units) ? units : storedMeasure();
@@ -151,6 +152,11 @@ function CookScreen({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        navigate(backTo);
+        return;
+      }
       if (view !== "steps") return;
       if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
@@ -220,7 +226,16 @@ function CookScreen({
           </Button>
         ) : (
           <Button asChild size="lg" className="min-w-28">
-            <Link to={backTo}>
+            <Link
+              to={backTo}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(stepKey, "0");
+                } catch {
+                  // next cook starts at step 1 either way if storage is full.
+                }
+              }}
+            >
               Done
               <CheckIcon data-icon="inline-end" />
             </Link>
@@ -341,7 +356,7 @@ function CookScreen({
                   <p className="text-sm font-medium text-muted-foreground tabular-nums">
                     Step {step + 1} of {total}
                   </p>
-                  <p className="text-2xl leading-relaxed text-balance sm:text-3xl sm:leading-relaxed">
+                  <p className="text-2xl text-balance sm:text-3xl">
                     <StepText
                       text={current.text}
                       step={step + 1}
