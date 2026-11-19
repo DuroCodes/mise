@@ -63,7 +63,7 @@ function ShareRecipe({
     try {
       await navigator.share({ title, url: link });
     } catch {
-      // The person closed the share sheet.
+      // the person closed the share sheet.
     }
   };
 

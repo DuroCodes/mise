@@ -367,7 +367,7 @@ function StoresPage() {
 
       {stores === null && <ListSkeleton label="Loading stores" rows={3} />}
 
-      {stores && stores.length === 0 && (
+      {stores && !stores.length && (
         <div className="space-y-2 rounded-xl bg-card px-4 py-10 text-center ring-1 ring-foreground/10">
           <StoreIcon
             className="mx-auto size-6 text-muted-foreground"

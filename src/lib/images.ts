@@ -1,5 +1,5 @@
 /**
- * Shrinks a phone photo before upload (they're often 4-12MB, over the 5MB
+ * shrinks a phone photo before upload (they're often 4-12MB, over the 5MB
  * limit). Returns a JPEG no wider or taller than `max` pixels.
  */
 export const shrinkPhoto = async (file: File, max = 1600, quality = 0.85) => {

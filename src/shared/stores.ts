@@ -6,7 +6,7 @@ export const storeSection = z.object({
   label: z.string().trim().max(24).default(""),
 });
 
-/** A store's walking order: each section at most once, in the order you shop it. */
+/** a store's walking order: each section at most once, in the order you shop it. */
 export const storeLayout = z
   .array(storeSection)
   .max(aisles.length)
@@ -26,11 +26,11 @@ export const storeSchema = z.object({
 export type StoreSection = z.infer<typeof storeSection>;
 export type Store = z.infer<typeof storeSchema>;
 
-/** The default walk (aisles in their usual order, no labels). */
+/** the default walk (aisles in their usual order, no labels). */
 export const defaultLayout = () =>
   aisles.map((aisle) => ({ aisle, label: "" }));
 
-/** Every section in this store's order; sections it doesn't list go last. */
+/** every section in this store's order; sections it doesn't list go last. */
 export const fullLayout = (layout: StoreSection[]) => {
   const listed = new Set(layout.map((section) => section.aisle));
   return [

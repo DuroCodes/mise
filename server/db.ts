@@ -127,7 +127,7 @@ const emptyStats = () => ({
   cookCount: 0,
 });
 
-/** Rating and cooking-log summaries for one recipe, or for all of them. */
+/** rating and cooking-log summaries for one recipe, or for all of them. */
 export const recipeStats = (viewerId: string, recipeId?: string) => {
   const stats = new Map<string, RecipeStats>();
   const entry = (id: string) => {
@@ -243,7 +243,7 @@ export const getRecipe = (id: string, viewerId: string, asAdmin = false) => {
   );
 };
 
-/** True when the viewer may see the recipe (admins see everything). */
+/** true when the viewer may see the recipe (admins see everything). */
 export const viewable = (id: string, viewerId: string, asAdmin = false) => {
   const row = db
     .select({ ownerId: recipes.ownerId, visibility: recipes.visibility })
@@ -311,7 +311,7 @@ export const removeUpload = (url: string | null) => {
   try {
     unlinkSync(`${uploadDir}/${name}`);
   } catch {
-    // The file is already gone.
+    // the file is already gone.
   }
 };
 

@@ -2,6 +2,16 @@ FROM oven/bun:1.4.0
 USER root
 WORKDIR /app
 
+# yt-dlp + ffmpeg for TikTok / Instagram reel import (extract speech from video)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl ffmpeg \
+    && curl -fsSL -o /usr/local/bin/yt-dlp \
+      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" \
+    && chmod a+rx /usr/local/bin/yt-dlp \
+    && apt-get purge -y curl \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 

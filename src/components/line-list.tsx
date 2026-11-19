@@ -250,7 +250,7 @@ function IngredientList({
                         <Input
                           aria-label={`Amount ${index + 1}`}
                           value={item.amount}
-                          placeholder="200"
+                          placeholder="1"
                           onChange={(event) =>
                             update(index, { amount: event.target.value })
                           }

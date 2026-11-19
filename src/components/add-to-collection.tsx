@@ -101,7 +101,7 @@ function AddToCollection({ recipeId }: { recipeId: string }) {
         </DialogHeader>
         {collections === null ? (
           <LinesSkeleton label="Loading collections" rows={3} line="h-9" />
-        ) : collections.length === 0 ? (
+        ) : !collections.length ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <FolderIcon className="size-4 shrink-0" aria-hidden="true" />
             No collections yet. Make the first one below.

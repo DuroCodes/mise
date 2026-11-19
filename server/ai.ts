@@ -1,24 +1,32 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
-import { APICallError, Output, generateText, stepCountIs, tool } from "ai";
+import {
+  APICallError,
+  Output,
+  RetryError,
+  generateText,
+  stepCountIs,
+  tool,
+} from "ai";
 import { z } from "zod";
 import { recipeInput, type Recipe } from "../src/shared/recipe";
 import { publicRecipeUrl } from "./fetch-recipe";
+import { whisperStatus, type WhisperStatus } from "./whisper";
 
 /**
- * Optional model features. They stay off unless the server has a model set
+ * optional model features. They stay off unless the server has a model set
  * up, so recipes never leave the machine unless the person running mise opts
  * in.
  *
- * Set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
+ * set `MISE_AI_API_KEY` and `MISE_AI_MODEL` as `provider:model`. The prefix
  * is required and chooses the provider. A local model needs no key:
  * `local:hermes3`, with `MISE_AI_BASE_URL` if it isn't Ollama on this
  * machine. Examples: `anthropic:claude-opus-5-5`, `openai:gpt-5`,
  * `openrouter:openai/gpt-5`.
  *
- * Without those, an admin can set the provider, model, and key in Admin > AI.
- * The environment always wins over the saved setting.
+ * without those, an admin can set the provider, model, and key in Admin > AI.
+ * the environment always wins over the saved setting.
  */
 export const aiProviders = [
   "anthropic",
@@ -26,12 +34,13 @@ export const aiProviders = [
   "openrouter",
   "local",
 ] as const;
+
 type ProviderId = (typeof aiProviders)[number];
 
 type AiSetup = {
   provider: ProviderId;
   model: string;
-  /** Empty for a local server that doesn't ask for one. */
+  /** empty for a local server that doesn't ask for one. */
   apiKey: string;
   baseURL?: string;
 };
@@ -41,35 +50,40 @@ const providers = new Set<ProviderId>(aiProviders);
 /** Ollama's OpenAI-compatible endpoint on the same machine. */
 export const localDefaultUrl = "http://localhost:11434/v1";
 
-/** Claude has a sensible default; the others need a model named. */
-export const defaultModel = (provider: ProviderId) =>
-  provider === "anthropic" ? "claude-opus-5-5" : "";
-
-/** Only local servers can run without a key. */
+/** only local servers can run without a key. */
 export const needsKey = (provider: ProviderId) => provider !== "local";
 
+const parseEnvModel = (
+  raw: string | undefined
+): { provider: ProviderId; model: string } | null => {
+  if (!raw) return null;
+
+  const split = raw.indexOf(":");
+  const head = split === -1 ? "" : raw.slice(0, split);
+
+  if (!providers.has(head as ProviderId) || split >= raw.length - 1)
+    return null;
+
+  return { provider: head as ProviderId, model: raw.slice(split + 1) };
+};
+
 const envSetup = () => {
-  const raw = process.env.MISE_AI_MODEL?.trim();
-  let provider: ProviderId = "anthropic";
-  let model = "claude-opus-5-5";
-  if (raw) {
-    const split = raw.indexOf(":");
-    const head = split === -1 ? "" : raw.slice(0, split);
-    if (!providers.has(head as ProviderId) || split >= raw.length - 1)
-      return null;
-    provider = head as ProviderId;
-    model = raw.slice(split + 1);
-  }
+  const parsed = parseEnvModel(process.env.MISE_AI_MODEL?.trim());
+  if (!parsed) return null;
+
+  const { provider, model } = parsed;
   const apiKey = process.env.MISE_AI_API_KEY?.trim() ?? "";
+
   if ((needsKey(provider) && !apiKey) || !model) return null;
+
   const baseURL =
     process.env.MISE_AI_BASE_URL?.trim() ||
     (provider === "local" ? localDefaultUrl : undefined);
+
   return { provider, model, apiKey, baseURL };
 };
 
-// Same default as db.ts; read here so importing this module never opens the
-// database (the tests import it).
+// same default as db.ts; read here so importing this module never opens the db
 const settingsFile = `${process.env.DATA_DIR ?? "./data"}/ai-settings.json`;
 
 const savedShape = z.object({
@@ -80,14 +94,16 @@ const savedShape = z.object({
 });
 
 let saved: AiSetup | null | undefined;
-const savedSetup = (): AiSetup | null => {
+const savedSetup = () => {
   if (saved !== undefined) return saved;
   saved = null;
+
   if (existsSync(settingsFile)) {
     try {
       const parsed = savedShape.safeParse(
         JSON.parse(readFileSync(settingsFile, "utf8"))
       );
+
       if (
         parsed.success &&
         (parsed.data.apiKey || !needsKey(parsed.data.provider))
@@ -97,11 +113,11 @@ const savedSetup = (): AiSetup | null => {
       saved = null;
     }
   }
+
   return saved;
 };
 
-export const aiSetup = (): AiSetup | null => envSetup() ?? savedSetup();
-
+export const aiSetup = () => envSetup() ?? savedSetup();
 export const aiEnabled = () => aiSetup() !== null;
 
 const modelFor = (setup: AiSetup) => {
@@ -111,8 +127,9 @@ const modelFor = (setup: AiSetup) => {
       baseURL: setup.baseURL,
     })(setup.model);
   }
+
   const openai = createOpenAI({
-    // Local servers like Ollama ignore the key, but the client wants one.
+    // local servers like Ollama ignore the key, but the client wants one.
     apiKey: setup.apiKey || "local",
     baseURL:
       setup.baseURL ??
@@ -122,6 +139,7 @@ const modelFor = (setup: AiSetup) => {
           ? localDefaultUrl
           : undefined),
   });
+
   return openai.chat(setup.model);
 };
 
@@ -138,12 +156,14 @@ export type AiStatus = {
   model: string | null;
   baseURL: string | null;
   hint: string | null;
+  whisper: WhisperStatus;
 };
 
-/** What admins see. The key itself never leaves the server. */
-export const aiStatus = (): AiStatus => {
+/** what admins see. the key itself never leaves the server. */
+export const aiStatus = () => {
   const fromEnv = envSetup();
   const setup = fromEnv ?? savedSetup();
+
   return {
     enabled: Boolean(setup),
     source: fromEnv ? "environment" : setup ? "saved" : null,
@@ -151,33 +171,37 @@ export const aiStatus = (): AiStatus => {
     model: setup?.model ?? null,
     baseURL: setup?.provider === "local" ? (setup.baseURL ?? null) : null,
     hint: setup?.apiKey ? `…${setup.apiKey.slice(-4)}` : null,
+    whisper: whisperStatus(),
   };
 };
 
-/** The saved key, so an admin can switch models without pasting it again. */
+/** the saved key, so an admin can switch models without pasting it again. */
 export const savedKeyFor = (provider: ProviderId) => {
   const setup = savedSetup();
   return setup?.provider === provider ? setup.apiKey : null;
 };
 
-/** Sends a one-word request to make sure the key and model work. */
+/** sends a one-word request to make sure the key and model work. */
 export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
   const local = setup.provider === "local";
+
   try {
     await generateText({
       model: modelFor(setup),
       prompt: "Reply with the word ok.",
       maxOutputTokens: 16,
       maxRetries: 0,
-      // A local model may need to load into memory first.
+      // a local model may need to load into memory first.
       abortSignal: AbortSignal.timeout(local ? 120_000 : 30_000),
     });
     return { ok: true, value: null };
   } catch (error) {
     console.error(error);
+
     if (APICallError.isInstance(error)) {
       if (error.statusCode === 401 || error.statusCode === 403)
         return { ok: false, error: "The provider didn't accept that key" };
+
       if (error.statusCode === 404)
         return {
           ok: false,
@@ -185,28 +209,34 @@ export const checkSetup = async (setup: AiSetup): Promise<AiResult<null>> => {
             ? "The server doesn't have that model. Pull it first, e.g. ollama pull hermes3."
             : "The provider doesn't know that model",
         };
+
       if (error.statusCode === 400)
         return { ok: false, error: "The provider rejected that model or key" };
+
       if (error.statusCode === 429)
         return {
           ok: false,
           error: "The provider is busy. Try again in a minute.",
         };
+
       if (!error.statusCode && local)
         return {
           ok: false,
           error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
         };
+
       return {
         ok: false,
         error: "Couldn't check the key with the provider right now",
       };
     }
+
     if (local)
       return {
         ok: false,
         error: `Couldn't reach a model server at ${setup.baseURL ?? localDefaultUrl}. Is Ollama running?`,
       };
+
     return { ok: false, error: "Couldn't reach the provider to check the key" };
   }
 };
@@ -215,6 +245,7 @@ export const saveSetup = (setup: AiSetup | null) => {
   if (setup)
     writeFileSync(settingsFile, JSON.stringify(setup), { mode: 0o600 });
   else if (existsSync(settingsFile)) unlinkSync(settingsFile);
+
   saved = setup;
 };
 
@@ -224,6 +255,7 @@ export const aiImageTypes = [
   "image/gif",
   "image/webp",
 ] as const;
+
 type AiImageType = (typeof aiImageTypes)[number];
 
 const extracted = z.object({
@@ -253,68 +285,155 @@ const within = (value: number | null, low: number, high: number) =>
     ? value
     : null;
 
-/** Fits model output to mise's limits. Exported for tests. */
+/**
+ * some models (esp. free Groq/Qwen JSON mode) leak schema junk into strings,
+ * e.g. "%Y44I1 teaspoon/I %E" or "%I2/I %E whole eggs".
+ */
+export const scrubModelText = (value: string) =>
+  value
+    .replace(/%Y\d+I/gi, " ")
+    .replace(/%E\b/gi, " ")
+    // %I before a digit is a marker; keep the digit (content).
+    .replace(/%I(?=\d)/g, " ")
+    .replace(/%[A-Za-z]+\b/g, " ")
+    .replace(/\/I\b/g, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .trim();
+
+const clean = (value: string, max: number) => clip(scrubModelText(value), max);
+
+/**
+ * models often put "5 tbsp" in unit (or amount) and leave the other blank.
+ * pull the leading quantity out when that happens.
+ */
+export const splitMeasure = (amount: string, unit: string) => {
+  const qty = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)\s*(.*)$/;
+
+  if (!amount && unit) {
+    const match = unit.match(qty);
+    if (match?.[1]) return { amount: match[1], unit: (match[2] ?? "").trim() };
+  }
+
+  if (amount && !unit) {
+    const match = amount.match(qty);
+    if (match?.[1] && match[2])
+      return { amount: match[1], unit: match[2].trim() };
+  }
+
+  return { amount, unit };
+};
+
+/** fits model output to mise's limits. Exported for tests. */
 export const toRecipeInput = (value: Extracted) => {
   if (!value.found) return null;
+
   const parsed = recipeInput.safeParse({
-    title: clip(value.title, 200),
-    description: clip(value.description, 4000),
+    title: clean(value.title, 200),
+    description: clean(value.description, 4000),
     prepMinutes: within(value.prepMinutes, 0, 1440),
     cookMinutes: within(value.cookMinutes, 0, 1440),
     servings: within(value.servings, 1, 999),
     tags: value.tags
-      .map((tag) => clip(tag, 40))
+      .map((t) => clean(t, 40))
       .filter(Boolean)
       .slice(0, 20),
     ingredients: value.ingredients
-      .map((item) => ({
-        amount: clip(item.amount, 40),
-        unit: clip(item.unit, 40),
-        name: clip(item.name, 200),
-        note: clip(item.note, 200),
-      }))
-      .filter((item) => item.name)
+      .map((i) => {
+        const split = splitMeasure(clean(i.amount, 40), clean(i.unit, 40));
+
+        return {
+          amount: split.amount,
+          unit: split.unit,
+          name: clean(i.name, 200).toLowerCase(),
+          note: clean(i.note, 200).toLowerCase(),
+        };
+      })
+      .filter((i) => i.name)
       .slice(0, 80),
     instructions: value.instructions
-      .map((text) => clip(text, 2000))
+      .map((t) => clean(t, 2000))
       .filter(Boolean)
       .slice(0, 80)
-      .map((text) => ({ text })),
+      .map((t) => ({ text: t })),
   });
+
   if (
     !parsed.success ||
     (!parsed.data.ingredients.length && !parsed.data.instructions.length)
   )
     return null;
+
   return parsed.data;
 };
+
+const ingredientShape = `Each ingredient is four separate fields — never combine amount and unit:
+  {"amount":"5","unit":"tbsp","name":"unsalted butter","note":"melted"}
+  {"amount":"3/4","unit":"cup","name":"sugar","note":""}
+  {"amount":"2","unit":"","name":"eggs","note":"room temperature"}
+Wrong: {"amount":"","unit":"5 tbsp","name":"butter","note":""}
+Wrong: {"amount":"5 tbsp","unit":"","name":"butter","note":""}`;
 
 const extractionPrompt = `You turn recipes into structured data for a recipe manager.
 The input is pasted text, a photo (a cookbook page, a handwritten card, a screenshot), or both.
 Copy what the recipe says; do not invent ingredients, amounts, or steps that are not there.
-- Split each ingredient into amount (keep fractions like "1/2" or ranges like "2-3" as written), unit (short form such as g, kg, ml, tsp, tbsp, cup, oz, lb, clove, can; empty when there is none), name, and note (preparation such as "finely chopped", or empty).
+- ${ingredientShape}
+- Unit is only the short unit (g, kg, ml, tsp, tbsp, cup, oz, lb, clove, can) or empty.
 - Each instruction is one step, without its leading number.
 - Times are whole minutes, servings a whole number; use null when the recipe does not say.
 - Tags are a few short lowercase words (cuisine, course, main ingredient) and may be empty.
 - If the input does not contain a recipe, set found to false and leave the other fields empty.`;
 
+/** spoken video transcripts: rewrite chatty narration into cookable steps. */
+const spokenExtractionPrompt = `You turn a cooking video transcript into a clean recipe for a recipe manager.
+The input is speech (and maybe a social caption), not a written recipe card. Rewrite it; do not paste the host's wording.
+- Title: a short normal recipe name (e.g. "Strawberry Cheesecake Cupcakes"). Never copy the video caption, hashtags, or emojis.
+- Description: one plain sentence grounded only in the transcript, or empty. No hashtags, emojis, or marketing fluff. Do not invent methods (e.g. do not say "no-bake" if they bake).
+- Ingredients: ${ingredientShape}
+- Instructions: short imperative steps a cook can follow (e.g. "Add 1/2 cup sour cream and mix until smooth."). Merge related chatter into one step.
+- Drop filler, taste reactions, merch plugs, and phrases like "we're going in with", "like that", "mmm".
+- Do not invent ingredients, amounts, steps, or techniques that are not in the transcript.
+- Every field must be plain text only — no markup, XML, or tokens like %I /I %E.
+- Times are whole minutes, servings a whole number; use null when the recipe does not say.
+- Tags are a few short lowercase words and may be empty.
+- If there is no recipe, set found to false and leave the other fields empty.`;
+
 export type AiResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+const apiError = (error: unknown) => {
+  if (APICallError.isInstance(error)) return error;
+  if (RetryError.isInstance(error) && APICallError.isInstance(error.lastError))
+    return error.lastError;
+  return null;
+};
+
 const failure = (error: unknown) => {
-  console.error(error);
-  if (APICallError.isInstance(error)) {
-    if (error.statusCode === 401 || error.statusCode === 403)
+  const api = apiError(error);
+  console.error(api ?? error);
+
+  if (api) {
+    if (api.statusCode === 401 || api.statusCode === 403)
       return { ok: false as const, error: "The API key was rejected" };
-    if (error.statusCode === 429)
+
+    if (api.statusCode === 429)
       return {
         ok: false as const,
-        error: "The model is busy. Try again in a minute.",
+        error: "The model is rate-limited. Try again in a minute.",
       };
+
+    const body = typeof api.responseBody === "string" ? api.responseBody : "";
+    if (/max_completion_tokens|truncated|json_validate_failed/i.test(body))
+      return {
+        ok: false as const,
+        error:
+          "The model ran out of room writing the recipe. Try again in a moment.",
+      };
+
     return {
       ok: false as const,
       error: "The model could not answer that right now",
     };
   }
+
   return { ok: false as const, error: "Could not reach the model" };
 };
 
@@ -337,7 +456,10 @@ const objectFrom = async <T>(
       },
     ],
     output: Output.object({ schema }),
-    maxOutputTokens: 8000,
+    // Groq free tier is ~8k TPM; 8k completion alone gets truncated mid-JSON.
+    maxOutputTokens: 2500,
+    // free OpenRouter models 429 often; one retry is enough, then surface it.
+    maxRetries: 1,
   });
   return result.output;
 };
@@ -345,9 +467,12 @@ const objectFrom = async <T>(
 export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
+  /** spoken video transcript — rewrite into clear steps instead of copying narration. */
+  spoken?: boolean;
 }) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const content: Part[] = [];
   if (input.image) {
     content.push({
@@ -356,6 +481,7 @@ export const extractRecipe = async (input: {
       mediaType: input.image.mediaType,
     });
   }
+
   content.push({
     type: "text",
     text: input.text.trim()
@@ -364,15 +490,21 @@ export const extractRecipe = async (input: {
   });
 
   try {
-    const output = await objectFrom(extracted, extractionPrompt, content);
+    const output = await objectFrom(
+      extracted,
+      input.spoken ? spokenExtractionPrompt : extractionPrompt,
+      content
+    );
     if (!output)
       return {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const recipe = toRecipeInput(output);
     if (!recipe)
       return { ok: false as const, error: "No recipe was found in that" };
+
     return { ok: true as const, value: recipe };
   } catch (error) {
     return failure(error);
@@ -388,10 +520,11 @@ const pageText = (html: string) =>
     .trim()
     .slice(0, 20_000);
 
-/** Downloads a public page as plain text. Exported for the model tools. */
+/** downloads a public page as plain text. Exported for the model tools. */
 export const readPublicPage = async (raw: string) => {
   let current = await publicRecipeUrl(raw);
   if (!current) return null;
+
   try {
     for (let hop = 0; hop < 4; hop += 1) {
       const response = await fetch(current, {
@@ -402,32 +535,40 @@ export const readPublicPage = async (raw: string) => {
           "user-agent": "Mise/0.1 (recipe import)",
         },
       });
+
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location");
         if (!location) return null;
+
         const next = await publicRecipeUrl(
           new URL(location, current).toString()
         );
         if (!next) return null;
+
         current = next;
         continue;
       }
+
       if (!response.ok) return null;
+
       const html = await response.text();
       if (html.length > 2_000_000) return null;
+
       const text = pageText(html);
-      return text.length > 0 ? text : null;
+      return text.length ? text : null;
     }
   } catch {
     return null;
   }
+
   return null;
 };
 
-/** Reads a recipe page the direct importer could not parse. */
+/** reads a recipe page the direct importer could not parse. */
 export const recipeFromUrl = async (url: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const page = await readPublicPage(url);
   if (!page)
     return {
@@ -435,6 +576,7 @@ export const recipeFromUrl = async (url: string) => {
       error:
         "That site blocked the download. Save the page and import the file instead.",
     };
+
   try {
     const output = await objectFrom(
       extracted,
@@ -446,9 +588,11 @@ export const recipeFromUrl = async (url: string) => {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const recipe = toRecipeInput(output);
     if (!recipe)
       return { ok: false as const, error: "No recipe was found on that page" };
+
     return { ok: true as const, value: { ...recipe, sourceUrl: url } };
   } catch (error) {
     return failure(error);
@@ -463,13 +607,15 @@ const photoItems = z.object({
 
 export type PhotoItem = { name: string; amount: string; unit: string };
 
-/** Fits model output to pantry limits. Exported for tests. */
+/** fits model output to pantry limits. Exported for tests. */
 export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
+
   for (const item of value.items) {
     const name = clip(item.name, 200).toLowerCase();
     if (!name || seen.has(name)) continue;
+
     seen.add(name);
     out.push({
       name,
@@ -478,6 +624,7 @@ export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
     });
     if (out.length >= 80) break;
   }
+
   return out;
 };
 
@@ -498,6 +645,7 @@ export const readPantryPhoto = async (input: {
 }) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   try {
     const output = await objectFrom(photoItems, photoPrompts[input.kind], [
       {
@@ -518,8 +666,9 @@ export const readPantryPhoto = async (input: {
         ok: false as const,
         error: "The model's answer could not be read",
       };
+
     const items = toPhotoItems(output);
-    if (items.length === 0)
+    if (!items.length)
       return {
         ok: false as const,
         error:
@@ -527,6 +676,7 @@ export const readPantryPhoto = async (input: {
             ? "No groceries found on that receipt"
             : "No food found in that photo",
       };
+
     return { ok: true as const, value: items };
   } catch (error) {
     return failure(error);
@@ -561,24 +711,29 @@ const normalizeUrl = (raw: string) => {
   }
 };
 
-/** Pulls the JSON array out of the model's final text (a ```json block or a bare array). */
+/** pulls the JSON array out of the model's final text (a ```json block or a bare array). */
 export const parseFound = (text: string, searched: Set<string>) => {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   const bare = text.slice(text.indexOf("["), text.lastIndexOf("]") + 1);
+
   let raw: unknown;
   try {
     raw = JSON.parse((fenced ?? bare).trim());
   } catch {
     return [];
   }
+
   const parsed = foundSchema.safeParse(raw);
   if (!parsed.success) return [];
+
   const seen = new Set<string>();
   const out: FoundRecipe[] = [];
+
   for (const item of parsed.data) {
     const url = normalizeUrl(item.url);
-    // Only links that actually came back from a search, so nothing is invented.
+    // only links that actually came back from a search, so nothing is invented.
     if (!url || !searched.has(url) || seen.has(url)) continue;
+
     seen.add(url);
     out.push({
       title: clip(item.title, 200) || new URL(url).hostname,
@@ -586,19 +741,21 @@ export const parseFound = (text: string, searched: Set<string>) => {
       site: new URL(url).hostname.replace(/^www\./, ""),
       why: clip(item.why, 300),
       uses: item.uses
-        .map((use) => clip(use, 60))
+        .map((u) => clip(u, 60))
         .filter(Boolean)
         .slice(0, 12),
     });
     if (out.length >= 6) break;
   }
+
   return out;
 };
 
-/** Result links from a DuckDuckGo HTML page, including uddg redirects. */
+/** result links from a DuckDuckGo HTML page, including uddg redirects. */
 export const linksFromSearchHtml = (html: string) => {
   const out: { title: string; url: string }[] = [];
   const seen = new Set<string>();
+
   for (const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const href = (match[1].match(/href="([^"]+)"/i)?.[1] ?? "").replace(
       /&amp;/g,
@@ -607,17 +764,21 @@ export const linksFromSearchHtml = (html: string) => {
     const uddg = href.match(/[?&]uddg=([^&]+)/);
     const raw = uddg ? decodeURIComponent(uddg[1]) : href;
     if (!/^https?:\/\//i.test(raw) || /duckduckgo\.com/i.test(raw)) continue;
+
     const url = normalizeUrl(raw);
     if (!url || seen.has(url)) continue;
+
     const title = match[2]
       .replace(/<[^>]+>/g, "")
       .replace(/\s+/g, " ")
       .trim();
     if (!title) continue;
+
     seen.add(url);
     out.push({ title: title.slice(0, 200), url });
     if (out.length >= 8) break;
   }
+
   return out;
 };
 
@@ -626,6 +787,7 @@ const searchWeb = async (query: string) => {
     `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`
   );
   if (!target) return [];
+
   try {
     const response = await fetch(target, {
       signal: AbortSignal.timeout(12_000),
@@ -635,6 +797,7 @@ const searchWeb = async (query: string) => {
       },
     });
     if (!response.ok) return [];
+
     return linksFromSearchHtml(await response.text());
   } catch {
     return [];
@@ -651,9 +814,10 @@ Finish with only a JSON array in a \`\`\`json code block, 3 to 6 items, each:
 export const findRecipes = async (pantry: string[], focus: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const list = pantry
     .slice(0, 80)
-    .map((name) => `- ${name}`)
+    .map((n) => `- ${n}`)
     .join("\n");
   const searched = new Set<string>();
   let searches = 0;
@@ -670,6 +834,7 @@ export const findRecipes = async (pantry: string[], focus: string) => {
           execute: async ({ query }) => {
             if (searches >= 5) return [];
             searches += 1;
+
             const links = await searchWeb(query);
             for (const link of links) searched.add(link.url);
             return links;
@@ -684,12 +849,14 @@ export const findRecipes = async (pantry: string[], focus: string) => {
         ok: false as const,
         error: "The model declined to search for that",
       };
+
     const found = parseFound(result.text, searched);
-    if (found.length === 0)
+    if (!found.length)
       return {
         ok: false as const,
         error: "No recipes came back this time. Try again or change the focus.",
       };
+
     return { ok: true as const, value: found };
   } catch (error) {
     return failure(error);
@@ -702,15 +869,16 @@ export const askAboutRecipe = async (
 ) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
+
   const ingredients = recipe.ingredients
-    .map((item) =>
-      [item.amount, item.unit, item.name, item.note ? `(${item.note})` : ""]
+    .map((i) =>
+      [i.amount, i.unit, i.name, i.note ? `(${i.note})` : ""]
         .filter(Boolean)
         .join(" ")
     )
     .join("\n");
   const steps = recipe.instructions
-    .map((step, index) => `${index + 1}. ${step.text}`)
+    .map((s, i) => `${i + 1}. ${s.text}`)
     .join("\n");
 
   try {
@@ -723,16 +891,16 @@ export const askAboutRecipe = async (
     });
     if (result.finishReason === "content-filter")
       return { ok: false as const, error: "The model declined to answer that" };
+
     const answer = result.text.trim();
     if (!answer)
       return { ok: false as const, error: "The model did not answer" };
+
     return { ok: true as const, value: answer };
   } catch (error) {
     return failure(error);
   }
 };
-
-// Meal planning ---------------------------------------------------------------
 
 export type PlanSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -772,10 +940,10 @@ const mealPlanOutput = z.object({
   summary: z.string(),
 });
 
-/** At most this many recipes go to Claude; favorites and regulars first. */
+/** at most this many recipes go to Claude; favorites and regulars first. */
 const plannerLimit = 300;
 
-/** Picks and orders the recipes Claude sees. Exported for tests. */
+/** picks and orders the recipes Claude sees. Exported for tests. */
 export const plannerRecipes = <T extends PlannerRecipe>(recipes: T[]) =>
   [...recipes]
     .sort(
@@ -799,14 +967,15 @@ const recipeLine = (recipe: PlannerRecipe, key: string) => {
       : "never cooked",
     `ingredients: ${recipe.ingredients
       .slice(0, 15)
-      .map((item) => item.name)
+      .map((i) => i.name)
       .join(", ")}`,
   ].filter(Boolean);
+
   return `${key} | ${recipe.title.replace(/\s+/g, " ")} | ${facts.join(" | ")}`;
 };
 
 /**
- * Keeps only meals that land on a requested day and meal, use a recipe from
+ * keeps only meals that land on a requested day and meal, use a recipe from
  * the library, and don't double up a slot. Exported for tests.
  */
 export const toMealPlan = (
@@ -816,15 +985,18 @@ export const toMealPlan = (
 ): MealPlanIdea => {
   const taken = new Set<string>();
   const meals: PlannedMeal[] = [];
+
   for (const meal of value.meals) {
     const day = meal.day.trim();
     const slot = meal.slot.trim().toLowerCase() as PlanSlot;
     const recipeId = keys.get(meal.recipe.trim().toLowerCase());
     if (!recipeId || !wanted.get(day)?.has(slot)) continue;
     if (taken.has(`${day} ${slot}`)) continue;
+
     taken.add(`${day} ${slot}`);
     meals.push({ day, slot, recipeId, why: clip(meal.why, 200) });
   }
+
   return { meals, summary: clip(value.summary, 600) };
 };
 
@@ -855,33 +1027,28 @@ export const planMeals = async (input: {
 }): Promise<AiResult<MealPlanIdea>> => {
   if (!aiEnabled())
     return { ok: false, error: "AI is not set up on this server" };
+
   const chosen = plannerRecipes(input.recipes);
-  const keys = new Map(
-    chosen.map((recipe, index) => [`r${index + 1}`, recipe.id])
-  );
-  const wanted = new Map(
-    input.fill.map((entry) => [entry.day, new Set(entry.slots)])
-  );
+  const keys = new Map(chosen.map((r, i) => [`r${i + 1}`, r.id]));
+  const wanted = new Map(input.fill.map((e) => [e.day, new Set(e.slots)]));
 
   const recipeList = chosen
-    .map((recipe, index) => recipeLine(recipe, `r${index + 1}`))
+    .map((r, i) => recipeLine(r, `r${i + 1}`))
     .join("\n");
+
   const pantry = input.pantry
     .slice(0, 150)
-    .map(
-      (item) =>
-        `- ${item.name}${item.expiresOn ? ` (use by ${item.expiresOn})` : ""}`
-    )
+    .map((i) => `- ${i.name}${i.expiresOn ? ` (use by ${i.expiresOn})` : ""}`)
     .join("\n");
+
   const planned = input.planned
-    .map((entry) => `- ${entry.day} ${entry.slot}: ${entry.title}`)
+    .map((e) => `- ${e.day} ${e.slot}: ${e.title}`)
     .join("\n");
+
   const fill = input.fill
-    .map(
-      (entry) =>
-        `- ${entry.day} (${weekday(entry.day)}): ${entry.slots.join(", ")}`
-    )
+    .map((e) => `- ${e.day} (${weekday(e.day)}): ${e.slots.join(", ")}`)
     .join("\n");
+
   const notes = input.notes.trim();
 
   const content = [
@@ -899,12 +1066,15 @@ export const planMeals = async (input: {
     const output = await objectFrom(mealPlanOutput, planPrompt, content);
     if (!output)
       return { ok: false, error: "The model's answer could not be read" };
+
     const plan = toMealPlan(output, keys, wanted);
-    if (plan.meals.length === 0)
+
+    if (!plan.meals.length)
       return {
         ok: false,
         error: "Couldn't find recipes that fit. Try different meals or notes.",
       };
+
     return { ok: true, value: plan };
   } catch (error) {
     return failure(error);

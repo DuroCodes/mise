@@ -23,7 +23,7 @@ import { shrinkPhoto } from "@/lib/images";
 
 type Row = PhotoItem & { keep: boolean };
 
-/** Snap a receipt or the fridge; Claude lists the food, you check it, it goes in the pantry. */
+/** snap a receipt or the fridge; Claude lists the food, you check it, it goes in the pantry. */
 function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -55,7 +55,7 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
 
   const save = async () => {
     const items = (rows ?? []).filter((row) => row.keep && row.name.trim());
-    if (items.length === 0) return;
+    if (!items.length) return;
     setSaving(true);
     const result = await addPantryBatch(
       items.map(({ name, amount, unit }) => ({

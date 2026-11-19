@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useTitle } from "@/lib/use-title";
 import { sharedLink } from "@/lib/view";
 
-/** Where Android's share sheet lands: hand the link to the recipe importer. */
+/** where Android's share sheet lands: hand the link to the recipe importer. */
 function ShareTargetPage() {
   const [params] = useSearchParams();
   useTitle("Import · Mise");

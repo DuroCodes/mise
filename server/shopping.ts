@@ -37,7 +37,7 @@ export const listShopping = (userId: string) =>
     .map(toItem);
 
 /**
- * Adds lines to a person's list. A line joins an unchecked item with the same
+ * adds lines to a person's list. A line joins an unchecked item with the same
  * name when the amounts can be added (same unit, or convertible units).
  */
 export const mergeLines = (userId: string, lines: ShoppingLine[]) => {

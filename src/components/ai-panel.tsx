@@ -18,6 +18,7 @@ import {
   getAiStatus,
   removeAiKey,
   saveAiSetup,
+  whisperProviderLabel,
   type AiProvider,
   type AiStatus,
 } from "@/lib/api";
@@ -31,7 +32,7 @@ const providerHelp: Record<
     keys: "https://platform.claude.com/settings/keys",
     site: "platform.claude.com",
     model: "claude-opus-5-5",
-    modelHint: "Leave blank for claude-opus-5-5.",
+    modelHint: "The Claude model id, like claude-opus-5-5.",
   },
   openai: {
     keys: "https://platform.openai.com/api-keys",
@@ -105,7 +106,7 @@ function AiPanel() {
       setError("Paste the API key");
       return;
     }
-    if (provider !== "anthropic" && !model.trim()) {
+    if (!model.trim()) {
       setError("Name the model to use");
       return;
     }
@@ -143,35 +144,72 @@ function AiPanel() {
 
   const fromEnvironment = status?.source === "environment";
   const help = providerHelp[provider];
+  const whisper = status?.whisper;
 
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="flex items-center gap-2 text-xl font-medium tracking-tight">
-          <SparklesIcon className="size-5 text-brand" aria-hidden="true" />
-          AI
-        </h2>
+        <h2 className="text-xl font-medium tracking-tight">AI</h2>
         <p className="text-sm text-muted-foreground">
-          Reads recipes, answers questions, and plans meals. What you send goes
-          to the provider.
+          Reads recipes, answers questions, plans meals, and (with Whisper)
+          imports TikTok and Instagram reels. What you send goes to the
+          provider.
         </p>
       </div>
 
       <div className="space-y-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-        <p className="text-sm" aria-live="polite">
-          {status === null
-            ? "Checking…"
-            : status.enabled && status.provider
-              ? `On: ${aiProviderLabel[status.provider]}, ${status.model}${
-                  status.baseURL ? ` at ${status.baseURL}` : ""
-                }${status.hint ? `, key ending ${status.hint}` : ""}${
-                  fromEnvironment ? ", from the server's environment" : ""
-                }.`
-              : "Off. Pick a provider to turn it on."}
-        </p>
+        <div className="space-y-2" aria-live="polite">
+          <p className="text-xs font-medium text-muted-foreground">
+            Chat model
+          </p>
+          {status === null ? (
+            <p className="text-sm">Checking…</p>
+          ) : status.enabled && status.provider ? (
+            <dl className="grid gap-1 text-sm sm:grid-cols-[6.5rem_1fr]">
+              <dt className="text-muted-foreground">Provider</dt>
+              <dd>{aiProviderLabel[status.provider]}</dd>
+              <dt className="text-muted-foreground">Model</dt>
+              <dd className="break-all font-mono text-xs sm:text-sm">
+                {status.model}
+              </dd>
+              {status.baseURL ? (
+                <>
+                  <dt className="text-muted-foreground">Server</dt>
+                  <dd className="break-all">{status.baseURL}</dd>
+                </>
+              ) : null}
+              {status.hint ? (
+                <>
+                  <dt className="text-muted-foreground">Key</dt>
+                  <dd>ending {status.hint}</dd>
+                </>
+              ) : null}
+              <dt className="text-muted-foreground">Source</dt>
+              <dd>
+                {fromEnvironment
+                  ? "Server environment (read-only here)"
+                  : "Saved on this server"}
+              </dd>
+            </dl>
+          ) : (
+            <p className="text-sm">Off. Pick a provider below to turn it on.</p>
+          )}
+        </div>
+
+        {fromEnvironment && (
+          <p className="text-sm text-muted-foreground">
+            Managed by <code className="text-xs">MISE_AI_MODEL</code> and{" "}
+            <code className="text-xs">MISE_AI_API_KEY</code>. Remove those from
+            the server environment and restart to edit the chat model on this
+            page.
+          </p>
+        )}
 
         {status && !fromEnvironment && (
-          <form onSubmit={save} className="space-y-3">
+          <form
+            onSubmit={save}
+            className="space-y-3 border-t border-border pt-4"
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="ai-provider">Provider</Label>
@@ -306,12 +344,46 @@ function AiPanel() {
           </form>
         )}
 
-        {fromEnvironment && (
-          <p className="text-sm text-muted-foreground">
-            Set with MISE_AI_MODEL and MISE_AI_API_KEY. Remove them to change it
-            here.
+        <div className="space-y-2 border-t border-border pt-4">
+          <p className="text-xs font-medium text-muted-foreground">
+            Speech (TikTok / Instagram)
           </p>
-        )}
+          {status === null ? (
+            <p className="text-sm">Checking…</p>
+          ) : whisper?.enabled && whisper.provider ? (
+            <>
+              <dl className="grid gap-1 text-sm sm:grid-cols-[6.5rem_1fr]">
+                <dt className="text-muted-foreground">Provider</dt>
+                <dd>{whisperProviderLabel[whisper.provider]}</dd>
+                <dt className="text-muted-foreground">Model</dt>
+                <dd className="break-all font-mono text-xs sm:text-sm">
+                  {whisper.model}
+                </dd>
+                {whisper.hint ? (
+                  <>
+                    <dt className="text-muted-foreground">Key</dt>
+                    <dd>ending {whisper.hint}</dd>
+                  </>
+                ) : null}
+                <dt className="text-muted-foreground">Source</dt>
+                <dd>Server environment</dd>
+              </dl>
+              <p className="text-sm text-muted-foreground">
+                Set with <code className="text-xs">MISE_WHISPER_MODEL</code> and{" "}
+                <code className="text-xs">MISE_WHISPER_API_KEY</code>. Separate
+                from the chat model — Anthropic cannot transcribe audio.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Off. Set <code className="text-xs">MISE_WHISPER_API_KEY</code> and{" "}
+              <code className="text-xs">
+                MISE_WHISPER_MODEL=groq:whisper-large-v3-turbo
+              </code>{" "}
+              for reel imports when the caption is not the recipe.
+            </p>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -39,7 +39,7 @@ const longDay = (day: string) =>
     day: "numeric",
   });
 
-/** Days from today on whose dinner is still open. */
+/** days from today on whose dinner is still open. */
 const openDays = (days: string[], today: string, entries: PlanEntry[]) =>
   days.filter(
     (day) =>
@@ -74,7 +74,7 @@ function AiPlanner({
   } | null>(null);
   const [lastWeek, setLastWeek] = useState<string | null>(null);
 
-  // Reset the request whenever the dialog opens on a different week.
+  // reset the request whenever the dialog opens on a different week.
   const weekKey = days[0] ?? "";
   if (open && weekKey !== lastWeek) {
     setLastWeek(weekKey);
@@ -104,11 +104,11 @@ function AiPlanner({
   const request = async (event?: SubmitEvent<HTMLFormElement>) => {
     event?.preventDefault();
     if (pending) return;
-    if (pickedDays.length === 0 || pickedSlots.length === 0) {
+    if (!pickedDays.length || !pickedSlots.length) {
       setError("Pick at least one day and one meal");
       return;
     }
-    if (fill.length === 0) {
+    if (!fill.length) {
       setError("Those meals are already planned");
       return;
     }
@@ -263,7 +263,7 @@ function AiPlanner({
                 {plan.summary}
               </p>
             )}
-            {grouped.length === 0 && (
+            {!grouped.length && (
               <p className="text-sm text-muted-foreground">
                 Nothing left to add.
               </p>
@@ -357,7 +357,7 @@ function AiPlanner({
               </Button>
               <Button
                 type="button"
-                disabled={saving || plan.meals.length === 0}
+                disabled={saving || !plan.meals.length}
                 aria-busy={saving}
                 onClick={save}
               >

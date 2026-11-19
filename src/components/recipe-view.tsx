@@ -47,15 +47,15 @@ const round = (value: number) =>
 
 function NutritionPanel({ recipe }: { recipe: ViewRecipe }) {
   const [open, setOpen] = useState(false);
-  if (recipe.ingredients.length === 0) return null;
+  if (!recipe.ingredients.length) return null;
   const estimate = estimateNutrition(recipe.ingredients, recipe.servings);
   const figures = estimate.perServing ?? estimate.total;
   const label = estimate.perServing ? "per serving" : "whole recipe";
-  if (estimate.counted.length === 0) return null;
+  if (!estimate.counted.length) return null;
   const missing = [...estimate.unmeasured, ...estimate.unknown];
 
   return (
-    <section className="min-w-0 space-y-3 print:break-inside-avoid">
+    <section className="min-w-0 space-y-2 print:break-inside-avoid">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring print:pointer-events-none"
@@ -162,8 +162,13 @@ function RecipeView({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: easeOut }}
     >
-      <header className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
+      <header className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+          {actions && (
+            <div className="flex shrink-0 items-center gap-1 sm:order-last print:hidden">
+              {actions}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-medium tracking-tight text-balance">
               {recipe.title}
@@ -188,13 +193,13 @@ function RecipeView({
                     href={recipe.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="inline-flex items-center gap-1 rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring"
+                    className="rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring"
                   >
                     <span className="print:hidden">View original on </span>
                     <span className="hidden print:inline">From </span>
                     {sourceHost(recipe.sourceUrl)}
                     <ExternalLinkIcon
-                      className="size-3.5 print:hidden"
+                      className="ml-1 inline size-3.5 align-[-0.125em] print:hidden"
                       aria-hidden="true"
                     />
                   </a>
@@ -202,11 +207,6 @@ function RecipeView({
               </p>
             )}
           </div>
-          {actions && (
-            <div className="flex shrink-0 items-center gap-1 print:hidden">
-              {actions}
-            </div>
-          )}
         </div>
         {recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 print:hidden">
@@ -237,7 +237,7 @@ function RecipeView({
         <motion.img
           src={recipe.image}
           alt=""
-          className="mt-6 h-48 w-full rounded-xl object-cover ring-1 ring-foreground/10 sm:h-64 print:hidden"
+          className="mt-4 h-48 w-full rounded-xl object-cover ring-1 ring-foreground/10 sm:h-64 print:hidden"
           initial={{ opacity: 0, scale: 1.015 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: easeOut, delay: 0.06 }}
@@ -245,7 +245,7 @@ function RecipeView({
         />
       )}
 
-      <div className="mt-8 space-y-10 border-t pt-8 print:mt-4 print:space-y-6 print:pt-4">
+      <div className="mt-5 space-y-6 border-t pt-5 print:mt-4 print:space-y-5 print:pt-4">
         <section className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h2 className="text-sm font-medium">
@@ -305,7 +305,7 @@ function RecipeView({
               )}
             </div>
           </div>
-          {ingredients.length === 0 ? (
+          {!ingredients.length ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <CarrotIcon className="size-4" aria-hidden="true" />
               No ingredients yet.
@@ -335,9 +335,9 @@ function RecipeView({
             </ul>
           )}
         </section>
-        <section className="min-w-0 space-y-3">
+        <section className="min-w-0 space-y-2">
           <h2 className="text-sm font-medium">Instructions</h2>
-          {recipe.instructions.length === 0 ? (
+          {!recipe.instructions.length ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <ListOrderedIcon className="size-4" aria-hidden="true" />
               No steps yet.

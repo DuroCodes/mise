@@ -207,7 +207,7 @@ function RecipeBody({
             type="button"
             variant="outline"
             size="sm"
-            disabled={adding || recipe.ingredients.length === 0}
+            disabled={adding || !recipe.ingredients.length}
             aria-busy={adding}
             onClick={addToList}
           >

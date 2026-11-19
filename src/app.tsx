@@ -29,7 +29,7 @@ import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
 import { SettingsPage } from "@/pages/settings";
 import { ShareTargetPage } from "@/pages/share-target";
-import { SharedPage } from "@/pages/shared";
+import { SharedCookPage, SharedPage } from "@/pages/shared";
 import { ShoppingPage } from "@/pages/shopping";
 import { StoresPage } from "@/pages/stores";
 
@@ -60,7 +60,7 @@ function SignedInApp() {
   const [featuresVersion, setFeaturesVersion] = useState(0);
   const [failed, setFailed] = useState(false);
 
-  // Offline, the session check fails; the service worker can still answer
+  // offline, the session check fails; the service worker can still answer
   // /api/me from its cache, so the saved recipes stay readable.
   const tryOffline =
     !session.isPending && !session.data && (Boolean(session.error) || !online);
@@ -128,8 +128,8 @@ function SignedInApp() {
         id="content"
         className={
           hideTabs
-            ? "isolate mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10"
-            : "isolate mx-auto w-full max-w-6xl px-4 pt-8 pb-28 sm:px-6 sm:py-10 print:pb-0"
+            ? "isolate mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10"
+            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-28 sm:px-6 sm:py-10 print:pb-0"
         }
       >
         <Routes>
@@ -175,6 +175,7 @@ function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/s/:token" element={<SharedPage />} />
+              <Route path="/s/:token/cook" element={<SharedCookPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/*" element={<SignedInApp />} />
             </Routes>
