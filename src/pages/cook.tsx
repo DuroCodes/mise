@@ -275,7 +275,7 @@ function CookScreen({
           </Button>
         ) : (
           <Button asChild size="lg" className="min-w-28">
-            <Link to={`/recipes/${recipe.id}`}>
+            <Link to={backTo}>
               Done
               <CheckIcon data-icon="inline-end" />
             </Link>
@@ -294,7 +294,7 @@ function CookScreen({
           size="icon"
           aria-label="Leave cook mode"
         >
-          <Link to={`/recipes/${recipe.id}`}>
+          <Link to={backTo}>
             <XIcon />
           </Link>
         </Button>
@@ -492,7 +492,15 @@ function CookPage() {
 
   if (missing) return <NotFoundPage />;
   if (!recipe) return <RecipePlaceholder />;
-  return <CookScreen key={recipe.id} recipe={recipe} />;
+
+  return (
+    <CookScreen
+      key={recipe.id}
+      recipe={recipe}
+      storageKey={recipe.id}
+      backTo={`/recipes/${recipe.id}`}
+    />
+  );
 }
 
-export { CookPage };
+export { CookPage, CookScreen };

@@ -29,7 +29,7 @@ import { RecipePage } from "@/pages/recipe";
 import { InvitePage, LoginPage, SetupPage } from "@/pages/session";
 import { SettingsPage } from "@/pages/settings";
 import { ShareTargetPage } from "@/pages/share-target";
-import { SharedPage } from "@/pages/shared";
+import { SharedCookPage, SharedPage } from "@/pages/shared";
 import { ShoppingPage } from "@/pages/shopping";
 import { StoresPage } from "@/pages/stores";
 
@@ -175,6 +175,7 @@ function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/s/:token" element={<SharedPage />} />
+              <Route path="/s/:token/cook" element={<SharedCookPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
               <Route path="/*" element={<SignedInApp />} />
             </Routes>
