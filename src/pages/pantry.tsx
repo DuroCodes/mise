@@ -1,4 +1,5 @@
 import {
+  CalendarDaysIcon,
   ExternalLinkIcon,
   PackageOpenIcon,
   PencilIcon,
@@ -48,6 +49,55 @@ const daysUntil = (day: string, today: string) =>
   Math.round(
     (dayFromKey(day).getTime() - dayFromKey(today).getTime()) / 86_400_000
   );
+
+/** iOS paints today on empty date inputs; show a real placeholder instead. */
+function OptionalDate({
+  id,
+  value,
+  onChange,
+  className,
+}: {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  const label = value
+    ? dayFromKey(value).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : "Use by";
+
+  return (
+    <div
+      className={cn(
+        "relative inline-flex h-10 min-w-0 items-center rounded-lg border border-input dark:bg-input/30",
+        className
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none flex min-w-0 items-center gap-1.5 truncate px-2.5 text-sm",
+          value ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        <CalendarDaysIcon className="size-4 shrink-0" />
+        {label}
+      </span>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        aria-label="Use by (optional)"
+        title="Use by (optional)"
+        className="absolute inset-0 cursor-pointer opacity-0"
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
+  );
+}
 
 const expiryLabel = (day: string, today: string) => {
   const days = daysUntil(day, today);
@@ -159,11 +209,11 @@ function EditItem({
           <div className="space-y-2">
             <Label htmlFor="pantry-expires">Use by</Label>
             <div className="flex gap-2">
-              <Input
+              <OptionalDate
                 id="pantry-expires"
-                type="date"
                 value={expiresOn}
-                onChange={(event) => setExpiresOn(event.target.value)}
+                onChange={setExpiresOn}
+                className="w-full"
               />
               {expiresOn && (
                 <Button
@@ -272,13 +322,10 @@ function PantryList({
           onChange={(event) => setDraft(event.target.value)}
         />
         <div className="flex gap-2">
-          <Input
-            type="date"
+          <OptionalDate
             value={expires}
-            aria-label="Use by (optional)"
-            title="Use by (optional)"
-            className="h-10 w-full sm:w-40"
-            onChange={(event) => setExpires(event.target.value)}
+            onChange={setExpires}
+            className="min-w-0 flex-1 sm:w-36 sm:flex-none"
           />
           {ai && <PantryPhoto onAdded={onItems} />}
           <Button
