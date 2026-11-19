@@ -40,7 +40,7 @@ export default defineConfig({
         bypass(req) {
           const ua = req.headers["user-agent"] ?? "";
           if (
-            !/Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp/i.test(
+            !/Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Mise\//i.test(
               ua
             )
           )
