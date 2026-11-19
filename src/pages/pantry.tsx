@@ -749,43 +749,45 @@ function PantryPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="space-y-1">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-medium tracking-tight">Pantry</h1>
-          <p className="text-sm text-muted-foreground">
-            {items === null
-              ? "Loading"
-              : `${items.length} ${items.length === 1 ? "thing" : "things"} on hand`}
-          </p>
+          <div
+            className="flex shrink-0 rounded-lg bg-muted p-0.5"
+            role="tablist"
+            aria-label="Pantry"
+          >
+            {(
+              [
+                ["have", "Have", "In my pantry"],
+                ["make", "Make", "What can I make"],
+              ] as const
+            ).map(([value, short, text]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={tab === value}
+                aria-label={text}
+                onClick={() => setTab(value)}
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring sm:px-3",
+                  tab === value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                )}
+              >
+                <span className="sm:hidden">{short}</span>
+                <span className="max-sm:hidden">{text}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div
-          className="flex rounded-lg bg-muted p-0.5"
-          role="tablist"
-          aria-label="Pantry"
-        >
-          {(
-            [
-              ["have", "In my pantry"],
-              ["make", "What can I make"],
-            ] as const
-          ).map(([value, text]) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={tab === value}
-              onClick={() => setTab(value)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
-                tab === value
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              )}
-            >
-              {text}
-            </button>
-          ))}
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {items === null
+            ? "Loading"
+            : `${items.length} ${items.length === 1 ? "thing" : "things"} on hand`}
+        </p>
       </div>
 
       {items === null && <ListSkeleton label="Loading your pantry" />}

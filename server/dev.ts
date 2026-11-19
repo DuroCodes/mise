@@ -7,7 +7,8 @@ const server = Bun.spawn(["bun", "--watch", "server/index.ts"], {
   env: { ...process.env, NODE_ENV: "development", PORT: "3001" },
 });
 
-const client = Bun.spawn(["bun", "run", "vite", "--host", "127.0.0.1"], {
+// --host exposes the LAN address so phones on wifi can hit the same vite.
+const client = Bun.spawn(["bun", "run", "vite", "--host"], {
   stdin: "inherit",
   stdout: "inherit",
   stderr: "inherit",

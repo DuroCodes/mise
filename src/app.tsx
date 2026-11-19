@@ -106,7 +106,8 @@ function SignedInApp() {
   if (!account) return <AppSkeleton path={location.pathname} />;
 
   const hideTabs = fullScreen.test(location.pathname);
-  const cooking = /^\/recipes\/[^/]+\/cook\/?$/.test(location.pathname);
+  // cook mode draws its own fullscreen shell over the header; keep the header
+  // mounted so a cook-route 404 still matches other pages.
 
   return (
     <SessionContext.Provider
@@ -124,13 +125,13 @@ function SignedInApp() {
       >
         Skip to content
       </a>
-      {!cooking && <AppHeader account={account} offline={!online} />}
+      <AppHeader account={account} offline={!online} />
       <main
         id="content"
         className={
           hideTabs
             ? "isolate mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10"
-            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-10 print:pb-0"
+            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 sm:py-10 print:pb-0"
         }
       >
         <Routes>

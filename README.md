@@ -15,6 +15,8 @@ bun dev
 
 open [localhost:5173](http://localhost:5173). the api listens on port 3001, and vite proxies `/api` and `/uploads` to it.
 
+vite binds on your lan as well — use the network url it prints (for example `http://192.168.x.x:5173`) to try the ui from a phone on the same wifi. that is plain http, so safari will not offer "add to home screen" as a pwa; use an https deploy for install and push. for a one-off lan host, set `BETTER_AUTH_URL` to that origin.
+
 the first visit asks you to create an admin account; after that, sign-up is closed and only admins can add new users. there are also three demo recipes to get you started.
 
 ## docker

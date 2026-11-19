@@ -143,82 +143,80 @@ function LibraryPage() {
   const filtering = Boolean(query.trim() || tag || favorites);
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-medium tracking-tight">Recipes</h1>
-          <p className="text-sm text-muted-foreground">
-            {recipes === null
-              ? "Loading recipes"
-              : filtering
-                ? `${shown.length} of ${recipes.length}`
-                : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
-          </p>
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-medium tracking-tight">Recipes</h1>
+        <p className="text-sm text-muted-foreground">
+          {recipes === null
+            ? "Loading recipes"
+            : filtering
+              ? `${shown.length} of ${recipes.length}`
+              : `${recipes.length} ${recipes.length === 1 ? "recipe" : "recipes"}`}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1 sm:max-w-md">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setFilter({ q: event.target.value })}
+            placeholder="Search titles, ingredients, steps"
+            aria-label="Search recipes"
+            className="pl-8"
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative min-w-0 flex-1 sm:max-w-md">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setFilter({ q: event.target.value })}
-              placeholder="Search titles, ingredients, steps"
-              aria-label="Search recipes"
-              className="pl-8"
-            />
-          </div>
-          <Select
-            value={sort}
-            onValueChange={(value) =>
-              setFilter({ sort: value === "updated" ? null : value })
-            }
+        <Select
+          value={sort}
+          onValueChange={(value) =>
+            setFilter({ sort: value === "updated" ? null : value })
+          }
+        >
+          <SelectTrigger
+            aria-label="Sort recipes"
+            className="size-8 shrink-0 justify-center px-0 sm:w-fit sm:justify-between sm:px-2.5 max-sm:[&_[data-slot=select-icon]]:hidden"
           >
-            <SelectTrigger
-              aria-label="Sort recipes"
-              className="size-8 shrink-0 justify-center px-0 sm:w-fit sm:justify-between sm:px-2.5 max-sm:[&_[data-slot=select-icon]]:hidden"
-            >
-              <ArrowDownUpIcon className="sm:hidden" aria-hidden="true" />
-              <span className="max-sm:sr-only">
-                <SelectValue />
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              {sorts.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-wrap gap-2">
+            <ArrowDownUpIcon className="sm:hidden" aria-hidden="true" />
+            <span className="max-sm:sr-only">
+              <SelectValue />
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            {sorts.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={favorites ? "default" : "outline"}
+          aria-pressed={favorites}
+          onClick={() => setFilter({ favorite: favorites ? null : "1" })}
+        >
+          favorites
+        </Button>
+        {tags.map((item) => (
           <Button
+            key={item}
             type="button"
             size="sm"
-            variant={favorites ? "default" : "outline"}
-            aria-pressed={favorites}
-            onClick={() => setFilter({ favorite: favorites ? null : "1" })}
+            variant={
+              item.toLowerCase() === tag.toLowerCase() ? "default" : "outline"
+            }
+            aria-pressed={item.toLowerCase() === tag.toLowerCase()}
+            onClick={() =>
+              setFilter({
+                tag: item.toLowerCase() === tag.toLowerCase() ? null : item,
+              })
+            }
           >
-            favorites
+            {item}
           </Button>
-          {tags.map((item) => (
-            <Button
-              key={item}
-              type="button"
-              size="sm"
-              variant={
-                item.toLowerCase() === tag.toLowerCase() ? "default" : "outline"
-              }
-              aria-pressed={item.toLowerCase() === tag.toLowerCase()}
-              onClick={() =>
-                setFilter({
-                  tag: item.toLowerCase() === tag.toLowerCase() ? null : item,
-                })
-              }
-            >
-              {item}
-            </Button>
-          ))}
-        </div>
+        ))}
       </div>
 
       {error && (

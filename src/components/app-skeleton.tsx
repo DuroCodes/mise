@@ -28,7 +28,7 @@ function AppSkeleton({ path }: { path: string }) {
           </div>
         </div>
       </div>
-      <main className="mx-auto w-full max-w-7xl px-4 pt-8 pb-28 sm:px-6 sm:py-10">
+      <main className="mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 sm:py-10">
         {recipe ? (
           <RecipePlaceholder />
         ) : (

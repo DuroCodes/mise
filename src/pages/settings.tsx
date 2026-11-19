@@ -128,7 +128,8 @@ function InstallSection() {
         </Button>
       ) : isIos() ? (
         <p className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          In Safari, tap <Share2Icon className="size-4" aria-label="Share" />{" "}
+          In Safari, tap{" "}
+          <Share2Icon className="size-4 text-foreground" aria-label="Share" />{" "}
           then
           <span className="inline-flex items-center gap-1 font-medium text-foreground">
             <SquarePlusIcon className="size-4" aria-hidden="true" /> Add to Home

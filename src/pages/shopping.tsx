@@ -572,10 +572,12 @@ function ShoppingPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Clear all"
                 onClick={() => setConfirmClear(true)}
               >
                 <TrashIcon data-icon="inline-start" />
-                Clear all
+                <span className="sm:hidden">Clear</span>
+                <span className="max-sm:hidden">Clear all</span>
               </Button>
             </div>
           )}

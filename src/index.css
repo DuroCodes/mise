@@ -215,7 +215,7 @@ select optgroup {
     @apply border-border outline-ring/50;
   }
   html {
-    @apply bg-background font-sans;
+    @apply min-h-dvh bg-background font-sans;
   }
   /* Tailwind v4 dropped the hand cursor on buttons; bring it back for
      anything clickable that isn't disabled. Utilities like cursor-grab
@@ -226,13 +226,16 @@ select optgroup {
     cursor: pointer;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply min-h-dvh bg-background text-foreground antialiased;
     text-rendering: optimizeLegibility;
   }
   /* clip sideways overflow on the app, not on body. overflow on body
      makes position:fixed menus (the theme menu) stick to the page top
-     instead of the header once you scroll. */
+     instead of the header once you scroll. min-h-dvh keeps short pages
+     (pantry, collections) filling the screen so iOS PWAs don't lift the
+     fixed tab bar. */
   #root {
+    min-height: 100dvh;
     overflow-x: clip;
   }
   h1,

@@ -172,7 +172,7 @@ function TimerProvider({ children }: { children: ReactNode }) {
           "pointer-events-none fixed inset-x-4 z-60 flex w-auto flex-col items-stretch gap-2 sm:inset-x-auto sm:left-6 sm:w-max sm:max-w-[calc(100vw-3rem)] print:hidden",
           cooking
             ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] sm:bottom-28"
-            : "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] sm:bottom-6"
+            : "bottom-24 sm:bottom-6"
         )}
         aria-live="polite"
       >
