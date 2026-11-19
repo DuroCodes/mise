@@ -36,11 +36,11 @@ export type ViewRecipe = SharedRecipe & {
   visibility?: "private" | "public";
 };
 
-const measures: { id: Measure; label: string }[] = [
-  { id: "original", label: "Original" },
-  { id: "metric", label: "Metric" },
-  { id: "imperial", label: "Imperial" },
-];
+const measures = [
+  { id: "original", label: "Original", short: "Original" },
+  { id: "metric", label: "Metric", short: "Metric" },
+  { id: "imperial", label: "Imperial", short: "US" },
+] as const;
 
 const round = (value: number) =>
   value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
@@ -227,7 +227,7 @@ function RecipeView({
         )}
         {aside}
         {toolbar && (
-          <div className="flex flex-wrap gap-2 pt-1 print:hidden">
+          <div className="flex flex-nowrap gap-1.5 overflow-x-auto pt-1 sm:flex-wrap sm:gap-2 print:hidden">
             {toolbar}
           </div>
         )}
@@ -247,7 +247,7 @@ function RecipeView({
 
       <div className="mt-5 space-y-6 border-t pt-5 print:mt-4 print:space-y-5 print:pt-4">
         <section className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3">
             <h2 className="text-sm font-medium">
               Ingredients
               {recipe.servings !== null && servings !== recipe.servings && (
@@ -257,10 +257,10 @@ function RecipeView({
                 </span>
               )}
             </h2>
-            <div className="flex flex-wrap items-center gap-1.5 print:hidden">
+            <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto print:hidden">
               {recipe.servings !== null && (
                 <NumberField
-                  className="w-auto flex-row items-center"
+                  className="w-auto shrink-0 flex-row items-center"
                   size="sm"
                   min={0.5}
                   max={999}
@@ -284,7 +284,7 @@ function RecipeView({
               )}
               {recipe.ingredients.length > 0 && (
                 <div
-                  className="flex flex-wrap gap-1.5"
+                  className="flex shrink-0 gap-1"
                   role="group"
                   aria-label="Units"
                 >
@@ -293,12 +293,14 @@ function RecipeView({
                       key={measure.id}
                       type="button"
                       size="sm"
-                      className="rounded-lg"
+                      className="rounded-lg px-2 sm:px-2.5"
                       variant={system === measure.id ? "default" : "outline"}
+                      aria-label={measure.label}
                       aria-pressed={system === measure.id}
                       onClick={() => onSystem(measure.id)}
                     >
-                      {measure.label}
+                      <span className="sm:hidden">{measure.short}</span>
+                      <span className="max-sm:hidden">{measure.label}</span>
                     </Button>
                   ))}
                 </div>
