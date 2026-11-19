@@ -6,14 +6,20 @@ export type Temperature = {
 };
 
 const temperaturePattern =
-  /(\d{2,3})(?:\s*(?:°|º)\s*|\s*degrees?\s+|)(F|C|Fahrenheit|Celsius)\b/gi;
+  /(\d{2,3})(?:\s*(℉|℃)|(?:\s*(?:°|º)\s*|\s*degrees?\s+|)(F|C|Fahrenheit|Celsius)\b)/gi;
 
-/** oven-style temperatures such as "400°F", "425F", "200 °C", or "180 degrees Celsius". */
+/** oven-style temperatures such as "400°F", "300℉", "425F", "200 °C", or "180 degrees Celsius". */
 export const findTemperatures = (text: string) => {
   const found: Temperature[] = [];
   for (const match of text.matchAll(temperaturePattern)) {
     const value = Number(match[1]);
-    const scale = (match[2] ?? "").toUpperCase().startsWith("F") ? "F" : "C";
+    const scale = match[2]
+      ? match[2] === "℉"
+        ? "F"
+        : "C"
+      : (match[3] ?? "").toUpperCase().startsWith("F")
+        ? "F"
+        : "C";
     // skip things that can't be cooking temperatures.
     if (scale === "F" ? value < 80 || value > 600 : value < 25 || value > 320)
       continue;

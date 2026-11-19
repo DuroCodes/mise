@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { SharedRecipe } from "../src/shared/recipe";
+import { parseRecipeHtml } from "./recipe-page";
 import {
   absoluteImageUrl,
   componentEmbedJson,
@@ -36,6 +37,7 @@ describe("share preview bots", () => {
       )
     ).toBe(true);
     expect(isPreviewBot("Slackbot-LinkExpanding 1.0")).toBe(true);
+    expect(isPreviewBot("Mise/0.1 (recipe import)")).toBe(true);
     expect(isPreviewBot("Mozilla/5.0 (Macintosh) Chrome/120")).toBe(false);
   });
 });
@@ -59,7 +61,7 @@ describe("share preview markup", () => {
     expect(ogDescription(recipe())).toContain("by Ada");
   });
 
-  test("html includes open graph tags and a discord component embed", () => {
+  test("html includes open graph tags, json-ld, and a discord component embed", () => {
     const html = sharePreviewHtml(
       recipe(),
       "https://mise.test/s/rdHor_WL",
@@ -69,9 +71,41 @@ describe("share preview markup", () => {
     expect(html).toContain(
       'property="og:image" content="https://mise.test/uploads/soup.jpg"'
     );
+    expect(html).toContain('type="application/ld+json"');
+    expect(html).toContain('"@type":"Recipe"');
     expect(html).toContain('id="discord:component-embed"');
     expect(html).toContain("Open recipe");
     expect(html).toContain("Tomato Soup");
+  });
+
+  test("json-ld round-trips through the normal html importer", () => {
+    const html = sharePreviewHtml(
+      recipe({
+        ingredients: [
+          { amount: "2", unit: "tbsp", name: "butter", note: "melted" },
+          { amount: "1", unit: "can", name: "tomatoes", note: "" },
+        ],
+      }),
+      "https://mise.test/s/rdHor_WL",
+      "https://mise.test"
+    );
+    const parsed = parseRecipeHtml(html);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.recipe.title).toBe("Tomato Soup");
+    expect(parsed.recipe.prepMinutes).toBe(10);
+    expect(parsed.recipe.cookMinutes).toBe(25);
+    expect(parsed.recipe.servings).toBe(4);
+    expect(parsed.recipe.image).toBe("https://mise.test/uploads/soup.jpg");
+    expect(parsed.recipe.ingredients[0]).toEqual({
+      amount: "2",
+      unit: "tbsp",
+      name: "butter",
+      note: "melted",
+    });
+    expect(parsed.recipe.instructions).toEqual([
+      { text: "Simmer everything until smooth." },
+    ]);
   });
 
   test("escapes html in titles", () => {

@@ -1,9 +1,10 @@
 import type { SharedRecipe } from "../src/shared/recipe";
 import { formatMinutes, ingredientLine } from "../src/lib/format";
 
-/** crawlers that need server-rendered preview markup (Discord does not run JS). */
+/** crawlers that need server-rendered preview markup (no JS). Mise's own
+ * importer is included so another instance can read the JSON-LD. */
 export const PREVIEW_BOT =
-  /Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp/i;
+  /Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp|Mise\//i;
 
 const MAX_EMBED_BYTES = 3000;
 const ACCENT = 0xb8762b;
@@ -187,6 +188,54 @@ export const componentEmbedJson = (
   return bytes(json) <= MAX_EMBED_BYTES ? json : "";
 };
 
+const isoDuration = (minutes: number | null) => {
+  if (minutes === null || minutes < 0) return undefined;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours && rest) return `PT${hours}H${rest}M`;
+  if (hours) return `PT${hours}H`;
+  return `PT${rest}M`;
+};
+
+const ldIngredient = (item: SharedRecipe["ingredients"][number]) => {
+  const line = ingredientLine(item);
+  const note = item.note.trim();
+  return note ? `${line} (${note})` : line;
+};
+
+/** schema.org Recipe for importers (and search) that read JSON-LD. */
+export const recipeJsonLd = (
+  recipe: SharedRecipe,
+  pageUrl: string,
+  origin: string
+) => {
+  const image = absoluteImageUrl(recipe.image, origin);
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    name: oneLine(recipe.title) || "Recipe",
+    url: pageUrl,
+  };
+  if (oneLine(recipe.description))
+    data.description = oneLine(recipe.description);
+  if (image) data.image = image;
+  if (recipe.sourceUrl) data.isBasedOn = recipe.sourceUrl;
+  const prep = isoDuration(recipe.prepMinutes);
+  const cook = isoDuration(recipe.cookMinutes);
+  if (prep) data.prepTime = prep;
+  if (cook) data.cookTime = cook;
+  if (recipe.servings !== null) data.recipeYield = String(recipe.servings);
+  if (recipe.tags.length) data.keywords = recipe.tags.join(", ");
+  if (recipe.ownerName)
+    data.author = { "@type": "Person", name: recipe.ownerName };
+  data.recipeIngredient = recipe.ingredients.map(ldIngredient);
+  data.recipeInstructions = recipe.instructions.map((step) => ({
+    "@type": "HowToStep",
+    text: step.text,
+  }));
+  return JSON.stringify(data).replaceAll("<", "\\u003c");
+};
+
 export const sharePreviewHtml = (
   recipe: SharedRecipe,
   pageUrl: string,
@@ -196,6 +245,7 @@ export const sharePreviewHtml = (
   const description = ogDescription(recipe);
   const image = absoluteImageUrl(recipe.image, origin);
   const payload = componentEmbedJson(recipe, pageUrl, image);
+  const jsonLd = recipeJsonLd(recipe, pageUrl, origin);
   const card = image ? "summary_large_image" : "summary";
 
   return `<!DOCTYPE html>
@@ -214,6 +264,7 @@ export const sharePreviewHtml = (
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   ${image ? `<meta name="twitter:image" content="${escapeHtml(image)}">` : ""}
+  <script type="application/ld+json">${jsonLd}</script>
   ${
     payload
       ? `<script id="discord:component-embed" type="application/json">${payload}</script>`

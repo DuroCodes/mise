@@ -448,6 +448,15 @@ describe("oven temperatures", () => {
     expect(convertTemperature(180, "C")).toEqual({ value: 355, scale: "F" });
     expect(findTemperatures("Heat to 180 degrees Celsius")[0]?.value).toBe(180);
     expect(findTemperatures("Chill 30 C")).toEqual([]);
+    expect(
+      findTemperatures("Bake at 300℉ then finish at 180℃").map((temp) => [
+        temp.value,
+        temp.scale,
+      ])
+    ).toEqual([
+      [300, "F"],
+      [180, "C"],
+    ]);
   });
 });
 

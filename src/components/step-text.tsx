@@ -1,4 +1,4 @@
-import { TimerIcon } from "lucide-react";
+import { ThermometerIcon, TimerIcon } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { cn } from "cn";
 import { useTimers } from "@/lib/timer-context";
@@ -22,9 +22,15 @@ type Piece =
       scale: "F" | "C";
     };
 
+const chipClass = (large: boolean) =>
+  cn(
+    "mx-0.5 inline-flex items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground underline decoration-brand/50 decoration-dotted underline-offset-4 print:bg-transparent print:p-0 print:no-underline",
+    large ? "py-0.5" : "py-0"
+  );
+
 /**
- * a step's text, with each duration turned into a start-timer button and,
- * when a unit system is chosen, oven temperatures shown in it too.
+ * a step's text, with each duration turned into a start-timer button and
+ * oven temperatures called out (with a conversion when Metric/Imperial is on).
  */
 function StepText({
   text,
@@ -43,11 +49,10 @@ function StepText({
   const want = measure === "metric" ? "C" : measure === "imperial" ? "F" : null;
   const pieces: Piece[] = [
     ...findTimers(text).map((timer) => ({ kind: "timer" as const, ...timer })),
-    ...(want
-      ? findTemperatures(text)
-          .filter((temp) => temp.scale !== want)
-          .map((temp) => ({ kind: "temp" as const, ...temp }))
-      : []),
+    ...findTemperatures(text).map((temp) => ({
+      kind: "temp" as const,
+      ...temp,
+    })),
   ].sort((a, b) => a.start - b.start);
 
   if (!pieces.length) return <>{text}</>;
@@ -58,14 +63,25 @@ function StepText({
     if (piece.start < cursor) return;
     if (piece.start > cursor) parts.push(text.slice(cursor, piece.start));
     if (piece.kind === "temp") {
-      const converted = convertTemperature(piece.value, piece.scale);
+      const converted =
+        want && piece.scale !== want
+          ? convertTemperature(piece.value, piece.scale)
+          : null;
       parts.push(
-        <span key={`t-${piece.start}`}>
+        <span key={`t-${piece.start}`} className={chipClass(large)}>
+          <ThermometerIcon
+            className={cn(
+              "shrink-0 self-center text-brand print:hidden",
+              large ? "size-5" : "size-3.5"
+            )}
+            aria-hidden="true"
+          />
           {text.slice(piece.start, piece.end)}
-          <span className="text-muted-foreground">
-            {" "}
-            ({converted.value}°{converted.scale})
-          </span>
+          {converted && (
+            <span className="font-normal text-muted-foreground">
+              ({converted.value}°{converted.scale})
+            </span>
+          )}
         </span>
       );
     } else {
@@ -74,8 +90,8 @@ function StepText({
           key={`${piece.start}-${index}`}
           type="button"
           className={cn(
-            "mx-0.5 inline-flex items-baseline gap-1 rounded-md bg-brand/12 px-1.5 font-medium text-foreground underline decoration-brand/50 decoration-dotted underline-offset-4 outline-none hover:bg-brand/20 focus-visible:ring-3 focus-visible:ring-ring print:bg-transparent print:p-0 print:no-underline",
-            large ? "py-0.5" : "py-0"
+            chipClass(large),
+            "outline-none hover:bg-brand/20 focus-visible:ring-3 focus-visible:ring-ring"
           )}
           aria-label={`Start a ${piece.label} timer`}
           onClick={() =>
