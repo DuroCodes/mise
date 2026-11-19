@@ -152,19 +152,21 @@ export const captionLooksLikeRecipe = (text: string) => {
 };
 
 /**
- * downloads audio only (no ffmpeg) into a temp dir. Caller must delete `dir`.
- * shortcut: needs a host audio format; if yt-dlp demands remux, install ffmpeg
+ * downloads media for Whisper into a temp dir. Caller must delete `dir`.
+ * TikTok's standalone `audio` format is often music-only (no voiceover), so
+ * prefer a progressive mp4 that muxes speech. Whisper accepts video files.
+ * shortcut: needs a host-ready format; if yt-dlp demands remux, install ffmpeg
  */
-const downloadAudio = async (url: string) => {
+const downloadForTranscript = async (url: string) => {
   const dir = await mkdtemp(join(tmpdir(), "mise-reel-"));
   const { code, stderr } = await runYtDlp([
     "--no-playlist",
     "--no-warnings",
-    // prefer a ready-made audio stream so ffmpeg is not required.
     "-f",
-    "ba[ext=m4a]/ba[ext=mp3]/audio/bestaudio[ext=m4a]/bestaudio[ext=mp3]/ba/bestaudio",
+    // progressive video+audio first; bare `ba`/`audio` on TikTok is usually music.
+    "best[height<=720][ext=mp4][vcodec!=none][acodec!=none]/best[ext=mp4][vcodec!=none][acodec!=none]/best[ext=mp4]/best/ba",
     "-o",
-    join(dir, "audio.%(ext)s"),
+    join(dir, "media.%(ext)s"),
     "--no-write-thumbnail",
     "--no-embed-thumbnail",
     "--no-embed-metadata",
@@ -173,15 +175,17 @@ const downloadAudio = async (url: string) => {
   ]);
   if (code !== 0) {
     await rm(dir, { recursive: true, force: true });
-    console.error("yt-dlp audio failed", stderr.slice(0, 500));
+    console.error("yt-dlp media failed", stderr.slice(0, 500));
     return null;
   }
+
   const files = (await readdir(dir)).filter((name) => !name.startsWith("."));
   const file = files[0];
   if (!file) {
     await rm(dir, { recursive: true, force: true });
     return null;
   }
+
   return { dir, path: join(dir, file) };
 };
 
@@ -196,18 +200,18 @@ const spokenFromReel = async (href: string, caption: string) => {
         "That video has no recipe in the caption. Set MISE_WHISPER_API_KEY and MISE_WHISPER_MODEL to transcribe it.",
     };
 
-  const audio = await downloadAudio(href);
-  if (!audio)
+  const media = await downloadForTranscript(href);
+  if (!media)
     return {
       ok: false as const,
       error:
-        "Could not download the audio. Update yt-dlp, or install ffmpeg if remux is required.",
+        "Could not download the video audio. Update yt-dlp, or install ffmpeg if remux is required.",
     };
 
   try {
-    return await transcribeFile(audio.path);
+    return await transcribeFile(media.path);
   } finally {
-    await rm(audio.dir, { recursive: true, force: true });
+    await rm(media.dir, { recursive: true, force: true });
   }
 };
 

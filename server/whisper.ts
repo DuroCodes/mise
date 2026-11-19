@@ -75,8 +75,9 @@ export const transcribeFile = async (path: string): Promise<WhisperResult> => {
     };
 
   const bytes = await readFile(path);
+  const name = path.split("/").pop() || "media.mp4";
   const form = new FormData();
-  form.append("file", new Blob([new Uint8Array(bytes)]), "audio.mp3");
+  form.append("file", new Blob([new Uint8Array(bytes)]), name);
   form.append("model", setup.model);
 
   try {
