@@ -34,6 +34,19 @@ export default defineConfig({
         proxyTimeout: 180_000,
       },
       "/uploads": "http://127.0.0.1:3001",
+      // discord & other embeds need the server-rendered share preview.
+      "/s": {
+        target: "http://127.0.0.1:3001",
+        bypass(req) {
+          const ua = req.headers["user-agent"] ?? "";
+          if (
+            !/Discordbot|Slackbot|Twitterbot|facebookexternalhit|LinkedInBot|WhatsApp/i.test(
+              ua
+            )
+          )
+            return req.url;
+        },
+      },
     },
   },
 });
