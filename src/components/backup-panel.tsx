@@ -75,7 +75,7 @@ function BackupPanel() {
           <p className="leading-6" aria-live="polite">
             Restored {summary.recipes} recipes, {summary.images} images,{" "}
             {summary.ratings} ratings, {summary.cookLogs} log entries,{" "}
-            {summary.collections} collections, {summary.mealPlan} planned meals,
+            {summary.collections} collections, {summary.mealPlan} planned meals,{" "}
             {summary.shopping} shopping items, {summary.stores} stores, and{" "}
             {summary.pantry} pantry items.
             {summary.skipped > 0 &&
