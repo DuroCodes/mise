@@ -47,7 +47,7 @@ function AppHeader({
   offline: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md print:hidden">
+    <header className="sticky top-0 z-40 border-b bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md print:hidden">
       {offline && (
         <p className="flex items-center justify-center gap-1.5 bg-muted px-4 py-1 text-xs text-muted-foreground">
           <WifiOffIcon className="size-3.5" aria-hidden="true" />
@@ -142,23 +142,23 @@ function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden print:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background sm:hidden print:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
         {links.map((link) => (
           <li key={link.to}>
             <NavLink
               to={link.to}
               end={link.end}
+              aria-label={link.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 text-[0.68rem] font-medium outline-none focus-visible:bg-muted",
+                  "flex h-12 items-center justify-center outline-none focus-visible:bg-muted",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )
               }
             >
               <link.icon className="size-5" aria-hidden="true" />
-              {link.label}
             </NavLink>
           </li>
         ))}

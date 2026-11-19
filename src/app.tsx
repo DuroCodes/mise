@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { currentAccount, getFeatures, type Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { SessionContext } from "@/lib/session-context";
+import { ThemeChrome } from "@/components/theme-chrome";
 import { themeIds } from "@/lib/themes";
 import { AdminPage } from "@/pages/admin";
 import { CollectionPage, CollectionsPage } from "@/pages/collections";
@@ -129,7 +130,7 @@ function SignedInApp() {
         className={
           hideTabs
             ? "isolate mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10"
-            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-28 sm:px-6 sm:py-10 print:pb-0"
+            : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-10 print:pb-0"
         }
       >
         <Routes>
@@ -168,6 +169,7 @@ function App() {
       disableTransitionOnChange
       storageKey="mise-theme"
     >
+      <ThemeChrome />
       <MotionConfig reducedMotion="user">
         <BrowserRouter>
           <TimerProvider>
@@ -180,7 +182,7 @@ function App() {
               <Route path="/*" element={<SignedInApp />} />
             </Routes>
           </TimerProvider>
-          <Toaster position="bottom-right" mobileOffset={{ bottom: 88 }} />
+          <Toaster position="bottom-right" mobileOffset={{ bottom: 72 }} />
         </BrowserRouter>
       </MotionConfig>
     </ThemeProvider>

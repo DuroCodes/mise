@@ -215,7 +215,7 @@ select optgroup {
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans;
+    @apply bg-background font-sans;
   }
   /* Tailwind v4 dropped the hand cursor on buttons; bring it back for
      anything clickable that isn't disabled. Utilities like cursor-grab

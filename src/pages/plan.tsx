@@ -489,7 +489,7 @@ function PlanPage() {
               >
                 <ShoppingBasketIcon data-icon="inline-start" />
               </motion.span>
-              <span className="sm:hidden">Shopping</span>
+              <span className="sm:hidden">Shop</span>
               <span className="max-sm:hidden">Shopping list</span>
             </Button>
           </div>
