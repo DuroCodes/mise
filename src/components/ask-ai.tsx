@@ -4,7 +4,7 @@ import { useRef, useState, type SubmitEvent } from "react";
 import Markdown, { type Components } from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { askClaude } from "@/lib/api";
+import { askAi } from "@/lib/api";
 import { easeOut } from "@/lib/motion";
 
 const examples = [
@@ -80,7 +80,7 @@ const components: Components = {
   h4: heading,
 };
 
-function AskClaude({ recipeId }: { recipeId: string }) {
+function AskAi({ recipeId }: { recipeId: string }) {
   const input = useRef<HTMLInputElement>(null);
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState("");
@@ -98,7 +98,7 @@ function AskClaude({ recipeId }: { recipeId: string }) {
     setError(null);
     setAnswer(null);
     setAsked(trimmed);
-    const result = await askClaude(recipeId, trimmed);
+    const result = await askAi(recipeId, trimmed);
     setPending(false);
     if (result.ok) setAnswer(result.value.answer);
     else setError(result.error);
@@ -221,4 +221,4 @@ function AskClaude({ recipeId }: { recipeId: string }) {
   );
 }
 
-export { AskClaude };
+export { AskAi };

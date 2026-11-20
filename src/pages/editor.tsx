@@ -241,7 +241,7 @@ function RecipeForm({ recipe }: { recipe: Recipe | null }) {
     setParams(next, { replace: true });
   }, [params, setParams]);
 
-  // opened from "Import" on a Claude search result: fill the form from that page.
+  // opened from "Import" on a web search result: fill the form from that page.
   const importUrl = recipe ? null : params.get("import");
   const [importing, setImporting] = useState<string | null>(importUrl);
   // read inside the import effect without restarting it when it loads.
