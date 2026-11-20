@@ -128,7 +128,7 @@ function ImportDialog({
     navigate(`/recipes/new?received=1&n=${Date.now()}`);
   };
 
-  const tryClaude = async () => {
+  const tryAi = async () => {
     if (!failedUrl) return;
     setPending(true);
     setError(null);
@@ -363,7 +363,7 @@ function ImportDialog({
             variant="outline"
             size="sm"
             disabled={pending}
-            onClick={() => void tryClaude()}
+            onClick={() => void tryAi()}
           >
             <SparklesIcon data-icon="inline-start" />
             {pending ? "Reading" : "Try with AI"}

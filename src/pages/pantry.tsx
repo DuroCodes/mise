@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import {
   addMissingToShopping,
   addPantryItem,
-  findRecipesWithClaude,
+  findRecipes,
   listPantry,
   pantrySuggestions,
   removePantryItem,
@@ -466,7 +466,7 @@ function PantryList({
   );
 }
 
-function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
+function RecipeFinder({ hasPantry }: { hasPantry: boolean }) {
   const navigate = useNavigate();
   const [focus, setFocus] = useState("");
   const [results, setResults] = useState<FoundRecipe[] | null>(null);
@@ -484,7 +484,7 @@ function ClaudeFinder({ hasPantry }: { hasPantry: boolean }) {
     setPending(true);
     setError(null);
     setResults(null);
-    const result = await findRecipesWithClaude(focus);
+    const result = await findRecipes(focus);
     setPending(false);
     if (result.ok) setResults(result.value);
     else setError(result.error);
@@ -729,7 +729,7 @@ function Suggestions({
           })}
         </ul>
       )}
-      {ai && <ClaudeFinder hasPantry={hasPantry} />}
+      {ai && <RecipeFinder hasPantry={hasPantry} />}
     </div>
   );
 }

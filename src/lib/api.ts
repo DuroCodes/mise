@@ -802,7 +802,7 @@ const foundRecipeSchema = z.object({
 
 export type FoundRecipe = z.infer<typeof foundRecipeSchema>;
 
-export const findRecipesWithClaude = (focus: string) =>
+export const findRecipes = (focus: string) =>
   zodFetch(
     z.array(foundRecipeSchema),
     "Could not search for recipes",
@@ -918,7 +918,7 @@ export const importPage = (url: string, html: string) =>
 export const aiRecipeFromUrl = (url: string) =>
   zodFetch(
     recipeInput,
-    "Claude couldn't read that page",
+    "Could not read that page",
     "/api/ai/recipe-from-url",
     {
       method: "POST",
@@ -926,7 +926,7 @@ export const aiRecipeFromUrl = (url: string) =>
     }
   );
 
-export const askClaude = (recipeId: string, question: string) =>
+export const askAi = (recipeId: string, question: string) =>
   zodFetch(
     z.object({ answer: z.string() }),
     "Could not get an answer",

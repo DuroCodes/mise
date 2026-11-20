@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AddToCollection } from "@/components/add-to-collection";
 import { AddToPlan } from "@/components/add-to-plan";
-import { AskClaude } from "@/components/ask-claude";
+import { AskAi } from "@/components/ask-ai";
 import { CookLog } from "@/components/cook-log";
 import { DeleteRecipe } from "@/components/delete-recipe";
 import { HeartMark } from "@/components/heart-mark";
@@ -266,7 +266,7 @@ function RecipeBody({
         }
       />
       {ai && recipe.ingredients.length > 0 && (
-        <AskClaude recipeId={recipe.id} />
+        <AskAi recipeId={recipe.id} />
       )}
     </RecipeView>
   );
