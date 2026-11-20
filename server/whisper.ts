@@ -12,12 +12,6 @@ import { readFile } from "node:fs/promises";
 export const whisperProviders = ["groq", "openai", "openrouter"] as const;
 type WhisperProvider = (typeof whisperProviders)[number];
 
-type WhisperSetup = {
-  provider: WhisperProvider;
-  model: string;
-  apiKey: string;
-};
-
 const providers = new Set<string>(whisperProviders);
 
 const baseUrl = (provider: WhisperProvider) => {
