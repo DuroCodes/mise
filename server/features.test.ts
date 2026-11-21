@@ -28,7 +28,14 @@ import {
   splitMeasure,
   toRecipeInput,
 } from "./ai";
-import { captionLooksLikeRecipe, isReelUrl, thumbnailFromMeta } from "./reel";
+import {
+  captionHasSteps,
+  captionLooksLikeRecipe,
+  isReelUrl,
+  ocrLineLooksUseful,
+  onScreenLooksLikeRecipe,
+  thumbnailFromMeta,
+} from "./reel";
 import { whisperSetup } from "./whisper";
 import { isReelUrl as isReelUrlShared } from "../src/shared/reel";
 import { linkToken, linkTokenShape } from "./link-token";
@@ -957,6 +964,37 @@ Steps:
 1. Mix
 2. Bake`)
     ).toBe(true);
+    // TikTok often flattens the description to one line.
+    const burritoCaption =
+      "Honey Chipotle Chicken Burritos #cooking For the Chicken: 2 1/2 lb chicken thighs 1/4 cup cilantro 2 tbsp honey 1 tsp salt For the Beans: 4 oz bacon 2 cups chicken broth 1 tsp cumin";
+    expect(captionLooksLikeRecipe(burritoCaption)).toBe(true);
+    // ingredients without steps → still download video for spoken instructions.
+    expect(captionHasSteps(burritoCaption)).toBe(false);
+    expect(
+      captionHasSteps(`Ingredients:
+1 cup sugar
+Steps:
+1. Mix flour and sugar
+2. Bake until golden`)
+    ).toBe(true);
+  });
+
+  test("keeps OCR lines that look like ingredients or steps", () => {
+    expect(ocrLineLooksUseful("add olive oil and salt")).toBe(true);
+    expect(ocrLineLooksUseful("6 strips bacon")).toBe(true);
+    expect(ocrLineLooksUseful("1/2 cup heavy cream")).toBe(true);
+    expect(ocrLineLooksUseful("roast at 400 F for 20min")).toBe(true);
+    expect(ocrLineLooksUseful("1/2 yellow onion(finely chopped")).toBe(true);
+    expect(ocrLineLooksUseful("7. wees, ,")).toBe(false);
+    expect(ocrLineLooksUseful("ae - . / \\ |||")).toBe(false);
+    expect(ocrLineLooksUseful("eee")).toBe(false);
+    expect(
+      onScreenLooksLikeRecipe(`add olive oil and salt
+6 strips bacon
+1/2 cup heavy cream
+2 cups cheddar cheese`)
+    ).toBe(true);
+    expect(onScreenLooksLikeRecipe("mm nice soup")).toBe(false);
   });
 
   test("picks the largest yt-dlp thumbnail", () => {

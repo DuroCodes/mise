@@ -3,6 +3,7 @@ import {
   CloudOffIcon,
   CopyIcon,
   PackageOpenIcon,
+  PencilIcon,
   PlusIcon,
   ScanLineIcon,
   Share2Icon,
@@ -28,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -40,6 +42,7 @@ import {
   finishShopping,
   listShopping,
   listStores,
+  updateShoppingItem,
   type ShoppingItem,
 } from "@/lib/api";
 import { easeOut } from "@/lib/motion";
@@ -171,15 +174,113 @@ const asText = (groups: Group[]) =>
 // removals wait a few seconds so they can be undone; this survives leaving the page.
 const pendingRemovals = new Map<string, number>();
 
+function EditItem({
+  item,
+  onClose,
+  onSaved,
+}: {
+  item: ShoppingItem;
+  onClose: () => void;
+  onSaved: (items: ShoppingItem[]) => void;
+}) {
+  const [name, setName] = useState(item.name);
+  const [amount, setAmount] = useState(item.amount);
+  const [unit, setUnit] = useState(item.unit);
+  const [note, setNote] = useState(item.note);
+  const [pending, setPending] = useState(false);
+
+  const save = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!name.trim()) {
+      toast.error("Name the item");
+      return;
+    }
+    setPending(true);
+    const result = await updateShoppingItem(item.id, {
+      name: name.trim(),
+      amount: amount.trim(),
+      unit: unit.trim(),
+      note: note.trim(),
+    });
+    setPending(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    onSaved(result.value);
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && !pending && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit {item.name}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={save} className="space-y-4" noValidate>
+          <div className="space-y-2">
+            <Label htmlFor="shopping-name">Item</Label>
+            <Input
+              id="shopping-name"
+              value={name}
+              maxLength={200}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="shopping-amount">Amount</Label>
+              <Input
+                id="shopping-amount"
+                value={amount}
+                maxLength={40}
+                placeholder="2"
+                onChange={(event) => setAmount(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shopping-unit">Unit</Label>
+              <Input
+                id="shopping-unit"
+                value={unit}
+                maxLength={40}
+                placeholder="cups"
+                onChange={(event) => setUnit(event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="shopping-note">Note</Label>
+            <Input
+              id="shopping-note"
+              value={note}
+              maxLength={200}
+              placeholder="optional, shredded…"
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving" : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Row({
   item,
   showSources,
   onToggle,
+  onEdit,
   onRemove,
 }: {
   item: ShoppingItem;
   showSources: boolean;
   onToggle: () => void;
+  onEdit: () => void;
   onRemove: () => void;
 }) {
   const optional = isOptional(item.note);
@@ -187,6 +288,7 @@ function Row({
   const details = [note, showSources ? item.sources.join(", ") : ""].filter(
     Boolean
   );
+  const local = item.id.startsWith("local-");
 
   return (
     <motion.li
@@ -239,6 +341,18 @@ function Row({
           )}
         </span>
       </button>
+      {!local && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0 text-muted-foreground"
+          aria-label={`Edit ${item.name}`}
+          onClick={onEdit}
+        >
+          <PencilIcon />
+        </Button>
+      )}
       <Button
         type="button"
         variant="ghost"
@@ -265,6 +379,7 @@ function ShoppingPage() {
   const [scanning, setScanning] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [savingDone, setSavingDone] = useState(false);
+  const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [waiting, setWaiting] = useState(pendingCount);
   const [params, setParams] = useSearchParams();
   const { account, offline } = useSession();
@@ -729,6 +844,7 @@ function ShoppingPage() {
                   item={item}
                   showSources={grouping === "aisle" || item.sources.length > 1}
                   onToggle={() => void toggle(item)}
+                  onEdit={() => setEditing(item)}
                   onRemove={() => remove(item)}
                 />
               ))}
@@ -762,12 +878,21 @@ function ShoppingPage() {
                   item={item}
                   showSources={false}
                   onToggle={() => void toggle(item)}
+                  onEdit={() => setEditing(item)}
                   onRemove={() => remove(item)}
                 />
               ))}
             </AnimatePresence>
           </ul>
         </section>
+      )}
+
+      {editing && (
+        <EditItem
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(list) => setItems(visible(list))}
+        />
       )}
 
       {scanning && (

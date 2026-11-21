@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useRef, useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -258,15 +259,15 @@ function ImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="pr-8">
+      <DialogContent className="gap-0 sm:max-w-lg">
+        <DialogHeader className="pr-8 pb-4">
           <DialogTitle>Import</DialogTitle>
           <DialogDescription>
             Link, text, photo, or a file from another app.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={submitUrl} noValidate>
+        <form onSubmit={submitUrl} className="pb-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="import-url">Recipe link</Label>
             <div className="flex items-center gap-2">
@@ -297,33 +298,23 @@ function ImportDialog({
         {ai && (
           <form
             onSubmit={submitText}
-            className="space-y-3 border-t pt-4"
+            className="min-w-0 border-t border-border py-4"
             noValidate
           >
-            <div className="space-y-2">
-              <Label htmlFor="import-text">Or paste text / add a photo</Label>
-              <Textarea
-                id="import-text"
-                value={text}
-                rows={5}
-                maxLength={60000}
-                className="max-h-[30svh] overflow-y-auto"
-                placeholder="Paste the ingredients and steps"
-                disabled={pending}
-                onChange={(event) => setText(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={pending}
-                onClick={() => photoRef.current?.click()}
-              >
-                <ImageIcon data-icon="inline-start" />
-                {photo ? "Change photo" : "Add a photo"}
-              </Button>
+            <div className="space-y-3">
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="import-text">Or paste text / add a photo</Label>
+                <Textarea
+                  id="import-text"
+                  value={text}
+                  rows={5}
+                  maxLength={60000}
+                  className="max-h-[30svh] overflow-x-auto overflow-y-auto whitespace-pre"
+                  placeholder="Paste the ingredients and steps"
+                  disabled={pending}
+                  onChange={(event) => setText(event.target.value)}
+                />
+              </div>
               {photo && (
                 <span className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
                   <span className="truncate">{photo.name}</span>
@@ -338,45 +329,65 @@ function ImportDialog({
                   </Button>
                 </span>
               )}
-              <Button type="submit" size="sm" disabled={pending}>
-                <SparklesIcon data-icon="inline-start" />
-                {pending && (text.trim() || photo) ? "Reading" : "Read with AI"}
-              </Button>
-              <input
-                ref={photoRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(event) => {
-                  void choosePhoto(event.target.files?.[0]);
-                  event.target.value = "";
-                }}
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  className="w-full"
+                  onClick={() => photoRef.current?.click()}
+                >
+                  <ImageIcon data-icon="inline-start" />
+                  {photo ? "Change photo" : "Add a photo"}
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={pending}
+                  className="w-full"
+                >
+                  <SparklesIcon data-icon="inline-start" />
+                  {pending && (text.trim() || photo)
+                    ? "Reading"
+                    : "Read with AI"}
+                </Button>
+              </div>
             </div>
+            <input
+              ref={photoRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={(event) => {
+                void choosePhoto(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
           </form>
         )}
 
-        {error && failedUrl && ai && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pending}
-            onClick={() => void tryAi()}
-          >
-            <SparklesIcon data-icon="inline-start" />
-            {pending ? "Reading" : "Try with AI"}
-          </Button>
+        {(error || (failedUrl && ai)) && (
+          <div className="flex min-w-0 flex-col gap-2 border-t border-border py-4">
+            {error && failedUrl && ai && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                disabled={pending}
+                onClick={() => void tryAi()}
+              >
+                <SparklesIcon data-icon="inline-start" />
+                {pending ? "Reading" : "Try with AI"}
+              </Button>
+            )}
+            <InlineError message={error} />
+          </div>
         )}
 
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="space-y-3 border-t pt-4">
+        <div className="space-y-3 border-t border-border pt-4">
           <ul className="grid gap-2 sm:grid-cols-3">
             {sources.map(({ name, help }) => (
               <li
@@ -430,7 +441,10 @@ function ImportDialog({
         </div>
 
         {ready && (
-          <section className="space-y-3" aria-live="polite">
+          <section
+            className="space-y-3 border-t border-border pt-4"
+            aria-live="polite"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-medium">
                 {ready.titles.length} recipes ready
@@ -475,7 +489,10 @@ function ImportDialog({
         )}
 
         {result && (
-          <section className="space-y-3" aria-live="polite">
+          <section
+            className="space-y-3 border-t border-border pt-4"
+            aria-live="polite"
+          >
             <h2 className="text-sm font-medium">
               {!result.imported.length
                 ? "Nothing was imported"

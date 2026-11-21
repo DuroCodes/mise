@@ -1,0 +1,38 @@
+name: Theme request
+description: Suggest a new color theme from tweakcn
+title: "theme: "
+labels: ["theme"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Theme name
+      description: Short name for the theme menu (e.g. Espresso, Herb).
+      placeholder: Ghibli
+    validations:
+      required: true
+  - type: input
+    id: tweakcn
+    attributes:
+      label: tweakcn link
+      description: Share or registry URL from [tweakcn](https://tweakcn.com) (e.g. `https://tweakcn.com/r/themes/…`).
+      placeholder: https://tweakcn.com/r/themes/…
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Which variant?
+      description: mise themes are a single look (not light+dark pairs). Pick the one you want shipped.
+      options:
+        - Dark
+        - Light
+        - Either is fine
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional — why you like it, or anything to watch for (sharp corners, loud accents, etc.).
+      placeholder: Soft night blue with sage accents.

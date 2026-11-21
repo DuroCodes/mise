@@ -4,6 +4,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import {
   APICallError,
   NoObjectGeneratedError,
+  NoOutputGeneratedError,
   Output,
   RetryError,
   generateText,
@@ -388,14 +389,16 @@ Copy what the recipe says; do not invent ingredients, amounts, or steps that are
 - If the input does not contain a recipe, set found to false and leave the other fields empty.`;
 
 /** spoken video transcripts: rewrite chatty narration into cookable steps. */
-const spokenExtractionPrompt = `You turn a cooking video transcript into a clean recipe for a recipe manager.
-The input is speech (and maybe a social caption), not a written recipe card. Rewrite it; do not paste the host's wording.
-- Title: a short normal recipe name (e.g. "Strawberry Cheesecake Cupcakes"). Never copy the video caption, hashtags, or emojis.
-- Description: one plain sentence grounded only in the transcript, or empty. No hashtags, emojis, or marketing fluff. Do not invent methods (e.g. do not say "no-bake" if they bake).
+const spokenExtractionPrompt = `You turn a cooking video into a clean recipe for a recipe manager.
+The input may include speech (transcript), a social caption, and OCR of on-screen text. Many TikTok/Instagram recipes put ingredients and steps only as burned-in overlays — trust the "On-screen text overlays" section when speech is vague or missing.
+- Title: a short normal recipe name (e.g. "Broccoli Cheddar Soup"). Never copy the video caption, hashtags, or emojis.
+- Description: one plain sentence grounded only in the input, or empty. No hashtags, emojis, or marketing fluff. Do not invent methods (e.g. do not say "no-bake" if they bake).
 - Ingredients: ${ingredientShape}
 - Instructions: short imperative steps a cook can follow (e.g. "Add 1/2 cup sour cream and mix until smooth."). Merge related chatter into one step.
+- Prefer on-screen ingredient lists and amounts when speech is vague or missing. Combine speech + overlays; do not drop amounts that appear in the OCR.
 - Drop filler, taste reactions, merch plugs, and phrases like "we're going in with", "like that", "mmm".
-- Do not invent ingredients, amounts, steps, or techniques that are not in the transcript.
+- Do not invent ingredients or amounts that are not in the caption, transcript, or OCR.
+- Prefer spoken narration for cook steps when present. Use caption/OCR for amounts. Do not invent temperatures, times, or fancy techniques the input never implies.
 - Every field must be plain text only — no markup, XML, or tokens like %I /I %E.
 - Times are whole minutes, servings a whole number; use null when the recipe does not say.
 - Tags are a few short lowercase words and may be empty.
@@ -416,6 +419,7 @@ const failure = (error: unknown) => {
 
   if (
     NoObjectGeneratedError.isInstance(error) ||
+    NoOutputGeneratedError.isInstance(error) ||
     TypeValidationError.isInstance(error)
   )
     return {
@@ -473,8 +477,9 @@ const structuredCall = async <T>(
     providerOptions: {
       openai: { strictJsonSchema: true },
     },
-    // Groq free tier is ~8k TPM; 8k completion alone gets truncated mid-JSON.
-    maxOutputTokens: 2500,
+    // long ingredient lists (burrito-style captions) need headroom; keep under
+    // Groq's ~8k TPM so a single call doesn't starve the next.
+    maxOutputTokens: 4500,
     // free OpenRouter models 429 often; one retry is enough, then surface it.
     maxRetries: 1,
   });
@@ -519,6 +524,8 @@ const objectFrom = async <T>(
 export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
+  /** extra stills (e.g. reel frames with on-screen ingredient text). */
+  images?: { data: string; mediaType: AiImageType }[];
   /** spoken video transcript — rewrite into clear steps instead of copying narration. */
   spoken?: boolean;
 }) => {
@@ -526,11 +533,15 @@ export const extractRecipe = async (input: {
     return { ok: false as const, error: "AI is not set up on this server" };
 
   const content: Part[] = [];
-  if (input.image) {
+  const images = [
+    ...(input.image ? [input.image] : []),
+    ...(input.images ?? []),
+  ];
+  for (const image of images) {
     content.push({
       type: "image",
-      image: input.image.data,
-      mediaType: input.image.mediaType,
+      image: image.data,
+      mediaType: image.mediaType,
     });
   }
 
@@ -538,7 +549,9 @@ export const extractRecipe = async (input: {
     type: "text",
     text: input.text.trim()
       ? `<recipe>\n${input.text.trim()}\n</recipe>`
-      : "The recipe is in the image.",
+      : images.length
+        ? "The recipe is in the image(s). Read any on-screen ingredient or step overlays."
+        : "The recipe is in the image.",
   });
 
   try {
