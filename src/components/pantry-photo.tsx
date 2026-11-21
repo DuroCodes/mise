@@ -2,6 +2,7 @@ import { CameraIcon, CheckIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -153,11 +154,7 @@ function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
                 event.target.value = "";
               }}
             />
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            )}
+            <InlineError message={error} />
           </div>
         ) : (
           <ul className="max-h-[50svh] divide-y overflow-y-auto rounded-xl ring-1 ring-foreground/10">

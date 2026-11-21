@@ -2,6 +2,7 @@ import { ClockIcon, SparklesIcon, XIcon } from "lucide-react";
 import { useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -239,11 +240,7 @@ function AiPlanner({
           </form>
         )}
 
-        {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        )}
+        <InlineError message={error} />
 
         {pending && (
           <div className="space-y-2" aria-label="Planning">
