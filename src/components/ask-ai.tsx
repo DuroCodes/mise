@@ -2,6 +2,7 @@ import { SparklesIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useRef, useState, type SubmitEvent } from "react";
 import Markdown, { type Components } from "react-markdown";
+import { InlineError } from "@/components/inline-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askAi } from "@/lib/api";
@@ -156,11 +157,7 @@ function AskAi({ recipeId }: { recipeId: string }) {
           ))}
         </div>
       )}
-      {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
+      <InlineError message={error} />
       {(pending || answer) && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
