@@ -241,9 +241,13 @@ function AiPanel() {
                 <Label htmlFor="ai-model">Model</Label>
                 <Input
                   id="ai-model"
+                  name="ai-model"
                   value={model}
                   spellCheck={false}
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-bwignore
                   placeholder={help.model}
                   disabled={pending}
                   onChange={(event) => setModel(event.target.value)}
@@ -283,9 +287,15 @@ function AiPanel() {
               </Label>
               <Input
                 id="ai-key"
+                name="ai-key"
                 type="password"
                 value={key}
-                autoComplete="off"
+                // "new-password" stops browsers filling a saved login here,
+                // which also stops them putting the email in the model box.
+                autoComplete="new-password"
+                data-1p-ignore
+                data-lpignore="true"
+                data-bwignore
                 spellCheck={false}
                 placeholder={keepsKey ? `Saved key ${status.hint}` : ""}
                 disabled={pending}
