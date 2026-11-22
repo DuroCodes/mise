@@ -1,15 +1,11 @@
 import {
-  CalendarDaysIcon,
-  BookOpenIcon,
-  FolderIcon,
   LogOutIcon,
-  PackageOpenIcon,
   PlusIcon,
   SettingsIcon,
-  ShoppingBasketIcon,
   UtensilsCrossedIcon,
   WifiOffIcon,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { NavLink } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -17,20 +13,31 @@ import type { Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { clearOfflineData } from "@/lib/offline";
 import { disablePush } from "@/lib/push";
+import { tabs as links } from "@/lib/tabs";
 import { cn } from "cn";
-
-const links = [
-  { to: "/", label: "Recipes", icon: BookOpenIcon, end: true },
-  { to: "/plan", label: "Plan", icon: CalendarDaysIcon, end: false },
-  { to: "/shopping", label: "Shopping", icon: ShoppingBasketIcon, end: false },
-  { to: "/pantry", label: "Pantry", icon: PackageOpenIcon, end: false },
-  { to: "/collections", label: "Collections", icon: FolderIcon, end: false },
-] as const;
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring",
+    "relative rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring",
     isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+  );
+
+const slide = { type: "spring", stiffness: 520, damping: 40 } as const;
+
+/** a header link's label, with the bar that glides to whichever link is current. */
+const headerLink =
+  (label: string) =>
+  ({ isActive }: { isActive: boolean }) => (
+    <>
+      {label}
+      {isActive && (
+        <motion.span
+          layoutId="header-tab"
+          transition={slide}
+          className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-brand"
+        />
+      )}
+    </>
   );
 
 const signOut = async () => {
@@ -72,12 +79,12 @@ function AppHeader({
                 end={link.end}
                 className={(state) => cn(navClass(state), "max-sm:hidden")}
               >
-                {link.label}
+                {headerLink(link.label)}
               </NavLink>
             ))}
             {account.role === "admin" && (
               <NavLink to="/admin" className={navClass}>
-                Admin
+                {headerLink("Admin")}
               </NavLink>
             )}
           </nav>
@@ -153,12 +160,26 @@ function BottomNav() {
               aria-label={link.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-11 items-center justify-center outline-none focus-visible:bg-muted",
+                  "group relative flex h-11 items-center justify-center transition-colors outline-none focus-visible:bg-muted",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )
               }
             >
-              <link.icon className="size-5" aria-hidden="true" />
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="bottom-tab"
+                      transition={slide}
+                      className="absolute inset-x-3 inset-y-1.5 rounded-full bg-muted"
+                    />
+                  )}
+                  <link.icon
+                    className="relative size-5 transition-transform duration-150 ease-out group-active:scale-90 motion-reduce:transition-none"
+                    aria-hidden="true"
+                  />
+                </>
+              )}
             </NavLink>
           </li>
         ))}
