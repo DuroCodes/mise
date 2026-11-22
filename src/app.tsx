@@ -12,6 +12,7 @@ import { AppHeader, BottomNav } from "@/components/app-header";
 import { AppSkeleton } from "@/components/app-skeleton";
 import { TimerProvider } from "@/components/timer-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { Walkthrough } from "@/components/walkthrough";
 import { currentAccount, getFeatures, type Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { SessionContext } from "@/lib/session-context";
@@ -159,6 +160,7 @@ function SignedInApp() {
         </Routes>
       </main>
       {!hideTabs && <BottomNav />}
+      {!hideTabs && <Walkthrough accountId={account.id} />}
     </SessionContext.Provider>
   );
 }
