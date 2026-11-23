@@ -6,7 +6,7 @@ import { formatMinutes, totalMinutes } from "@/lib/format";
 import { addDays, dayFromKey, localDay } from "@/lib/view";
 import { rankRecipes } from "@/shared/pantry";
 import type { SharedRecipe } from "@/shared/recipe";
-import { pantry, recipes } from "../demo-data";
+import { PANTRY, RECIPES } from "../demo-data";
 
 /** the same wording the pantry page uses (src/pages/pantry.tsx). */
 const expiryLabel = (days: number, day: string) => {
@@ -20,34 +20,66 @@ const expiryLabel = (days: number, day: string) => {
   };
 };
 
-const heading = "px-1 text-sm font-medium";
-
 /**
- * the pantry and "what can I make". the ranking is the app's own
- * (src/shared/pantry.ts), run over the demo recipes and this pantry.
+ * the pantry and "what can I make", tabbed like the app
+ * (src/pages/pantry.tsx) instead of squeezed into two columns.
  */
 function PantryDemo({
   onAdd,
 }: {
   onAdd: (recipe: SharedRecipe, missing: string[]) => void;
 }) {
+  const [tab, setTab] = useState<"have" | "make">("have");
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   const today = localDay();
-  const shelf = pantry.map((item) => ({
+  const shelf = PANTRY.map((item) => ({
     ...item,
     expiresOn: item.days === null ? null : addDays(today, item.days),
   }));
-  const suggestions = rankRecipes(recipes, shelf, today).slice(0, 3);
+  const suggestions = rankRecipes(RECIPES, shelf, today).slice(0, 3);
 
   return (
-    <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      <section className="space-y-2">
-        <h3 className={heading}>
-          Pantry{" "}
-          <span className="font-normal text-muted-foreground">
-            · {shelf.length} items
-          </span>
-        </h3>
+    <div className="space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-lg font-medium tracking-tight">Pantry</p>
+          <p className="text-sm text-muted-foreground">
+            {shelf.length} things on hand
+          </p>
+        </div>
+        <div
+          className="flex shrink-0 rounded-lg bg-muted p-0.5"
+          role="tablist"
+          aria-label="Pantry"
+        >
+          {(
+            [
+              ["have", "Have", "In my pantry"],
+              ["make", "Make", "What can I make"],
+            ] as const
+          ).map(([value, short, text]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={tab === value}
+              aria-label={text}
+              onClick={() => setTab(value)}
+              className={cn(
+                "rounded-md px-2.5 py-1.5 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring sm:px-3",
+                tab === value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              )}
+            >
+              <span className="sm:hidden">{short}</span>
+              <span className="max-sm:hidden">{text}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "have" ? (
         <ul className="divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
           {shelf.map((item) => {
             const expiry =
@@ -56,34 +88,34 @@ function PantryDemo({
                 : null;
             const amount = [item.amount, item.unit].filter(Boolean).join(" ");
             return (
-              <li key={item.name} className="px-3 py-1.5">
-                <p className="text-sm leading-6">
+              <li
+                key={item.name}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4"
+              >
+                <p className="min-w-0 flex-1 truncate text-[0.95rem] leading-6">
                   {amount && (
                     <span className="font-medium tabular-nums">{amount} </span>
                   )}
                   <span>{item.name}</span>
-                  {expiry && (
-                    <span
-                      className={cn(
-                        "ml-1.5 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
-                        expiry.tone === "bad" &&
-                          "bg-destructive/15 text-destructive",
-                        expiry.tone === "soon" && "bg-brand/15 text-foreground",
-                        expiry.tone === "ok" && "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {expiry.text}
-                    </span>
-                  )}
                 </p>
+                {expiry && (
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium whitespace-nowrap",
+                      expiry.tone === "bad" &&
+                        "bg-destructive/15 text-destructive",
+                      expiry.tone === "soon" && "bg-brand/15 text-foreground",
+                      expiry.tone === "ok" && "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {expiry.text}
+                  </span>
+                )}
               </li>
             );
           })}
         </ul>
-      </section>
-
-      <section className="space-y-2">
-        <h3 className={heading}>What can I make</h3>
+      ) : (
         <ul className="space-y-2">
           {suggestions.map((suggestion) => {
             const { recipe } = suggestion;
@@ -170,7 +202,7 @@ function PantryDemo({
             );
           })}
         </ul>
-      </section>
+      )}
     </div>
   );
 }

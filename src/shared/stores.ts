@@ -31,7 +31,7 @@ export const defaultLayout = () =>
   aisles.map((aisle) => ({ aisle, label: "" }));
 
 /** every section in this store's order; sections it doesn't list go last. */
-export const fullLayout = (layout: StoreSection[]) => {
+export const fullLayout = (layout: readonly StoreSection[]) => {
   const listed = new Set(layout.map((section) => section.aisle));
   return [
     ...layout,

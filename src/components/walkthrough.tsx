@@ -80,7 +80,7 @@ function MiniCard({
 
 function WelcomeScene() {
   const cards = [
-    { title: "Shakshuka", tone: "bg-chart-2", x: -68, rotate: -9 },
+    { title: "Tomato pasta", tone: "bg-chart-2", x: -68, rotate: -9 },
     { title: "Lemon cake", tone: "bg-chart-4", x: 68, rotate: 9 },
     { title: "Garlic noodles", tone: "bg-brand", x: 0, rotate: 0 },
   ];
@@ -178,13 +178,7 @@ const cookStep = "Simmer for 10 minutes until the sauce thickens.";
 const cookTimes = [1100] as const;
 
 /** same chip as timer-provider, sized for the walkthrough card. */
-function SceneTimerChip({
-  timer,
-  now,
-}: {
-  timer: KitchenTimer;
-  now: number;
-}) {
+function SceneTimerChip({ timer, now }: { timer: KitchenTimer; now: number }) {
   const left = secondsLeft(timer, now);
   return (
     <motion.div
@@ -276,12 +270,7 @@ function CookScene() {
             Step 2 of 4
           </p>
           <p className="text-[15px] leading-snug text-balance">
-            <StepText
-              text={cookStep}
-              step={2}
-              recipe="Garlic noodles"
-              large
-            />
+            <StepText text={cookStep} step={2} recipe="Garlic noodles" large />
           </p>
         </motion.div>
         <div className="mt-auto space-y-2 pb-3">
@@ -304,7 +293,7 @@ function PlanScene() {
   const planned: Record<number, { title: string; tone: string; at: number }> = {
     0: { title: "Tacos", tone: "bg-chart-3", at: 0 },
     2: { title: "Noodles", tone: "bg-brand", at: 1 },
-    4: { title: "Shakshuka", tone: "bg-chart-2", at: 2 },
+    4: { title: "Tomato pasta", tone: "bg-chart-2", at: 2 },
   };
   return (
     <div className="absolute inset-0 grid grid-cols-5 gap-1.5 px-4 pt-5">
@@ -423,11 +412,11 @@ function ShopScene() {
           id: "eggs",
           measure: "5",
           name: "eggs",
-          note: "Shakshuka, Fried rice",
+          note: "Omelette, Fried rice",
         },
       ]
     : [
-        { id: "eggs", measure: "2", name: "eggs", note: "Shakshuka" },
+        { id: "eggs", measure: "2", name: "eggs", note: "Omelette" },
         { id: "eggs-2", measure: "3", name: "eggs", note: "Fried rice" },
       ];
   const groups = [
@@ -485,7 +474,7 @@ function PantryScene() {
   const pantry = ["Rice", "Eggs", "Garlic", "Scallions", "Soy sauce"];
   const matches = [
     { title: "Fried rice", have: 5, of: 5 },
-    { title: "Shakshuka", have: 3, of: 4 },
+    { title: "Tomato pasta", have: 3, of: 4 },
     { title: "Pad thai", have: 3, of: 7 },
   ];
   return (

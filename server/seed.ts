@@ -52,45 +52,44 @@ const examples: RecipeInput[] = [
     ],
   },
   {
-    title: "Shakshuka",
-    description: "Eggs poached in a skillet of pepper, cumin, and tomatoes.",
+    title: "Tomato pasta",
+    description:
+      "A quick skillet sauce over spaghetti. Dinner in about 25 minutes.",
     image: null,
     sourceUrl: null,
-    prepMinutes: 10,
-    cookMinutes: 25,
+    prepMinutes: 5,
+    cookMinutes: 20,
     servings: 4,
     favorite: false,
     visibility: "public",
-    tags: ["eggs", "dinner"],
+    tags: ["pasta", "weeknight"],
     ingredients: [
+      { amount: "400", unit: "g", name: "spaghetti", note: "" },
       { amount: "2", unit: "tbsp", name: "olive oil", note: "" },
-      { amount: "1", unit: "", name: "yellow onion", note: "thinly sliced" },
-      { amount: "1", unit: "", name: "red bell pepper", note: "sliced" },
-      { amount: "3", unit: "cloves", name: "garlic", note: "minced" },
-      { amount: "1", unit: "tsp", name: "ground cumin", note: "" },
-      { amount: "1", unit: "tsp", name: "paprika", note: "" },
+      { amount: "3", unit: "cloves", name: "garlic", note: "sliced" },
       { amount: "1", unit: "can (28 oz)", name: "crushed tomatoes", note: "" },
-      { amount: "4", unit: "", name: "eggs", note: "" },
       { amount: "", unit: "", name: "salt and black pepper", note: "" },
       {
         amount: "",
         unit: "",
-        name: "cilantro or parsley",
+        name: "basil or parsley",
         note: "for serving",
       },
     ],
     instructions: [
       {
-        text: "Warm the oil in a skillet over medium heat. Cook the onion and pepper until soft, about 8 minutes.",
-      },
-      { text: "Stir in the garlic, cumin, and paprika and cook for 1 minute." },
-      {
-        text: "Add the tomatoes, salt, and pepper. Simmer until the sauce thickens slightly, about 10 minutes.",
+        text: "Boil the spaghetti in salted water until just shy of done, about 9 minutes. Save a cup of the pasta water.",
       },
       {
-        text: "Make four wells and crack an egg into each. Cover and cook until the whites set, 5 to 7 minutes.",
+        text: "Warm the oil in a wide skillet. Cook the garlic until fragrant, about 1 minute.",
       },
-      { text: "Scatter with herbs and serve with bread." },
+      {
+        text: "Add the tomatoes, salt, and pepper. Simmer until the sauce thickens a little, about 10 minutes.",
+      },
+      {
+        text: "Toss in the drained pasta with a splash of pasta water until it coats the noodles.",
+      },
+      { text: "Scatter with herbs and serve." },
     ],
   },
   {

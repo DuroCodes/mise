@@ -11,16 +11,16 @@ import { StepText } from "@/components/step-text";
 import { Button } from "@/components/ui/button";
 import { easeOut } from "@/lib/motion";
 import type { Measure } from "@/lib/units";
-import { shakshuka } from "../demo-data";
+import { tomatoPasta } from "../demo-data";
 
 /** the app's recipe page (src/components/recipe-view.tsx), as it ships. */
 function RecipeDemo() {
-  const [servings, setServings] = useState(shakshuka.servings ?? 4);
+  const [servings, setServings] = useState(tomatoPasta.servings ?? 4);
   const [system, setSystem] = useState<Measure>("original");
 
   return (
     <RecipeView
-      recipe={shakshuka}
+      recipe={tomatoPasta}
       servings={servings}
       onServings={setServings}
       system={system}
@@ -34,7 +34,7 @@ function RecipeDemo() {
  * over the whole screen; the step text and its timers are the same component.
  */
 function CookDemo() {
-  const steps = shakshuka.instructions;
+  const steps = tomatoPasta.instructions;
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const current = steps[step];
@@ -65,9 +65,9 @@ function CookDemo() {
     >
       <header className="flex items-center gap-2 border-b px-4 py-2 sm:px-5">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-medium">{shakshuka.title}</p>
+          <p className="truncate text-base font-medium">{tomatoPasta.title}</p>
           <p className="text-xs text-muted-foreground">
-            {shakshuka.servings} servings · Screen stays on
+            {tomatoPasta.servings} servings · Screen stays on
           </p>
         </div>
         <SunIcon className="size-4 text-brand" aria-hidden="true" />
@@ -91,7 +91,7 @@ function CookDemo() {
                 <StepText
                   text={current.text}
                   step={step + 1}
-                  recipe={shakshuka.title}
+                  recipe={tomatoPasta.title}
                   large
                 />
               </p>

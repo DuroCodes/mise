@@ -77,8 +77,8 @@ type PantryEntry = { name: string; expiresOn: string | null };
  * the page can say "uses up your spinach".
  */
 export const rankRecipes = <R extends Recipe>(
-  recipes: R[],
-  pantry: PantryEntry[],
+  recipes: readonly R[],
+  pantry: readonly PantryEntry[],
   today: string,
   soonDays = 3
 ) => {

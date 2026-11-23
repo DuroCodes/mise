@@ -916,15 +916,10 @@ export const importPage = (url: string, html: string) =>
   );
 
 export const aiRecipeFromUrl = (url: string) =>
-  zodFetch(
-    recipeInput,
-    "Could not read that page",
-    "/api/ai/recipe-from-url",
-    {
-      method: "POST",
-      ...json({ url }),
-    }
-  );
+  zodFetch(recipeInput, "Could not read that page", "/api/ai/recipe-from-url", {
+    method: "POST",
+    ...json({ url }),
+  });
 
 export const askAi = (recipeId: string, question: string) =>
   zodFetch(
