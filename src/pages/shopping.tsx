@@ -108,15 +108,6 @@ const saveGrouping = (value: Grouping) => {
 const quantity = (item: ShoppingItem) =>
   [item.amount, item.unit].filter(Boolean).join(" ");
 
-/** unit present → measure on the right; bare counts stay with the name. */
-const rowParts = (item: ShoppingItem) => {
-  const measure = item.unit.trim() ? quantity(item) : "";
-  const title = measure
-    ? item.name
-    : [item.amount, item.name].filter(Boolean).join(" ");
-  return { title, measure };
-};
-
 const isOptional = (note: string) => /\boptional\b/i.test(note);
 
 /** the note without the word "optional", which gets its own tag. */
@@ -294,11 +285,11 @@ function Row({
 }) {
   const optional = isOptional(item.note);
   const note = cleanNote(item.note);
-  const details = [note, showSources ? item.sources.join(", ") : ""].filter(
-    Boolean
-  );
+  const details = [note, showSources ? item.sources.join(", ") : ""]
+    .filter(Boolean)
+    .join(" · ");
   const local = item.id.startsWith("local-");
-  const { title, measure } = rowParts(item);
+  const measure = quantity(item);
 
   return (
     <motion.li
@@ -327,30 +318,26 @@ function Row({
         >
           {item.checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
         </span>
-        <span className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "flex items-baseline gap-x-3 text-[0.95rem] leading-6",
-              item.checked && "text-muted-foreground line-through"
-            )}
-          >
-            <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5">
-              <span>{title}</span>
-              {optional && (
-                <span className="rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
-                  optional
-                </span>
-              )}
-            </span>
+        <span
+          className={cn(
+            "flex min-w-0 flex-1 items-baseline gap-x-3 text-[0.95rem] leading-6",
+            item.checked && "text-muted-foreground line-through"
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">
             {measure && (
-              <span className="shrink-0 font-medium tabular-nums">
-                {measure}
+              <span className="font-medium tabular-nums">{measure} </span>
+            )}
+            <span>{item.name}</span>
+            {optional && (
+              <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
+                optional
               </span>
             )}
           </span>
-          {details.length > 0 && (
-            <span className="block truncate text-xs text-muted-foreground">
-              {details.join(" · ")}
+          {details && (
+            <span className="max-w-[42%] shrink-0 truncate text-right text-xs text-muted-foreground no-underline">
+              {details}
             </span>
           )}
         </span>

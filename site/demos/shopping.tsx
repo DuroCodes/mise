@@ -12,15 +12,6 @@ type Grouping = "aisle" | "recipe";
 const quantity = (item: ListItem) =>
   [item.amount, item.unit].filter(Boolean).join(" ");
 
-/** unit present → measure on the right; bare counts stay with the name. */
-const rowParts = (item: ListItem) => {
-  const measure = item.unit.trim() ? quantity(item) : "";
-  const title = measure
-    ? item.name
-    : [item.amount, item.name].filter(Boolean).join(" ");
-  return { title, measure };
-};
-
 /** the same grouping the shopping page does (src/pages/shopping.tsx). */
 const groupItems = (
   items: ListItem[],
@@ -61,7 +52,8 @@ function Row({
   showSources: boolean;
   onToggle: () => void;
 }) {
-  const { title, measure } = rowParts(item);
+  const measure = quantity(item);
+  const details = showSources ? item.sources.join(", ") : "";
 
   return (
     <li>
@@ -83,23 +75,21 @@ function Row({
         >
           {checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
         </span>
-        <span className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "flex items-baseline gap-x-3 text-[0.95rem] leading-6",
-              checked && "text-muted-foreground line-through"
-            )}
-          >
-            <span className="min-w-0 flex-1">{title}</span>
+        <span
+          className={cn(
+            "flex min-w-0 flex-1 items-baseline gap-x-3 text-[0.95rem] leading-6",
+            checked && "text-muted-foreground line-through"
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">
             {measure && (
-              <span className="shrink-0 font-medium tabular-nums">
-                {measure}
-              </span>
+              <span className="font-medium tabular-nums">{measure} </span>
             )}
+            <span>{item.name}</span>
           </span>
-          {showSources && (
-            <span className="block truncate text-xs text-muted-foreground">
-              {item.sources.join(", ")}
+          {details && (
+            <span className="max-w-[42%] shrink-0 truncate text-right text-xs text-muted-foreground no-underline">
+              {details}
             </span>
           )}
         </span>

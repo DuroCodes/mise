@@ -351,11 +351,13 @@ const shopTimes = [1200, 800, 600] as const;
 
 function ShopRow({
   done,
-  label,
+  measure,
+  name,
   note,
 }: {
   done: boolean;
-  label: string;
+  measure: string;
+  name: string;
   note: string;
 }) {
   return (
@@ -388,19 +390,24 @@ function ShopRow({
         )}
       </span>
       <motion.span
-        key={label}
+        key={`${measure}-${name}`}
         className={cn(
-          "text-[11px] font-medium transition-colors duration-200",
+          "min-w-0 flex-1 truncate text-[11px] transition-colors duration-200",
           done && "text-muted-foreground line-through"
         )}
         initial={{ opacity: 0.4 }}
         animate={{ opacity: 1 }}
       >
-        {label}
+        {measure && (
+          <span className="font-medium tabular-nums">{measure} </span>
+        )}
+        <span>{name}</span>
       </motion.span>
-      <span className="ml-auto truncate text-[10px] text-muted-foreground">
-        {note}
-      </span>
+      {note && (
+        <span className="max-w-[42%] shrink-0 truncate text-right text-[10px] text-muted-foreground">
+          {note}
+        </span>
+      )}
     </motion.li>
   );
 }
@@ -409,17 +416,36 @@ function ShopScene() {
   const phase = useSequence(shopTimes);
   const merged = phase >= 1;
   const eggs = merged
-    ? [{ id: "eggs", label: "5 eggs", note: "Shakshuka, Fried rice" }]
+    ? [
+        {
+          id: "eggs",
+          measure: "5",
+          name: "eggs",
+          note: "Shakshuka, Fried rice",
+        },
+      ]
     : [
-        { id: "eggs", label: "2 eggs", note: "Shakshuka" },
-        { id: "eggs-2", label: "3 eggs", note: "Fried rice" },
+        { id: "eggs", measure: "2", name: "eggs", note: "Shakshuka" },
+        { id: "eggs-2", measure: "3", name: "eggs", note: "Fried rice" },
       ];
   const groups = [
     {
       name: "Produce",
       rows: [
-        { id: "basil", label: "Basil", note: "1 bunch", done: phase >= 2 },
-        { id: "garlic", label: "Garlic", note: "4 cloves", done: phase >= 3 },
+        {
+          id: "basil",
+          measure: "1 bunch",
+          name: "Basil",
+          note: "Pesto pasta",
+          done: phase >= 2,
+        },
+        {
+          id: "garlic",
+          measure: "4 cloves",
+          name: "Garlic",
+          note: "Garlic noodles",
+          done: phase >= 3,
+        },
       ],
     },
     {
@@ -440,7 +466,8 @@ function ShopScene() {
                 <ShopRow
                   key={row.id}
                   done={row.done}
-                  label={row.label}
+                  measure={row.measure}
+                  name={row.name}
                   note={row.note}
                 />
               ))}
