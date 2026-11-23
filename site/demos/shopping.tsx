@@ -99,7 +99,7 @@ function Row({
 }
 
 const groupHeading =
-  "flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground";
+  "flex items-baseline gap-2 px-1 text-sm font-medium text-muted-foreground";
 
 /** the shopping list: real merging, real aisle sorting, nothing saved. */
 function ShoppingDemo({ items }: { items: ListItem[] }) {

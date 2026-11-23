@@ -831,7 +831,7 @@ function ShoppingPage() {
 
       {groups.map((group) => (
         <section key={group.name} className="space-y-1.5">
-          <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground">
+          <h2 className="flex items-baseline gap-2 px-1 text-sm font-medium text-muted-foreground">
             {group.name}
             <span className="font-normal tabular-nums">
               {group.items.length}
@@ -857,7 +857,7 @@ function ShoppingPage() {
       {done.length > 0 && (
         <section className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground">
+            <h2 className="flex items-baseline gap-2 px-1 text-sm font-medium text-muted-foreground">
               In the basket
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>

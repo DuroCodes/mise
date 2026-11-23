@@ -451,7 +451,7 @@ function ShopScene() {
       ],
     },
     {
-      name: "Dairy & eggs",
+      name: "Dairy & Eggs",
       rows: eggs.map((row) => ({ ...row, done: phase >= 3 })),
     },
   ];

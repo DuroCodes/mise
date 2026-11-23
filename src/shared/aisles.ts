@@ -4,13 +4,13 @@ import { tokens } from "./nutrition";
 export const aisles = [
   "Produce",
   "Bakery",
-  "Meat & seafood",
-  "Dairy & eggs",
+  "Meat & Seafood",
+  "Dairy & Eggs",
   "Frozen",
   "Pantry",
   "Baking",
-  "Spices & seasonings",
-  "Condiments & sauces",
+  "Spices & Seasonings",
+  "Condiments & Sauces",
   "Drinks",
   "Other",
 ] as const;
@@ -111,7 +111,7 @@ const sections: Record<Exclude<Aisle, "Other">, string[]> = {
     "croissant",
     "english muffin",
   ],
-  "Meat & seafood": [
+  "Meat & Seafood": [
     "chicken",
     "chicken breast",
     "chicken thigh",
@@ -144,7 +144,7 @@ const sections: Record<Exclude<Aisle, "Other">, string[]> = {
     "mussel",
     "clam",
   ],
-  "Dairy & eggs": [
+  "Dairy & Eggs": [
     "milk",
     "whole milk",
     "buttermilk",
@@ -259,7 +259,7 @@ const sections: Record<Exclude<Aisle, "Other">, string[]> = {
     "vanilla extract",
     "gelatin",
   ],
-  "Spices & seasonings": [
+  "Spices & Seasonings": [
     "salt",
     "kosher salt",
     "sea salt",
@@ -296,7 +296,7 @@ const sections: Record<Exclude<Aisle, "Other">, string[]> = {
     "seasoning",
     "msg",
   ],
-  "Condiments & sauces": [
+  "Condiments & Sauces": [
     "oil",
     "olive oil",
     "vegetable oil",

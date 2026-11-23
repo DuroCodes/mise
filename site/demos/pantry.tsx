@@ -57,15 +57,15 @@ function PantryDemo({
             const amount = [item.amount, item.unit].filter(Boolean).join(" ");
             return (
               <li key={item.name} className="px-3 py-1.5">
-                <p className="flex flex-wrap items-baseline gap-x-1.5 text-sm leading-6">
+                <p className="text-sm leading-6">
                   {amount && (
-                    <span className="font-medium tabular-nums">{amount}</span>
+                    <span className="font-medium tabular-nums">{amount} </span>
                   )}
                   <span>{item.name}</span>
                   {expiry && (
                     <span
                       className={cn(
-                        "rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
+                        "ml-1.5 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
                         expiry.tone === "bad" &&
                           "bg-destructive/15 text-destructive",
                         expiry.tone === "soon" && "bg-brand/15 text-foreground",

@@ -160,29 +160,29 @@ describe("store aisles", () => {
       "yellow onion": "Produce",
       "celery stalks": "Produce",
       garlic: "Produce",
-      bacon: "Meat & seafood",
-      butter: "Dairy & eggs",
+      bacon: "Meat & Seafood",
+      butter: "Dairy & Eggs",
       "all-purpose flour": "Baking",
       "chicken stock": "Pantry",
-      "whole milk": "Dairy & eggs",
-      "heavy cream": "Dairy & eggs",
+      "whole milk": "Dairy & Eggs",
+      "heavy cream": "Dairy & Eggs",
       "russet potatoes": "Produce",
-      "cheddar cheese": "Dairy & eggs",
+      "cheddar cheese": "Dairy & Eggs",
       "green onions": "Produce",
-      "salt and black pepper": "Spices & seasonings",
+      "salt and black pepper": "Spices & Seasonings",
     };
     for (const [name, aisle] of Object.entries(expected))
       expect(`${name}: ${aisleFor(name)}`).toBe(`${name}: ${aisle}`);
   });
 
   test("prefers the most specific phrase", () => {
-    expect(aisleFor("garlic powder")).toBe("Spices & seasonings");
+    expect(aisleFor("garlic powder")).toBe("Spices & Seasonings");
     expect(aisleFor("peanut butter")).toBe("Pantry");
     expect(aisleFor("coconut milk")).toBe("Pantry");
     expect(aisleFor("crushed tomatoes")).toBe("Pantry");
     expect(aisleFor("cherry tomatoes")).toBe("Produce");
-    expect(aisleFor("red pepper flakes")).toBe("Spices & seasonings");
-    expect(aisleFor("olive oil")).toBe("Condiments & sauces");
+    expect(aisleFor("red pepper flakes")).toBe("Spices & Seasonings");
+    expect(aisleFor("olive oil")).toBe("Condiments & Sauces");
     expect(aisleFor("frozen corn")).toBe("Frozen");
     expect(aisleFor("Panko bread crumbs")).toBe("Pantry");
     expect(aisleFor("unobtainium")).toBe("Other");
