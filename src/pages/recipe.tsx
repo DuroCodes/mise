@@ -265,9 +265,7 @@ function RecipeBody({
           })
         }
       />
-      {ai && recipe.ingredients.length > 0 && (
-        <AskAi recipeId={recipe.id} />
-      )}
+      {ai && recipe.ingredients.length > 0 && <AskAi recipeId={recipe.id} />}
     </RecipeView>
   );
 }
