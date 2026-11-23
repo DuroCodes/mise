@@ -1,0 +1,203 @@
+/* the site wears the app's own themes: same tokens, same four palettes. */
+@import "../src/index.css";
+@import "@fontsource-variable/recursive/casl.css";
+
+/* the demos render the app's components, so their classes need scanning too. */
+@source "../src";
+
+@theme inline {
+  --font-display: "Recursive Variable", "Geist Variable", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+@layer components {
+  /* headings are set like a hand-lettered label: Recursive with its casual
+     axis halfway up, warm without turning comic. everything inside a demo
+     stays in Geist, so the product reads as the product. */
+  .display {
+    font-family: var(--font-display);
+    font-variation-settings: "CASL" 0.5;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    text-wrap: balance;
+  }
+
+  /* a divider card from a recipe box. each one carries a tab named after the
+     part of the app it describes, stepped along the top edge the way index
+     tabs are. */
+  .divider {
+    position: relative;
+    margin-top: 5.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-3xl);
+    background: var(--card);
+  }
+
+  .divider-tab {
+    position: absolute;
+    bottom: 100%;
+    left: calc(1.25rem + var(--slot) * clamp(3.4rem, 15vw, 9.5rem));
+    margin-bottom: -1px;
+    padding: 0.4rem 0.7rem 0.3rem;
+    border: 1px solid var(--border);
+    border-bottom-color: var(--card);
+    border-radius: 0.8rem 0.8rem 0 0;
+    background: var(--card);
+    font-family: var(--font-display);
+    font-variation-settings: "CASL" 0.5;
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  @media (min-width: 40rem) {
+    .divider-tab {
+      left: calc(2rem + var(--slot) * clamp(3.4rem, 15vw, 9.5rem));
+      padding: 0.55rem 1.25rem 0.45rem;
+      font-size: 1rem;
+    }
+  }
+
+  /* demos sit in a well, a shade off the card they are set into. */
+  .well {
+    border-radius: var(--radius-2xl);
+    background: var(--background);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+
+  /* a scrolling list inside a demo gets a quiet scrollbar. */
+  .quiet-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent)
+      transparent;
+  }
+
+  .details {
+    display: grid;
+    gap: 1.5rem 2.5rem;
+  }
+  .details dt {
+    font-weight: 500;
+  }
+  .details dd {
+    margin-top: 0.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+  }
+
+  .button {
+    display: inline-flex;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    padding-inline: 1.1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+  }
+  .button:focus-visible,
+  .plain-link:focus-visible,
+  .theme-choice:focus-visible,
+  .copy:focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--ring) 60%, transparent);
+    outline-offset: 2px;
+  }
+  .button-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  .button-primary:hover {
+    background: color-mix(in oklab, var(--primary) 85%, transparent);
+  }
+  .button-outline {
+    border-color: var(--border);
+    background: var(--background);
+  }
+  .button-outline:hover {
+    background: var(--muted);
+  }
+
+  .plain-link {
+    border-radius: 0.25rem;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--brand) 70%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.22em;
+  }
+  .plain-link:hover {
+    text-decoration-color: var(--brand);
+  }
+
+  /* theme buttons: the swatch is that theme's own background and accent. */
+  .theme-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+  }
+  .swatch {
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklab, var(--foreground) 28%, transparent);
+  }
+  .swatch::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--swatch-accent);
+  }
+  .theme-choice[aria-pressed="true"] .swatch {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  .command {
+    position: relative;
+    border-radius: var(--radius-xl);
+    background: var(--muted);
+  }
+  /* long commands wrap instead of scrolling sideways; copying still gives
+     the unbroken line. */
+  .command pre {
+    padding: 0.9rem 1rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+  .command .copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--background);
+    padding: 0.15rem 0.6rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+  .command .copy:hover {
+    background: var(--card);
+  }
+}

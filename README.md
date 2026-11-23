@@ -82,3 +82,16 @@ set `BETTER_AUTH_URL` to the public origin, such as `https://mise.example.com`, 
 ## backups
 
 download a backup from the admin page. restoring from the admin page merges the backup into the site and matches people by email. to roll everything back, including accounts, stop mise, delete `mise.db-wal` and `mise.db-shm` from `DATA_DIR` if they exist, then copy the backup's `mise.db` and `uploads/` folder into `DATA_DIR`.
+
+## site
+
+the marketing site lives in `site/`. the page is static html; its demos run the app's own components and logic from `src/`, so they keep up as the app changes.
+
+```bash
+bun run site:dev    # localhost:5174
+bun run site:build  # writes dist-site/
+```
+
+`dist-site/` is plain static files with relative paths, so any static host can serve it, at a domain root or under a sub-path. set `SITE_URL` when building (for example `SITE_URL=https://mise.example.com bun run site:build`) to add the preview image that chat apps show for a link.
+
+every link on the page points at the repo named in `vite.site.config.ts`.
