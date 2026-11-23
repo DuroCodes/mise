@@ -381,8 +381,8 @@ function PantryList({
       ) : (
         groups.map((group) => (
           <section key={group.aisle} className="space-y-1.5">
-            <h2 className="flex items-baseline gap-2 px-1 text-sm font-medium text-muted-foreground">
-              {group.aisle}
+            <h2 className="px-1 text-sm font-medium text-muted-foreground">
+              {group.aisle}{" "}
               <span className="font-normal tabular-nums">
                 {group.items.length}
               </span>

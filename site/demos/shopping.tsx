@@ -98,8 +98,7 @@ function Row({
   );
 }
 
-const groupHeading =
-  "flex items-baseline gap-2 px-1 text-sm font-medium text-muted-foreground";
+const groupHeading = "px-1 text-sm font-medium text-muted-foreground";
 
 /** the shopping list: real merging, real aisle sorting, nothing saved. */
 function ShoppingDemo({ items }: { items: ListItem[] }) {
@@ -208,7 +207,7 @@ function ShoppingDemo({ items }: { items: ListItem[] }) {
         {groups.map((group) => (
           <section key={group.name} className="space-y-1.5">
             <h3 className={groupHeading}>
-              {group.name}
+              {group.name}{" "}
               <span className="font-normal tabular-nums">
                 {group.items.length}
               </span>
@@ -229,7 +228,7 @@ function ShoppingDemo({ items }: { items: ListItem[] }) {
         {done.length > 0 && (
           <section className="space-y-1.5">
             <h3 className={groupHeading}>
-              In the basket
+              In the basket{" "}
               <span className="font-normal tabular-nums">{done.length}</span>
             </h3>
             <ul className="divide-y overflow-hidden rounded-xl bg-card/60 ring-1 ring-foreground/10">
