@@ -208,30 +208,7 @@ function IngredientList({
 
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <h2 className="text-sm leading-none font-medium">Ingredients</h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="absolute right-0 bottom-0"
-          onClick={() =>
-            onChange([
-              ...items,
-              {
-                key: crypto.randomUUID(),
-                amount: "",
-                unit: "",
-                name: "",
-                note: "",
-              },
-            ])
-          }
-        >
-          <PlusIcon data-icon="inline-start" />
-          Add
-        </Button>
-      </div>
+      <h2 className="text-sm leading-none font-medium">Ingredients</h2>
       <SortableRows items={items} onChange={onChange}>
         <ul className="space-y-3">
           {items.map((item, index) => (
@@ -353,6 +330,26 @@ function IngredientList({
           ))}
         </ul>
       </SortableRows>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          onChange([
+            ...items,
+            {
+              key: crypto.randomUUID(),
+              amount: "",
+              unit: "",
+              name: "",
+              note: "",
+            },
+          ])
+        }
+      >
+        <PlusIcon data-icon="inline-start" />
+        Add
+      </Button>
     </div>
   );
 }
@@ -368,21 +365,7 @@ function InstructionList({
 }) {
   return (
     <div className="space-y-2">
-      <div className="relative">
-        <h2 className="text-sm leading-none font-medium">Instructions</h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="absolute right-0 bottom-0"
-          onClick={() =>
-            onChange([...items, { key: crypto.randomUUID(), text: "" }])
-          }
-        >
-          <PlusIcon data-icon="inline-start" />
-          Add
-        </Button>
-      </div>
+      <h2 className="text-sm leading-none font-medium">Instructions</h2>
       <SortableRows items={items} onChange={onChange}>
         <ol className="space-y-3">
           {items.map((item, index) => (
@@ -441,6 +424,17 @@ function InstructionList({
           ))}
         </ol>
       </SortableRows>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          onChange([...items, { key: crypto.randomUUID(), text: "" }])
+        }
+      >
+        <PlusIcon data-icon="inline-start" />
+        Add
+      </Button>
     </div>
   );
 }
