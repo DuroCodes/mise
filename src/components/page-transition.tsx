@@ -14,7 +14,7 @@ const routeKey = (path: string) =>
 
 const depth = (path: string) => path.split("/").filter(Boolean).length;
 
-const directionFor = (from: string, to: string): Direction => {
+const directionFor = (from: string, to: string) => {
   const fromTab = tabIndex(from);
   const toTab = tabIndex(to);
   if (fromTab !== -1 && toTab !== -1)

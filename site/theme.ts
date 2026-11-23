@@ -8,7 +8,7 @@ const prefersDark = matchMedia("(prefers-color-scheme: dark)");
 const isChoice = (value: string | undefined): value is Choice =>
   themeOptions.some((option) => option.id === value);
 
-const stored = (): Choice => {
+const stored = () => {
   try {
     const value = localStorage.getItem(storageKey) ?? undefined;
     if (isChoice(value)) return value;

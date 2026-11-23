@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig } from "vite";
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
@@ -20,11 +20,11 @@ const escapeHtml = (value: string) =>
  * fills the page's placeholders from the repo, so the install steps always
  * show the compose file that actually ships.
  */
-const siteHtml = (): Plugin => ({
+const siteHtml = () => ({
   name: "mise-site-html",
   transformIndexHtml: {
     order: "pre",
-    handler: (html) =>
+    handler: (html: string) =>
       html
         .replaceAll("{{repo}}", repo)
         .replaceAll(

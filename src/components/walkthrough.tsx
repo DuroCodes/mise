@@ -13,10 +13,9 @@ import {
   TimerIcon,
   WifiOffIcon,
   XIcon,
-  type LucideIcon,
 } from "lucide-react";
-import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "cn";
 import { StepText } from "@/components/step-text";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ import {
   secondsLeft,
   TimerContext,
   type KitchenTimer,
-  type TimerApi,
 } from "@/lib/timer-context";
 import {
   markWalkthroughSeen,
@@ -223,10 +221,10 @@ function CookScene() {
   const [now, setNow] = useState(() => Date.now());
   const started = useRef(false);
 
-  const api: TimerApi = {
+  const api = {
     timers,
     now,
-    start: (label, seconds, recipe = null) => {
+    start: (label: string, seconds: number, recipe: string | null = null) => {
       const startedAt = Date.now();
       setNow(startedAt);
       setTimers([
@@ -241,8 +239,8 @@ function CookScene() {
         },
       ]);
     },
-    pause: () => {},
-    resume: () => {},
+    pause: (_id: string) => {},
+    resume: (_id: string) => {},
     remove: () => setTimers([]),
   };
 
@@ -506,7 +504,7 @@ function PantryScene() {
   );
 }
 
-const extras: { label: string; icon: LucideIcon }[] = [
+const extras = [
   { label: "Timers", icon: TimerIcon },
   { label: "Scan & shop", icon: ScanBarcodeIcon },
   { label: "Collections", icon: FolderIcon },
@@ -535,7 +533,7 @@ function MoreScene() {
   );
 }
 
-const steps: { title: string; body: string; scene: () => ReactNode }[] = [
+const steps = [
   {
     title: "Welcome to Mise",
     body: "Your recipes, meal plan, and groceries in one place. Here's a quick look around.",
@@ -573,7 +571,7 @@ const steps: { title: string; body: string; scene: () => ReactNode }[] = [
   },
 ];
 
-const slide: Variants = {
+const slide = {
   enter: (direction: number) => ({ opacity: 0, x: direction * 28 }),
   center: { opacity: 1, x: 0, transition: rise },
   exit: (direction: number) => ({

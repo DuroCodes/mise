@@ -8,7 +8,7 @@ import type { StoreSection } from "@/shared/stores";
  */
 const recipe = (
   value: Omit<SharedRecipe, "image" | "sourceUrl" | "ownerName">
-): SharedRecipe => ({
+) => ({
   ...value,
   image: null,
   sourceUrl: null,
