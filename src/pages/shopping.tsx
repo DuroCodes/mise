@@ -108,6 +108,15 @@ const saveGrouping = (value: Grouping) => {
 const quantity = (item: ShoppingItem) =>
   [item.amount, item.unit].filter(Boolean).join(" ");
 
+/** unit present → measure on the right; bare counts stay with the name. */
+const rowParts = (item: ShoppingItem) => {
+  const measure = item.unit.trim() ? quantity(item) : "";
+  const title = measure
+    ? item.name
+    : [item.amount, item.name].filter(Boolean).join(" ");
+  return { title, measure };
+};
+
 const isOptional = (note: string) => /\boptional\b/i.test(note);
 
 /** the note without the word "optional", which gets its own tag. */
@@ -289,6 +298,7 @@ function Row({
     Boolean
   );
   const local = item.id.startsWith("local-");
+  const { title, measure } = rowParts(item);
 
   return (
     <motion.li
@@ -320,17 +330,21 @@ function Row({
         <span className="min-w-0 flex-1">
           <span
             className={cn(
-              "flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-6",
+              "flex items-baseline gap-x-3 text-[0.95rem] leading-6",
               item.checked && "text-muted-foreground line-through"
             )}
           >
-            {quantity(item) && (
-              <span className="font-medium tabular-nums">{quantity(item)}</span>
-            )}
-            <span>{item.name}</span>
-            {optional && (
-              <span className="rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
-                optional
+            <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5">
+              <span>{title}</span>
+              {optional && (
+                <span className="rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
+                  optional
+                </span>
+              )}
+            </span>
+            {measure && (
+              <span className="shrink-0 font-medium tabular-nums">
+                {measure}
               </span>
             )}
           </span>

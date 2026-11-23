@@ -12,6 +12,15 @@ type Grouping = "aisle" | "recipe";
 const quantity = (item: ListItem) =>
   [item.amount, item.unit].filter(Boolean).join(" ");
 
+/** unit present → measure on the right; bare counts stay with the name. */
+const rowParts = (item: ListItem) => {
+  const measure = item.unit.trim() ? quantity(item) : "";
+  const title = measure
+    ? item.name
+    : [item.amount, item.name].filter(Boolean).join(" ");
+  return { title, measure };
+};
+
 /** the same grouping the shopping page does (src/pages/shopping.tsx). */
 const groupItems = (
   items: ListItem[],
@@ -52,6 +61,8 @@ function Row({
   showSources: boolean;
   onToggle: () => void;
 }) {
+  const { title, measure } = rowParts(item);
+
   return (
     <li>
       <button
@@ -75,14 +86,16 @@ function Row({
         <span className="min-w-0 flex-1">
           <span
             className={cn(
-              "flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-6",
+              "flex items-baseline gap-x-3 text-[0.95rem] leading-6",
               checked && "text-muted-foreground line-through"
             )}
           >
-            {quantity(item) && (
-              <span className="font-medium tabular-nums">{quantity(item)}</span>
+            <span className="min-w-0 flex-1">{title}</span>
+            {measure && (
+              <span className="shrink-0 font-medium tabular-nums">
+                {measure}
+              </span>
             )}
-            <span>{item.name}</span>
           </span>
           {showSources && (
             <span className="block truncate text-xs text-muted-foreground">
