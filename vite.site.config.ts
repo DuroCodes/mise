@@ -1,20 +1,13 @@
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
-/** where the project lives; every link on the site is built from this. */
-const repo = "https://github.com/durocodes/mise";
-
 /** the site's public address, for link previews. Set SITE_URL when building. */
 const siteUrl = (process.env.SITE_URL ?? "").replace(/\/+$/, "");
-
-const escapeHtml = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /**
  * fills the page's placeholders from the repo, so the install steps always
@@ -23,26 +16,16 @@ const escapeHtml = (value: string) =>
 const siteHtml = () => ({
   name: "mise-site-html",
   transformIndexHtml: {
-    order: "pre",
+    order: "pre" as const,
     handler: (html: string) =>
-      html
-        .replaceAll("{{repo}}", repo)
-        .replaceAll(
-          "{{raw}}",
-          repo.replace("github.com", "raw.githubusercontent.com")
-        )
-        .replaceAll(
-          "{{compose}}",
-          escapeHtml(readFileSync(here("./compose.yml"), "utf8").trimEnd())
-        )
-        .replaceAll(
-          "{{preview}}",
-          siteUrl
-            ? `<meta property="og:url" content="${siteUrl}/" />
+      html.replaceAll(
+        "{{preview}}",
+        siteUrl
+          ? `<meta property="og:url" content="${siteUrl}/" />
     <meta property="og:image" content="${siteUrl}/preview.jpg" />
     <meta name="twitter:card" content="summary_large_image" />`
-            : ""
-        ),
+          : ""
+      ),
   },
 });
 

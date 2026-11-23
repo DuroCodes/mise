@@ -85,7 +85,7 @@ download a backup from the admin page. restoring from the admin page merges the 
 
 ## site
 
-the marketing site lives in `site/`. the page is static html; its demos run the app's own components and logic from `src/`, so they keep up as the app changes.
+the marketing site lives in `site/`. it is a React page that reuses the app's themes, typography, and UI from `src/`; its demos run the same components and logic, so they keep up as the app changes.
 
 ```bash
 bun run site:dev    # localhost:5174
