@@ -94,67 +94,78 @@ function PantryDemo({
             return (
               <li
                 key={recipe.title}
-                className="space-y-1.5 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
+                className="flex overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                  <p className="truncate font-medium">{recipe.title}</p>
-                  {minutes && (
-                    <span className="text-xs text-muted-foreground">
-                      {minutes}
-                    </span>
+                <div className="w-16 shrink-0 self-stretch bg-muted sm:w-20">
+                  {recipe.image && (
+                    <img
+                      src={recipe.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{ width: `${suggestion.coverage * 100}%` }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    You have {suggestion.have.length} of {needed}
-                  </span>
-                </div>
-                {suggestion.expiring.length > 0 && (
-                  <p className="text-xs font-medium text-foreground">
-                    Uses up your {suggestion.expiring.join(", ")}
-                  </p>
-                )}
-                {suggestion.missing.length === 0 ? (
-                  <p className="text-xs font-medium text-brand">
-                    You have everything
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="min-w-0 text-xs text-muted-foreground">
-                      Need {suggestion.missing.join(", ")}
-                    </p>
-                    {added.has(recipe.title) ? (
-                      <p className="text-xs font-medium" role="status">
-                        Added to{" "}
-                        <a
-                          href="#shopping"
-                          className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
-                        >
-                          the list above
-                        </a>
-                      </p>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          onAdd(recipe, suggestion.missing);
-                          setAdded(new Set(added).add(recipe.title));
-                        }}
-                      >
-                        <ShoppingBasketIcon data-icon="inline-start" />
-                        Add {suggestion.missing.length} to list
-                      </Button>
+                <div className="min-w-0 flex-1 space-y-1 p-2.5 sm:p-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                    <p className="truncate font-medium">{recipe.title}</p>
+                    {minutes && (
+                      <span className="text-xs text-muted-foreground">
+                        {minutes}
+                      </span>
                     )}
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-brand"
+                        style={{ width: `${suggestion.coverage * 100}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      You have {suggestion.have.length} of {needed}
+                    </span>
+                  </div>
+                  {suggestion.expiring.length > 0 && (
+                    <p className="text-xs font-medium text-foreground">
+                      Uses up your {suggestion.expiring.join(", ")}
+                    </p>
+                  )}
+                  {suggestion.missing.length === 0 ? (
+                    <p className="text-xs font-medium text-brand">
+                      You have everything
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="min-w-0 text-xs text-muted-foreground">
+                        Need {suggestion.missing.join(", ")}
+                      </p>
+                      {added.has(recipe.title) ? (
+                        <p className="text-xs font-medium" role="status">
+                          Added to{" "}
+                          <a
+                            href="#shopping"
+                            className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                          >
+                            the list above
+                          </a>
+                        </p>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            onAdd(recipe, suggestion.missing);
+                            setAdded(new Set(added).add(recipe.title));
+                          }}
+                        >
+                          <ShoppingBasketIcon data-icon="inline-start" />
+                          Add {suggestion.missing.length} to list
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </li>
             );
           })}

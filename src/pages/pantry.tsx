@@ -658,21 +658,18 @@ function Suggestions({
                   ease: easeOut,
                   delay: Math.min(index, 6) * 0.03,
                 }}
-                className="flex gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
+                className="flex overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
               >
-                {suggestion.image ? (
-                  <img
-                    src={suggestion.image}
-                    alt=""
-                    className="size-16 shrink-0 rounded-lg object-cover"
-                  />
-                ) : (
-                  <span
-                    className="size-16 shrink-0 rounded-lg bg-muted"
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="w-16 shrink-0 self-stretch bg-muted sm:w-20">
+                  {suggestion.image && (
+                    <img
+                      src={suggestion.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1 p-2.5 sm:p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                     <Link
                       to={`/recipes/${suggestion.id}`}
