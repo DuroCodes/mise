@@ -160,8 +160,7 @@ export const captionLooksLikeRecipe = (text: string) => {
 /** caption also has cook steps — only then skip downloading the video. */
 export const captionHasSteps = (text: string) => {
   const body = text.trim();
-  if (/\b(steps?|directions?|method|instructions?)\b/i.test(body))
-    return true;
+  if (/\b(steps?|directions?|method|instructions?)\b/i.test(body)) return true;
 
   // numbered steps, or several imperative cook verbs with some length.
   const numbered = (body.match(/(?:^|\n)\s*\d+[.)]\s+\S+/g) ?? []).length;
