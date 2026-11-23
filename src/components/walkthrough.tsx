@@ -7,15 +7,18 @@ import {
   Link2Icon,
   LinkIcon,
   PaletteIcon,
+  PauseIcon,
   ScanBarcodeIcon,
   StarIcon,
   TimerIcon,
   WifiOffIcon,
+  XIcon,
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
+import { StepText } from "@/components/step-text";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +28,17 @@ import {
 } from "@/components/ui/dialog";
 import { easeOut, leave, rise } from "@/lib/motion";
 import {
+  secondsLeft,
+  TimerContext,
+  type KitchenTimer,
+  type TimerApi,
+} from "@/lib/timer-context";
+import {
   markWalkthroughSeen,
   onOpenWalkthrough,
   walkthroughSeen,
 } from "@/lib/walkthrough";
+import { formatClock } from "@/shared/timers";
 
 /** steps through `durations` once, then holds on the last phase. */
 function useSequence(durations: readonly number[]) {
@@ -166,95 +176,125 @@ function ImportScene() {
   );
 }
 
-function TimerPill() {
-  const [left, setLeft] = useState(600);
-  useEffect(() => {
-    const id = window.setInterval(
-      () => setLeft((value) => Math.max(0, value - 1)),
-      1000
-    );
-    return () => window.clearInterval(id);
-  }, []);
-  const minutes = Math.floor(left / 60);
-  const seconds = String(left % 60).padStart(2, "0");
+const cookStep = "Simmer for 10 minutes until the sauce thickens.";
+const cookTimes = [1100] as const;
+
+/** same chip as timer-provider, sized for the walkthrough card. */
+function SceneTimerChip({
+  timer,
+  now,
+}: {
+  timer: KitchenTimer;
+  now: number;
+}) {
+  const left = secondsLeft(timer, now);
   return (
     <motion.div
-      className="absolute inset-x-0 bottom-4 mx-auto flex w-fit items-center gap-2 rounded-full bg-card py-1.5 pr-3 pl-1.5 text-[11px] shadow-sm ring-1 ring-foreground/10"
-      initial={{ opacity: 0, y: 16 }}
+      layout="position"
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: easeOut }}
+      transition={{ duration: 0.2, ease: easeOut }}
+      className="flex w-full items-center gap-2 rounded-xl bg-popover py-1.5 pr-1.5 pl-3 text-sm shadow-lg ring-1 ring-foreground/10"
     >
-      <svg viewBox="0 0 20 20" className="size-5 -rotate-90">
-        <circle
-          cx="10"
-          cy="10"
-          r="8"
-          fill="none"
-          strokeWidth="2.5"
-          className="stroke-foreground/10"
-        />
-        <motion.circle
-          cx="10"
-          cy="10"
-          r="8"
-          fill="none"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          className="stroke-brand"
-          initial={{ pathLength: 1 }}
-          animate={{ pathLength: 0.75 }}
-          transition={{ duration: 12, ease: "linear" }}
-        />
-      </svg>
-      <span className="font-medium">Simmer</span>
-      <span className="text-muted-foreground tabular-nums">
-        {minutes}:{seconds}
+      <TimerIcon
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="font-medium tabular-nums">{formatClock(left)}</p>
+        <p className="max-w-48 truncate text-xs text-muted-foreground">
+          {timer.recipe ? `${timer.recipe} · ` : ""}
+          {timer.label}
+        </p>
+      </div>
+      <span className="grid size-7 place-items-center text-muted-foreground">
+        <PauseIcon className="size-4" aria-hidden="true" />
+      </span>
+      <span className="grid size-7 place-items-center text-muted-foreground">
+        <XIcon className="size-4" aria-hidden="true" />
       </span>
     </motion.div>
   );
 }
 
-const cookTimes = [1100] as const;
-
 function CookScene() {
   const phase = useSequence(cookTimes);
+  const [timers, setTimers] = useState<KitchenTimer[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+  const started = useRef(false);
+
+  const api: TimerApi = {
+    timers,
+    now,
+    start: (label, seconds, recipe = null) => {
+      const startedAt = Date.now();
+      setNow(startedAt);
+      setTimers([
+        {
+          id: "walkthrough-timer",
+          label,
+          recipe,
+          total: seconds,
+          endsAt: startedAt + seconds * 1000,
+          remaining: seconds,
+          done: false,
+        },
+      ]);
+    },
+    pause: () => {},
+    resume: () => {},
+    remove: () => setTimers([]),
+  };
+
+  useEffect(() => {
+    if (phase < 1 || started.current) return;
+    started.current = true;
+    const startedAt = Date.now();
+    setNow(startedAt);
+    setTimers([
+      {
+        id: "walkthrough-timer",
+        label: "Step 2: 10 minutes",
+        recipe: "Garlic noodles",
+        total: 600,
+        endsAt: startedAt + 600_000,
+        remaining: 600,
+        done: false,
+      },
+    ]);
+  }, [phase]);
+
+  useEffect(() => {
+    if (!timers.some((timer) => timer.endsAt !== null)) return;
+    const id = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(id);
+  }, [timers]);
+
   return (
-    <div className="absolute inset-0 px-6 pt-6">
-      <div className="flex gap-1">
-        {[0, 1, 2, 3].map((segment) => (
-          <div
-            key={segment}
-            className="h-1 flex-1 overflow-hidden rounded-full bg-foreground/10"
-          >
-            {segment < 2 && (
-              <motion.div
-                className="h-full bg-brand"
-                initial={{ width: segment === 1 ? "0%" : "100%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 0.5, ease: easeOut, delay: 0.2 }}
-              />
-            )}
-          </div>
-        ))}
+    <TimerContext.Provider value={api}>
+      <div className="absolute inset-0 flex flex-col px-5 pt-5">
+        <motion.div className="space-y-2" {...pop(0.1)}>
+          <p className="text-[11px] font-medium text-muted-foreground tabular-nums">
+            Step 2 of 4
+          </p>
+          <p className="text-[15px] leading-snug text-balance">
+            <StepText
+              text={cookStep}
+              step={2}
+              recipe="Garlic noodles"
+              large
+            />
+          </p>
+        </motion.div>
+        <div className="mt-auto space-y-2 pb-3">
+          <AnimatePresence initial={false}>
+            {timers.map((timer) => (
+              <SceneTimerChip key={timer.id} timer={timer} now={now} />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
-      <p className="mt-3 text-[10px] text-muted-foreground">Step 2 of 4</p>
-      <motion.p
-        className="mt-1 text-[15px] leading-snug font-medium"
-        {...pop(0.15)}
-      >
-        Simmer for{" "}
-        <motion.span
-          className="inline-flex items-center gap-0.5 rounded-md bg-brand/15 px-1 text-brand"
-          animate={phase >= 1 ? { scale: [1, 0.9, 1] } : { scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <TimerIcon className="size-3.5" />
-          10 minutes
-        </motion.span>{" "}
-        until the sauce thickens.
-      </motion.p>
-      {phase >= 1 && <TimerPill />}
-    </div>
+    </TimerContext.Provider>
   );
 }
 
