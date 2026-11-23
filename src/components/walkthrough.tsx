@@ -363,8 +363,14 @@ function ShopRow({
   return (
     <motion.li
       layout
-      className="flex items-center gap-2 overflow-hidden py-1"
-      exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
+      className="flex items-center gap-2 overflow-hidden py-1 pl-0.5"
+      exit={{
+        opacity: 0,
+        height: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+      }}
       transition={{ duration: 0.35, ease: easeOut }}
     >
       <span
