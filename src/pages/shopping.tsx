@@ -320,11 +320,11 @@ function Row({
         </span>
         <span
           className={cn(
-            "flex min-w-0 flex-1 items-baseline gap-x-3 text-[0.95rem] leading-6",
+            "flex min-w-0 flex-1 flex-col gap-0.5 text-[0.95rem] leading-6 sm:flex-row sm:items-baseline sm:gap-x-3",
             item.checked && "text-muted-foreground line-through"
           )}
         >
-          <span className="min-w-0 flex-1 truncate">
+          <span className="min-w-0 truncate sm:flex-1">
             {measure && (
               <span className="font-medium tabular-nums">{measure} </span>
             )}
@@ -336,7 +336,7 @@ function Row({
             )}
           </span>
           {details && (
-            <span className="max-w-[42%] shrink-0 truncate text-right text-xs text-muted-foreground no-underline">
+            <span className="truncate text-xs text-muted-foreground no-underline sm:max-w-[42%] sm:shrink-0 sm:text-right">
               {details}
             </span>
           )}
@@ -831,7 +831,7 @@ function ShoppingPage() {
 
       {groups.map((group) => (
         <section key={group.name} className="space-y-1.5">
-          <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground">
             {group.name}
             <span className="font-normal tabular-nums">
               {group.items.length}
@@ -857,7 +857,7 @@ function ShoppingPage() {
       {done.length > 0 && (
         <section className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground">
               In the basket
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>

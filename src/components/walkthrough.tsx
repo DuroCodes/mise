@@ -392,22 +392,24 @@ function ShopRow({
       <motion.span
         key={`${measure}-${name}`}
         className={cn(
-          "min-w-0 flex-1 truncate text-[11px] transition-colors duration-200",
+          "min-w-0 flex-1 transition-colors duration-200",
           done && "text-muted-foreground line-through"
         )}
         initial={{ opacity: 0.4 }}
         animate={{ opacity: 1 }}
       >
-        {measure && (
-          <span className="font-medium tabular-nums">{measure} </span>
-        )}
-        <span>{name}</span>
-      </motion.span>
-      {note && (
-        <span className="max-w-[42%] shrink-0 truncate text-right text-[10px] text-muted-foreground">
-          {note}
+        <span className="block truncate text-[11px]">
+          {measure && (
+            <span className="font-medium tabular-nums">{measure} </span>
+          )}
+          <span>{name}</span>
         </span>
-      )}
+        {note && (
+          <span className="block truncate text-[10px] text-muted-foreground no-underline">
+            {note}
+          </span>
+        )}
+      </motion.span>
     </motion.li>
   );
 }
@@ -457,7 +459,7 @@ function ShopScene() {
     <div className="absolute inset-0 space-y-2.5 px-6 pt-6">
       {groups.map((group) => (
         <div key={group.name}>
-          <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+          <p className="text-[10px] font-medium text-muted-foreground">
             {group.name}
           </p>
           <ul>

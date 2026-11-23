@@ -77,18 +77,18 @@ function Row({
         </span>
         <span
           className={cn(
-            "flex min-w-0 flex-1 items-baseline gap-x-3 text-[0.95rem] leading-6",
+            "flex min-w-0 flex-1 flex-col gap-0.5 text-[0.95rem] leading-6 sm:flex-row sm:items-baseline sm:gap-x-3",
             checked && "text-muted-foreground line-through"
           )}
         >
-          <span className="min-w-0 flex-1 truncate">
+          <span className="min-w-0 truncate sm:flex-1">
             {measure && (
               <span className="font-medium tabular-nums">{measure} </span>
             )}
             <span>{item.name}</span>
           </span>
           {details && (
-            <span className="max-w-[42%] shrink-0 truncate text-right text-xs text-muted-foreground no-underline">
+            <span className="truncate text-xs text-muted-foreground no-underline sm:max-w-[42%] sm:shrink-0 sm:text-right">
               {details}
             </span>
           )}
@@ -99,7 +99,7 @@ function Row({
 }
 
 const groupHeading =
-  "flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase";
+  "flex items-baseline gap-2 px-1 text-xs font-medium text-muted-foreground";
 
 /** the shopping list: real merging, real aisle sorting, nothing saved. */
 function ShoppingDemo({ items }: { items: ListItem[] }) {
