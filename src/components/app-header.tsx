@@ -54,7 +54,10 @@ function AppHeader({
   offline: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background pt-[env(safe-area-inset-top)] print:hidden">
+    <motion.header
+      layoutRoot
+      className="sticky top-0 z-40 border-b bg-background pt-[env(safe-area-inset-top)] print:hidden"
+    >
       {offline && (
         <p className="flex items-center justify-center gap-1.5 bg-muted px-4 py-1 text-xs text-muted-foreground">
           <WifiOffIcon className="size-3.5" aria-hidden="true" />
@@ -140,7 +143,7 @@ function AppHeader({
           </Button>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }
 
