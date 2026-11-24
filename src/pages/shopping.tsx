@@ -285,10 +285,11 @@ function Row({
 }) {
   const optional = isOptional(item.note);
   const note = cleanNote(item.note);
-  const details = [note, showSources ? item.sources.join(", ") : ""].filter(
-    Boolean
-  );
+  const details = [note, showSources ? item.sources.join(", ") : ""]
+    .filter(Boolean)
+    .join(" · ");
   const local = item.id.startsWith("local-");
+  const measure = quantity(item);
 
   return (
     <motion.li
@@ -317,26 +318,26 @@ function Row({
         >
           {item.checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
         </span>
-        <span className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-6",
-              item.checked && "text-muted-foreground line-through"
-            )}
-          >
-            {quantity(item) && (
-              <span className="font-medium tabular-nums">{quantity(item)}</span>
+        <span
+          className={cn(
+            "flex min-w-0 flex-1 flex-col gap-0.5 text-[0.95rem] leading-6 sm:flex-row sm:items-baseline sm:gap-x-3",
+            item.checked && "text-muted-foreground line-through"
+          )}
+        >
+          <span className="min-w-0 truncate sm:flex-1">
+            {measure && (
+              <span className="font-medium tabular-nums">{measure} </span>
             )}
             <span>{item.name}</span>
             {optional && (
-              <span className="rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
+              <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
                 optional
               </span>
             )}
           </span>
-          {details.length > 0 && (
-            <span className="block truncate text-xs text-muted-foreground">
-              {details.join(" · ")}
+          {details && (
+            <span className="truncate text-xs text-muted-foreground no-underline sm:max-w-[42%] sm:shrink-0 sm:text-right">
+              {details}
             </span>
           )}
         </span>
@@ -830,8 +831,8 @@ function ShoppingPage() {
 
       {groups.map((group) => (
         <section key={group.name} className="space-y-1.5">
-          <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {group.name}
+          <h2 className="px-1 text-sm font-medium text-muted-foreground">
+            {group.name}{" "}
             <span className="font-normal tabular-nums">
               {group.items.length}
             </span>
@@ -856,8 +857,8 @@ function ShoppingPage() {
       {done.length > 0 && (
         <section className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              In the basket
+            <h2 className="px-1 text-sm font-medium text-muted-foreground">
+              In the basket{" "}
               <span className="font-normal tabular-nums">{done.length}</span>
             </h2>
             <Button

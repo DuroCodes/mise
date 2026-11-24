@@ -1,0 +1,33 @@
+/* the site wears the app's own themes: same tokens, same four palettes. */
+@import "../src/index.css";
+
+/* the demos render the app's components, so their classes need scanning too. */
+@source "../src";
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+@layer components {
+  .command {
+    position: relative;
+    border-radius: var(--radius-xl);
+    background: var(--muted);
+  }
+
+  .command pre {
+    padding: 0.9rem 1rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  .quiet-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent)
+      transparent;
+  }
+}

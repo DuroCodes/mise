@@ -10,8 +10,10 @@ import {
 import { ThemeProvider } from "next-themes";
 import { AppHeader, BottomNav } from "@/components/app-header";
 import { AppSkeleton } from "@/components/app-skeleton";
+import { PageTransition } from "@/components/page-transition";
 import { TimerProvider } from "@/components/timer-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { Walkthrough } from "@/components/walkthrough";
 import { currentAccount, getFeatures, type Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { SessionContext } from "@/lib/session-context";
@@ -110,6 +112,29 @@ function SignedInApp() {
   // under the sticky header, so hide the chrome instead of overlaying it.
   const cooking = /\/cook\/?$/.test(location.pathname);
 
+  const routes = (
+    <Routes>
+      <Route path="/" element={<LibraryPage />} />
+      <Route path="/admin" element={<AdminPage selfId={account.id} />} />
+      <Route path="/people" element={<Navigate to="/admin" replace />} />
+      <Route path="/plan" element={<PlanPage />} />
+      <Route path="/shopping" element={<ShoppingPage />} />
+      <Route path="/stores" element={<StoresPage />} />
+      <Route path="/pantry" element={<PantryPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/share-target" element={<ShareTargetPage />} />
+      <Route path="/receive" element={<ReceivePage />} />
+      <Route path="/collections" element={<CollectionsPage />} />
+      <Route path="/collections/:id" element={<CollectionPage />} />
+      <Route path="/import" element={<Navigate to="/" replace />} />
+      <Route path="/recipes/new" element={<EditorPage />} />
+      <Route path="/recipes/:id" element={<RecipePage />} />
+      <Route path="/recipes/:id/edit" element={<EditorPage />} />
+      <Route path="/recipes/:id/cook" element={<CookPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+
   return (
     <SessionContext.Provider
       value={{
@@ -137,28 +162,10 @@ function SignedInApp() {
               : "isolate mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 sm:py-10 print:pb-0"
         }
       >
-        <Routes>
-          <Route path="/" element={<LibraryPage />} />
-          <Route path="/admin" element={<AdminPage selfId={account.id} />} />
-          <Route path="/people" element={<Navigate to="/admin" replace />} />
-          <Route path="/plan" element={<PlanPage />} />
-          <Route path="/shopping" element={<ShoppingPage />} />
-          <Route path="/stores" element={<StoresPage />} />
-          <Route path="/pantry" element={<PantryPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/share-target" element={<ShareTargetPage />} />
-          <Route path="/receive" element={<ReceivePage />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/collections/:id" element={<CollectionPage />} />
-          <Route path="/import" element={<Navigate to="/" replace />} />
-          <Route path="/recipes/new" element={<EditorPage />} />
-          <Route path="/recipes/:id" element={<RecipePage />} />
-          <Route path="/recipes/:id/edit" element={<EditorPage />} />
-          <Route path="/recipes/:id/cook" element={<CookPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        {cooking ? routes : <PageTransition>{routes}</PageTransition>}
       </main>
       {!hideTabs && <BottomNav />}
+      {!hideTabs && <Walkthrough accountId={account.id} />}
     </SessionContext.Provider>
   );
 }

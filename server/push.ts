@@ -275,7 +275,7 @@ export const tomorrowNote = (userId: string, today: string) => {
   for (const meal of meals) {
     const recipe = getRecipe(meal.recipeId, userId);
     for (const item of recipe?.ingredients ?? [])
-      if (aisleFor(item.name) === "Meat & seafood") thaw.add(item.name);
+      if (aisleFor(item.name) === "Meat & Seafood") thaw.add(item.name);
   }
   const titles = meals.map((meal) => meal.title);
   return {

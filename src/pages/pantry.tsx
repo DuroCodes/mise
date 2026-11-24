@@ -381,8 +381,8 @@ function PantryList({
       ) : (
         groups.map((group) => (
           <section key={group.aisle} className="space-y-1.5">
-            <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {group.aisle}
+            <h2 className="px-1 text-sm font-medium text-muted-foreground">
+              {group.aisle}{" "}
               <span className="font-normal tabular-nums">
                 {group.items.length}
               </span>
@@ -392,23 +392,24 @@ function PantryList({
                 const expiry = item.expiresOn
                   ? expiryLabel(item.expiresOn, today)
                   : null;
+                const measure = quantity(item);
                 return (
                   <li
                     key={item.id}
                     className="flex items-center gap-1 py-1.5 pr-1.5 pl-4"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-6">
-                        {quantity(item) && (
+                      <p className="text-[0.95rem] leading-6">
+                        {measure && (
                           <span className="font-medium tabular-nums">
-                            {quantity(item)}
+                            {measure}{" "}
                           </span>
                         )}
                         <span>{item.name}</span>
                         {expiry && (
                           <span
                             className={cn(
-                              "rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
+                              "ml-1.5 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
                               expiry.tone === "bad" &&
                                 "bg-destructive/15 text-destructive",
                               expiry.tone === "soon" &&
@@ -658,21 +659,18 @@ function Suggestions({
                   ease: easeOut,
                   delay: Math.min(index, 6) * 0.03,
                 }}
-                className="flex gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
+                className="flex overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
               >
-                {suggestion.image ? (
-                  <img
-                    src={suggestion.image}
-                    alt=""
-                    className="size-16 shrink-0 rounded-lg object-cover"
-                  />
-                ) : (
-                  <span
-                    className="size-16 shrink-0 rounded-lg bg-muted"
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="w-16 shrink-0 self-stretch bg-muted sm:w-20">
+                  {suggestion.image && (
+                    <img
+                      src={suggestion.image}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1 p-2.5 sm:p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                     <Link
                       to={`/recipes/${suggestion.id}`}
