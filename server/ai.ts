@@ -182,6 +182,20 @@ export const savedKeyFor = (provider: ProviderId) => {
   return setup?.provider === provider ? setup.apiKey : null;
 };
 
+/** the human-readable reason in a provider's error reply, if it gave one. */
+const providerMessage = (body: string | undefined) => {
+  if (!body) return null;
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: unknown } };
+    const message = parsed.error?.message;
+    return typeof message === "string" && message.trim()
+      ? message.trim().slice(0, 300)
+      : null;
+  } catch {
+    return null;
+  }
+};
+
 /** sends a one-word request to make sure the key and model work. */
 export const checkSetup = async (setup: AiSetup) => {
   const local = setup.provider === "local";
@@ -211,8 +225,15 @@ export const checkSetup = async (setup: AiSetup) => {
             : "The provider doesn't know that model",
         };
 
-      if (error.statusCode === 400)
-        return { ok: false, error: "The provider rejected that model or key" };
+      if (error.statusCode === 400) {
+        const said = providerMessage(error.responseBody);
+        return {
+          ok: false,
+          error: said
+            ? `The provider said: ${said}`
+            : "The provider rejected that model or key",
+        };
+      }
 
       if (error.statusCode === 429)
         return {

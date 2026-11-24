@@ -1,43 +1,103 @@
 import {
-  CalendarDaysIcon,
-  BookOpenIcon,
-  FolderIcon,
   LogOutIcon,
-  PackageOpenIcon,
   PlusIcon,
   SettingsIcon,
-  ShoppingBasketIcon,
   UtensilsCrossedIcon,
   WifiOffIcon,
 } from "lucide-react";
-import { NavLink } from "react-router";
+import { motion } from "motion/react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { clearOfflineData } from "@/lib/offline";
 import { disablePush } from "@/lib/push";
+import { tabs as links } from "@/lib/tabs";
 import { cn } from "cn";
-
-const links = [
-  { to: "/", label: "Recipes", icon: BookOpenIcon, end: true },
-  { to: "/plan", label: "Plan", icon: CalendarDaysIcon, end: false },
-  { to: "/shopping", label: "Shopping", icon: ShoppingBasketIcon, end: false },
-  { to: "/pantry", label: "Pantry", icon: PackageOpenIcon, end: false },
-  { to: "/collections", label: "Collections", icon: FolderIcon, end: false },
-] as const;
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring",
+    "relative rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring",
     isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
   );
+
+const slide = { type: "spring", stiffness: 520, damping: 40 } as const;
 
 const signOut = async () => {
   await disablePush();
   await clearOfflineData();
   await authClient.signOut();
 };
+
+/** underline that only slides sideways inside the sticky header. */
+function HeaderNav({ admin }: { admin: boolean }) {
+  const { pathname } = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+  const [bar, setBar] = useState({ left: 0, width: 0, ready: false });
+
+  const measure = () => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) {
+      setBar((current) =>
+        current.ready ? { ...current, ready: false, width: 0 } : current
+      );
+      return;
+    }
+    setBar({
+      left: active.offsetLeft,
+      width: active.offsetWidth,
+      ready: true,
+    });
+  };
+
+  useLayoutEffect(() => {
+    measure();
+  }, [pathname, admin]);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [admin]);
+
+  return (
+    <nav
+      ref={navRef}
+      className="relative flex items-center gap-4 text-sm"
+      aria-label="Main"
+    >
+      {links.map((link) => (
+        <NavLink
+          key={link.to}
+          to={link.to}
+          end={link.end}
+          className={(state) => cn(navClass(state), "max-sm:hidden")}
+        >
+          {link.label}
+        </NavLink>
+      ))}
+      {admin && (
+        <NavLink to="/admin" className={navClass}>
+          Admin
+        </NavLink>
+      )}
+      {bar.ready && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-1.5 h-0.5 rounded-full bg-brand"
+          initial={false}
+          animate={{ left: bar.left, width: bar.width }}
+          transition={slide}
+        />
+      )}
+    </nav>
+  );
+}
 
 function AppHeader({
   account,
@@ -64,23 +124,7 @@ function AppHeader({
             <UtensilsCrossedIcon className="size-5 text-brand" />
             Mise
           </NavLink>
-          <nav className="flex items-center gap-4 text-sm" aria-label="Main">
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                className={(state) => cn(navClass(state), "max-sm:hidden")}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-            {account.role === "admin" && (
-              <NavLink to="/admin" className={navClass}>
-                Admin
-              </NavLink>
-            )}
-          </nav>
+          <HeaderNav admin={account.role === "admin"} />
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
@@ -153,12 +197,26 @@ function BottomNav() {
               aria-label={link.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-11 items-center justify-center outline-none focus-visible:bg-muted",
+                  "group relative flex h-11 items-center justify-center transition-colors outline-none focus-visible:bg-muted",
                   isActive ? "text-foreground" : "text-muted-foreground"
                 )
               }
             >
-              <link.icon className="size-5" aria-hidden="true" />
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="bottom-tab"
+                      transition={slide}
+                      className="absolute inset-x-3 inset-y-1.5 rounded-full bg-muted"
+                    />
+                  )}
+                  <link.icon
+                    className="relative size-5 transition-transform duration-150 ease-out group-active:scale-90 motion-reduce:transition-none"
+                    aria-hidden="true"
+                  />
+                </>
+              )}
             </NavLink>
           </li>
         ))}

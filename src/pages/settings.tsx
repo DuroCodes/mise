@@ -1,6 +1,7 @@
 import {
   BellIcon,
   BookmarkIcon,
+  CompassIcon,
   DownloadIcon,
   KeyRoundIcon,
   Share2Icon,
@@ -42,6 +43,7 @@ import { getUserSettings, updateUserSettings } from "@/lib/api";
 import { bookmarkletFor } from "@/lib/bookmarklet";
 import { useSession } from "@/lib/session-context";
 import { useTitle } from "@/lib/use-title";
+import { openWalkthrough } from "@/lib/walkthrough";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Section({
@@ -449,6 +451,22 @@ function AiSection() {
   );
 }
 
+function WalkthroughSection() {
+  return (
+    <Section
+      icon={<CompassIcon className="size-4 text-brand" aria-hidden="true" />}
+      title="Walkthrough"
+    >
+      <p className="text-sm text-muted-foreground">
+        A quick look at what Mise can do.
+      </p>
+      <Button variant="outline" onClick={openWalkthrough}>
+        Show again
+      </Button>
+    </Section>
+  );
+}
+
 function SettingsPage() {
   useTitle("Settings · Mise");
   return (
@@ -459,6 +477,7 @@ function SettingsPage() {
       <NotificationsSection />
       <AiSection />
       <PasswordSection />
+      <WalkthroughSection />
     </div>
   );
 }

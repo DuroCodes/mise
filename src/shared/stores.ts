@@ -41,9 +41,30 @@ export const fullLayout = (layout: StoreSection[]) => {
   ];
 };
 
+/** older installs stored sentence-case aisle names. */
+const legacyAisle: Record<string, Aisle> = {
+  "Meat & seafood": "Meat & Seafood",
+  "Dairy & eggs": "Dairy & Eggs",
+  "Spices & seasonings": "Spices & Seasonings",
+  "Condiments & sauces": "Condiments & Sauces",
+};
+
 export const parseLayout = (raw: string) => {
   try {
-    const parsed = storeLayout.safeParse(JSON.parse(raw));
+    const value = JSON.parse(raw);
+    const sections = Array.isArray(value)
+      ? value.map((section) =>
+          section && typeof section === "object" && "aisle" in section
+            ? {
+                ...section,
+                aisle:
+                  legacyAisle[String(section.aisle)] ??
+                  (section as { aisle: unknown }).aisle,
+              }
+            : section
+        )
+      : value;
+    const parsed = storeLayout.safeParse(sections);
     return parsed.success ? parsed.data : [];
   } catch {
     return [];
