@@ -166,10 +166,10 @@ function InvitePanel() {
                 const justCopied = fresh === invite.id;
                 return (
                   <TableRow key={invite.id}>
-                    <TableCell className="max-w-[10rem] truncate font-medium">
+                    <TableCell className="max-w-40 truncate font-medium">
                       {invite.note || "Invite"}
                     </TableCell>
-                    <TableCell className="max-w-[14rem] truncate font-mono text-xs text-muted-foreground">
+                    <TableCell className="max-w-56 truncate font-mono text-xs text-muted-foreground">
                       {href}
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">
@@ -181,7 +181,7 @@ function InvitePanel() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="min-w-[5.5rem]"
+                          className="min-w-22"
                           onClick={async () => {
                             if (await copyLink(href)) setFresh(invite.id);
                           }}

@@ -1,10 +1,6 @@
 import type { SharedRecipe } from "@/shared/recipe";
 import { combineQuantities, itemKey } from "@/shared/shopping";
 
-/**
- * the recipes the demos run on. the first three are the ones a fresh install
- * starts with (server/seed.ts); the last two fill out the week.
- */
 const recipe = (
   value: Omit<SharedRecipe, "image" | "sourceUrl" | "ownerName">
 ) => ({
@@ -150,11 +146,6 @@ export type ListItem = {
   sources: string[];
 };
 
-/**
- * joins lines into a list the way the server does (server/shopping.ts): a line
- * joins an existing one with the same name when the amounts can honestly be
- * added, and stays separate otherwise.
- */
 export const mergeInto = (
   list: ListItem[],
   lines: { name: string; amount: string; unit: string }[],

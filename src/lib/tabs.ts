@@ -14,7 +14,6 @@ export const tabs = [
   { to: "/collections", label: "Collections", icon: FolderIcon, end: false },
 ] as const;
 
-/** position of a top-level tab page, or -1 for anything deeper. */
 export const tabIndex = (path: string) => {
   const trimmed = path.length > 1 ? path.replace(/\/+$/, "") : path;
   return tabs.findIndex((tab) => tab.to === trimmed);

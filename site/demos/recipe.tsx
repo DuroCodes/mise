@@ -13,7 +13,6 @@ import { easeOut } from "@/lib/motion";
 import type { Measure } from "@/lib/units";
 import { tomatoPasta } from "../demo-data";
 
-/** the app's recipe page (src/components/recipe-view.tsx), as it ships. */
 function RecipeDemo() {
   const [servings, setServings] = useState(tomatoPasta.servings ?? 4);
   const [system, setSystem] = useState<Measure>("original");
@@ -29,10 +28,6 @@ function RecipeDemo() {
   );
 }
 
-/**
- * cook mode, cut down to fit a card. the real one (src/pages/cook.tsx) takes
- * over the whole screen; the step text and its timers are the same component.
- */
 function CookDemo() {
   const steps = tomatoPasta.instructions;
   const [step, setStep] = useState(0);

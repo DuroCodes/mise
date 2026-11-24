@@ -1,4 +1,3 @@
-/** where a received recipe waits for the editor to pick it up. */
 export const receivedKey = "mise-received";
 
 /**

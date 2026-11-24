@@ -1,5 +1,3 @@
-/** captures the browser's install prompt so Settings can offer "Install Mise". */
-
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;

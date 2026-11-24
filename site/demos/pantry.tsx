@@ -8,7 +8,6 @@ import { rankRecipes } from "@/shared/pantry";
 import type { SharedRecipe } from "@/shared/recipe";
 import { PANTRY, RECIPES } from "../demo-data";
 
-/** the same wording the pantry page uses (src/pages/pantry.tsx). */
 const expiryLabel = (days: number, day: string) => {
   if (days === 0) return { text: "use today", tone: "bad" as const };
   if (days === 1) return { text: "use by tomorrow", tone: "soon" as const };
@@ -20,10 +19,6 @@ const expiryLabel = (days: number, day: string) => {
   };
 };
 
-/**
- * the pantry and "what can I make", tabbed like the app
- * (src/pages/pantry.tsx) instead of squeezed into two columns.
- */
 function PantryDemo({
   onAdd,
 }: {

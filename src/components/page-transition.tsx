@@ -24,11 +24,6 @@ const directionFor = (from: string, to: string) => {
   return "none";
 };
 
-/**
- * slides each new page in from the side it's "on": tabs to the right come
- * from the right, opening a recipe pushes in, going back slides the other way.
- * a plain css enter animation, so nothing is left transformed afterwards.
- */
 function PageTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const key = routeKey(pathname);

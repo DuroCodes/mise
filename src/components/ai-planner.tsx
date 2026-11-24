@@ -40,7 +40,6 @@ const longDay = (day: string) =>
     day: "numeric",
   });
 
-/** days from today on whose dinner is still open. */
 const openDays = (days: string[], today: string, entries: PlanEntry[]) =>
   days.filter(
     (day) =>

@@ -44,7 +44,6 @@ import { match } from "@/lib/result";
 import { useTitle } from "@/lib/use-title";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** gray table rows shown while a table's data loads. */
 function SkeletonRows({ rows = 3 }: { rows?: number }) {
   return Array.from({ length: rows }, (_, index) => (
     <TableRow key={index} aria-hidden="true">

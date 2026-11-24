@@ -41,7 +41,6 @@ const chipTextClass = (large: boolean) =>
       : "after:top-[1.4em] after:h-[3px] after:bg-size-[3.5px_3px] after:bg-[radial-gradient(circle,color-mix(in_oklab,var(--brand)_50%,transparent)_1px,transparent_1.05px)]"
   );
 
-/** split plain text so cook mode can flex-wrap with a real row gap. */
 const textItems = (value: string, keyPrefix: string) => {
   const items: ReactNode[] = [];
   for (const [index, token] of value.split(/(\s+)/).entries()) {
@@ -62,16 +61,11 @@ const textItems = (value: string, keyPrefix: string) => {
   return items;
 };
 
-/** pull `,` / `.` / etc. that sit right after a chip so they don't get a flex gap. */
 const takeTrailingPunct = (value: string, from: number) => {
   const match = value.slice(from).match(/^[.,;:!?]+/);
   return match?.[0] ?? "";
 };
 
-/**
- * a step's text, with each duration turned into a start-timer button and
- * oven temperatures called out (with a conversion when Metric/Imperial is on).
- */
 function StepText({
   text,
   step,

@@ -4,7 +4,6 @@ import { DropdownMenu } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import { themeOptions } from "@/lib/themes";
 
-/** picks a color theme; "System" follows the device's light or dark setting. */
 function ThemeToggle() {
   const { theme = "system", setTheme } = useTheme();
 

@@ -182,7 +182,6 @@ export const savedKeyFor = (provider: ProviderId) => {
   return setup?.provider === provider ? setup.apiKey : null;
 };
 
-/** the human-readable reason in a provider's error reply, if it gave one. */
 const providerMessage = (body: string | undefined) => {
   if (!body) return null;
   try {
@@ -196,7 +195,6 @@ const providerMessage = (body: string | undefined) => {
   }
 };
 
-/** sends a one-word request to make sure the key and model work. */
 export const checkSetup = async (setup: AiSetup) => {
   const local = setup.provider === "local";
 
@@ -349,7 +347,6 @@ export const splitMeasure = (amount: string, unit: string) => {
   return { amount, unit };
 };
 
-/** fits model output to mise's limits. Exported for tests. */
 export const toRecipeInput = (value: Extracted) => {
   if (!value.found) return null;
 
@@ -409,7 +406,6 @@ Copy what the recipe says; do not invent ingredients, amounts, or steps that are
 - Tags are a few short lowercase words (cuisine, course, main ingredient) and may be empty.
 - If the input does not contain a recipe, set found to false and leave the other fields empty.`;
 
-/** spoken video transcripts: rewrite chatty narration into cookable steps. */
 const spokenExtractionPrompt = `You turn a cooking video into a clean recipe for a recipe manager.
 The input may include speech (transcript), a social caption, and OCR of on-screen text. Many TikTok/Instagram recipes put ingredients and steps only as burned-in overlays — trust the "On-screen text overlays" section when speech is vague or missing.
 - Title: a short normal recipe name (e.g. "Broccoli Cheddar Soup"). Never copy the video caption, hashtags, or emojis.
@@ -545,9 +541,7 @@ const objectFrom = async <T>(
 export const extractRecipe = async (input: {
   text: string;
   image: { data: string; mediaType: AiImageType } | null;
-  /** extra stills (e.g. reel frames with on-screen ingredient text). */
   images?: { data: string; mediaType: AiImageType }[];
-  /** spoken video transcript — rewrite into clear steps instead of copying narration. */
   spoken?: boolean;
 }) => {
   if (!aiEnabled())
@@ -606,7 +600,6 @@ const pageText = (html: string) =>
     .trim()
     .slice(0, 20_000);
 
-/** downloads a public page as plain text. Exported for the model tools. */
 export const readPublicPage = async (raw: string) => {
   let current = await publicRecipeUrl(raw);
   if (!current) return null;
@@ -650,7 +643,6 @@ export const readPublicPage = async (raw: string) => {
   return null;
 };
 
-/** reads a recipe page the direct importer could not parse. */
 export const recipeFromUrl = async (url: string) => {
   if (!aiEnabled())
     return { ok: false as const, error: "AI is not set up on this server" };
@@ -693,7 +685,6 @@ const photoItems = z.object({
 
 export type PhotoItem = { name: string; amount: string; unit: string };
 
-/** fits model output to pantry limits. Exported for tests. */
 export const toPhotoItems = (value: z.infer<typeof photoItems>) => {
   const seen = new Set<string>();
   const out: PhotoItem[] = [];
@@ -837,7 +828,6 @@ export const parseFound = (text: string, searched: Set<string>) => {
   return out;
 };
 
-/** result links from a DuckDuckGo HTML page, including uddg redirects. */
 export const linksFromSearchHtml = (html: string) => {
   const out: { title: string; url: string }[] = [];
   const seen = new Set<string>();
@@ -1029,7 +1019,6 @@ const mealPlanOutput = z.object({
 /** at most this many recipes go to Claude; favorites and regulars first. */
 const plannerLimit = 300;
 
-/** picks and orders the recipes Claude sees. Exported for tests. */
 export const plannerRecipes = <T extends PlannerRecipe>(recipes: T[]) =>
   [...recipes]
     .sort(

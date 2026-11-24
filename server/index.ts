@@ -67,7 +67,6 @@ const api = new Hono<{ Variables: { user: SessionUser } }>();
 
 const megabytes = (count: number) => count * 1024 * 1024;
 
-/** largest request body each route accepts; most only take small JSON. */
 const bodyCap = (path: string) => {
   if (path === "/api/admin/restore") return megabytes(512);
   if (path === "/api/import/file") return megabytes(101);

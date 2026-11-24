@@ -50,7 +50,6 @@ export const covers = (pantryName: string, ingredientName: string) => {
   return contains(need, have) || contains(have, need);
 };
 
-/** the unchecked shopping-list item a scanned product most likely is. */
 export const matchListItem = <T extends { name: string; checked: boolean }>(
   productName: string,
   items: T[]

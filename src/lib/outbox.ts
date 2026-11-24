@@ -74,7 +74,6 @@ const enqueue = (op: Op) => {
   write(ops);
 };
 
-/** the server's list with waiting changes applied on top. */
 export const withOutbox = (items: ShoppingItem[]) => {
   let list = [...items];
   for (const op of read()) {

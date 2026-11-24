@@ -177,7 +177,6 @@ function ImportScene() {
 const cookStep = "Simmer for 10 minutes until the sauce thickens.";
 const cookTimes = [1100] as const;
 
-/** same chip as timer-provider, sized for the walkthrough card. */
 function SceneTimerChip({ timer, now }: { timer: KitchenTimer; now: number }) {
   const left = secondsLeft(timer, now);
   return (
@@ -665,7 +664,7 @@ function Walkthrough({ accountId }: { accountId: string }) {
                 <Scene />
               </div>
             </motion.div>
-            <div className="min-h-[5.25rem] space-y-1.5 px-5 pt-4">
+            <div className="min-h-21 space-y-1.5 px-5 pt-4">
               <DialogTitle>{step.title}</DialogTitle>
               <DialogDescription>{step.body}</DialogDescription>
             </div>

@@ -709,7 +709,6 @@ export type Product = z.infer<typeof productSchema>;
 
 const products = new Map<string, Product | null>();
 
-/** looks up a barcode; null means the product isn't in the database. */
 export const lookupProduct = async (code: string) => {
   if (products.has(code)) return Ok(products.get(code) ?? null);
   const response = await fetch(`/api/products/${code}`).catch(() => null);

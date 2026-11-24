@@ -135,7 +135,6 @@ function AppHeader({
   );
 }
 
-/** tab bar for phones; the header carries these links on wider screens. */
 function BottomNav() {
   return (
     <nav

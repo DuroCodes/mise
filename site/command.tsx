@@ -1,34 +1,44 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { FileCodeIcon, TerminalIcon } from "lucide-react";
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockHeader,
+  CodeBlockLine,
+  CodeBlockTitle,
+} from "@/components/ui/code-block";
+import { useHighlightedCode } from "@/hooks/use-highlighted-code";
 
-function Command({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
+function Command({
+  code,
+  title = "Terminal",
+  language = "bash",
+}: {
+  code: string;
+  title?: string;
+  language?: string;
+}) {
+  const lines = useHighlightedCode(code, language);
+  const Icon = language === "yaml" ? FileCodeIcon : TerminalIcon;
 
   return (
-    <div className="command">
-      <pre>
-        <code>{code}</code>
-      </pre>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="absolute top-2 right-2"
-        onClick={() => void copy()}
-      >
-        {copied ? "Copied" : "Copy"}
-      </Button>
-    </div>
+    <CodeBlock>
+      <CodeBlockHeader>
+        <CodeBlockTitle>
+          <Icon />
+          {title}
+        </CodeBlockTitle>
+        <CodeBlockActions>
+          <CodeBlockCopyButton value={code} />
+        </CodeBlockActions>
+      </CodeBlockHeader>
+      <CodeBlockContent wrap>
+        {lines.map((line, index) => (
+          <CodeBlockLine key={index}>{line}</CodeBlockLine>
+        ))}
+      </CodeBlockContent>
+    </CodeBlock>
   );
 }
 

@@ -28,7 +28,6 @@ const runYtDlp = (args: string[]) => run([ytDlp(), ...args]);
 
 type ThumbCandidate = { url: string; area: number };
 
-/** picks the best thumbnail URL from yt-dlp JSON. Exported for tests. */
 export const thumbnailFromMeta = (data: {
   thumbnail?: unknown;
   thumbnails?: unknown;

@@ -92,7 +92,6 @@ const openInvite = (token: string) =>
     gt(invites.expiresAt, new Date())
   );
 
-/** what the invite page shows before someone signs up. */
 export const describeInvite = (token: string) => {
   if (!inviteTokenShape.test(token)) return null;
   const row = db

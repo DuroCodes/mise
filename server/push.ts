@@ -76,7 +76,6 @@ export const subscriptionFor = (userId: string, endpoint: string) => {
   return row ? { useSoon: row.useSoon, tomorrow: row.tomorrow } : null;
 };
 
-/** saves a device's subscription for this person (a shared device moves to whoever enabled it last). */
 export const saveSubscription = (
   userId: string,
   input: { endpoint: string; p256dh: string; auth: string } & Prefs
@@ -229,7 +228,6 @@ export const cancelTimer = (userId: string, id: string) => {
   perUser.get(userId)?.delete(key);
 };
 
-/** YYYY-MM-DD in the server's time zone. */
 export const dayKey = (date = new Date()) => {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -240,7 +238,6 @@ const plusDays = (day: string, count: number) => {
   return dayKey(new Date(year ?? 1970, (month ?? 1) - 1, (date ?? 1) + count));
 };
 
-/** "Use soon" text for one person's pantry, or null when nothing is close. */
 export const soonNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const soon = listPantry(userId)
@@ -266,7 +263,6 @@ export const soonNote = (userId: string, today: string) => {
   };
 };
 
-/** tomorrow's meals, with a thaw reminder when one needs meat or seafood. */
 export const tomorrowNote = (userId: string, today: string) => {
   const tomorrow = plusDays(today, 1);
   const meals = listPlan(userId, tomorrow, tomorrow, false);
@@ -333,7 +329,6 @@ const runDaily = async (now = new Date()) => {
   }
 };
 
-/** checks every few minutes; each reminder goes out at most once a day per device. */
 export const startReminders = () => {
   const tick = () =>
     void runDaily().catch((error) => console.error("reminders failed", error));

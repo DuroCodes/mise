@@ -100,7 +100,6 @@ const draftFromInput = (imported: RecipeInput) => ({
     : [{ key: crypto.randomUUID(), text: "" }],
 });
 
-/** a recipe handed over by "Send to Mise", used once and then cleared. */
 const receivedDraft = () => {
   if (new URLSearchParams(window.location.search).get("received") !== "1")
     return null;

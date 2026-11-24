@@ -17,7 +17,6 @@ import { STORES, type ListItem } from "../demo-data";
 
 type Grouping = "aisle" | "recipe";
 
-/** the same grouping the shopping page does (src/pages/shopping.tsx). */
 const groupItems = (
   items: ListItem[],
   grouping: Grouping,
@@ -48,7 +47,6 @@ const groupItems = (
 
 const groupHeading = "px-1 text-sm font-medium text-muted-foreground";
 
-/** the shopping list: real aisle sorting, the app's own row. */
 function ShoppingDemo({ items }: { items: ListItem[] }) {
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
   const [storeId, setStoreId] = useState("");
@@ -72,7 +70,7 @@ function ShoppingDemo({ items }: { items: ListItem[] }) {
   });
 
   return (
-    <div className="flex max-h-[38rem] flex-col">
+    <div className="flex max-h-152 flex-col">
       <div className="space-y-3 border-b px-4 pt-4 pb-3 sm:px-5">
         <div className="space-y-1">
           <p className="text-lg font-medium tracking-tight">Shopping list</p>

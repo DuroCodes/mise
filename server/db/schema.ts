@@ -382,7 +382,6 @@ export const pushSubscriptions = sqliteTable(
   ]
 );
 
-/** per-person preferences. A missing row means every default. */
 export const userSettings = sqliteTable("user_settings", {
   userId: text("user_id")
     .primaryKey()

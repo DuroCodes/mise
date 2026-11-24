@@ -14,7 +14,6 @@ type State =
   | { kind: "failed"; error: string; url: string | null }
   | { kind: "alone" };
 
-/** opened by the "Send to Mise" bookmark: receives the page and opens it in the editor. */
 function ReceivePage() {
   const navigate = useNavigate();
   const { ai } = useSession();

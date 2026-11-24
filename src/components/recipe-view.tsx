@@ -260,7 +260,7 @@ function RecipeView({
                 </span>
               )}
             </h2>
-            <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto print:hidden">
+            <div className="flex min-w-0 flex-nowrap items-center gap-1.5 max-sm:[zoom:0.92] print:hidden">
               {recipe.servings !== null && (
                 <NumberField
                   className="w-auto shrink-0 flex-row items-center"

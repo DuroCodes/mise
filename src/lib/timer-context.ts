@@ -5,9 +5,7 @@ export type KitchenTimer = {
   label: string;
   recipe: string | null;
   total: number;
-  /** Epoch ms when a running timer ends; null while paused or done. */
   endsAt: number | null;
-  /** seconds left, kept while paused. */
   remaining: number;
   done: boolean;
 };

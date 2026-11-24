@@ -9,10 +9,6 @@ const short = (key: string) =>
     day: "numeric",
   });
 
-/**
- * this week on the meal plan. a picture of the page rather than a working
- * one: the real planner (src/pages/plan.tsx) is drag and drop.
- */
 function PlanDemo() {
   const today = localDay();
   const monday = weekStart(today);
