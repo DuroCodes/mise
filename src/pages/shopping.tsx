@@ -623,31 +623,88 @@ function ShoppingPage() {
         </p>
       )}
 
-      <form onSubmit={add} className="flex gap-2">
-        <Input
-          value={draft}
-          maxLength={200}
-          placeholder="Add an item, like 2 lemons"
-          aria-label="New item"
-          className="h-10 text-base"
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <Button
-          type="submit"
-          size="lg"
-          className="h-10"
-          disabled={adding || !draft.trim()}
-        >
-          <PlusIcon data-icon="inline-start" />
-          Add
-        </Button>
-      </form>
+      <div className="space-y-2">
+        <form onSubmit={add} className="flex gap-2">
+          <Input
+            value={draft}
+            maxLength={200}
+            placeholder="Add an item, like 2 lemons"
+            aria-label="New item"
+            className="h-10 text-base"
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            className="h-10"
+            disabled={adding || !draft.trim()}
+          >
+            <PlusIcon data-icon="inline-start" />
+            Add
+          </Button>
+        </form>
 
-      {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+
+        {open.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Select
+              value={store ? store.id : "usual"}
+              onValueChange={(value) =>
+                chooseStore(value === "usual" ? "" : value)
+              }
+            >
+              <SelectTrigger aria-label="Store" className="max-w-56">
+                <StoreIcon className="size-4 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="usual">Usual store order</SelectItem>
+                {stores.map((entry) => (
+                  <SelectItem key={entry.id} value={entry.id}>
+                    {entry.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__manage">
+                  {stores.length ? "Edit my stores…" : "Set up my stores…"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <div
+              className="flex rounded-lg bg-muted p-0.5"
+              role="radiogroup"
+              aria-label="Group by"
+            >
+              {(
+                [
+                  ["aisle", "Aisle"],
+                  ["recipe", "Recipe"],
+                ] as const
+              ).map(([value, text]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={grouping === value}
+                  onClick={() => chooseGrouping(value)}
+                  className={cn(
+                    "rounded-md px-3 py-1 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
+                    grouping === value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {items === null && !error && (
         <ListSkeleton label="Loading your list" rows={6} />
@@ -671,61 +728,6 @@ function ShoppingPage() {
             <Button asChild variant="outline">
               <Link to="/plan">Meal plan</Link>
             </Button>
-          </div>
-        </div>
-      )}
-
-      {open.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Select
-            value={store ? store.id : "usual"}
-            onValueChange={(value) =>
-              chooseStore(value === "usual" ? "" : value)
-            }
-          >
-            <SelectTrigger aria-label="Store" className="max-w-56">
-              <StoreIcon className="size-4 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="usual">Usual store order</SelectItem>
-              {stores.map((entry) => (
-                <SelectItem key={entry.id} value={entry.id}>
-                  {entry.name}
-                </SelectItem>
-              ))}
-              <SelectItem value="__manage">
-                {stores.length ? "Edit my stores…" : "Set up my stores…"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <div
-            className="flex rounded-lg bg-muted p-0.5"
-            role="radiogroup"
-            aria-label="Group by"
-          >
-            {(
-              [
-                ["aisle", "Aisle"],
-                ["recipe", "Recipe"],
-              ] as const
-            ).map(([value, text]) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={grouping === value}
-                onClick={() => chooseGrouping(value)}
-                className={cn(
-                  "rounded-md px-3 py-1 text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring",
-                  grouping === value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                )}
-              >
-                {text}
-              </button>
-            ))}
           </div>
         </div>
       )}
