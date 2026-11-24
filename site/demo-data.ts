@@ -1,11 +1,6 @@
 import type { SharedRecipe } from "@/shared/recipe";
 import { combineQuantities, itemKey } from "@/shared/shopping";
-import type { StoreSection } from "@/shared/stores";
 
-/**
- * the recipes the demos run on. the first three are the ones a fresh install
- * starts with (server/seed.ts); the last two fill out the week.
- */
 const recipe = (
   value: Omit<SharedRecipe, "image" | "sourceUrl" | "ownerName">
 ) => ({
@@ -15,37 +10,41 @@ const recipe = (
   ownerName: null,
 });
 
-export const shakshuka = recipe({
-  title: "Shakshuka",
-  description: "Eggs poached in a skillet of pepper, cumin, and tomatoes.",
-  prepMinutes: 10,
-  cookMinutes: 25,
+export const tomatoPasta = recipe({
+  title: "Tomato pasta",
+  description:
+    "A quick skillet sauce over spaghetti. Dinner in about 25 minutes.",
+  prepMinutes: 5,
+  cookMinutes: 20,
   servings: 4,
-  tags: ["eggs", "dinner"],
+  tags: ["pasta", "weeknight"],
   ingredients: [
+    { amount: "400", unit: "g", name: "spaghetti", note: "" },
     { amount: "2", unit: "tbsp", name: "olive oil", note: "" },
-    { amount: "1", unit: "", name: "yellow onion", note: "thinly sliced" },
-    { amount: "1", unit: "", name: "red bell pepper", note: "sliced" },
-    { amount: "3", unit: "cloves", name: "garlic", note: "minced" },
-    { amount: "1", unit: "tsp", name: "ground cumin", note: "" },
-    { amount: "1", unit: "tsp", name: "paprika", note: "" },
+    { amount: "3", unit: "cloves", name: "garlic", note: "sliced" },
     { amount: "1", unit: "can (28 oz)", name: "crushed tomatoes", note: "" },
-    { amount: "4", unit: "", name: "eggs", note: "" },
     { amount: "", unit: "", name: "salt and black pepper", note: "" },
-    { amount: "", unit: "", name: "cilantro or parsley", note: "for serving" },
+    {
+      amount: "",
+      unit: "",
+      name: "basil or parsley",
+      note: "for serving",
+    },
   ],
   instructions: [
     {
-      text: "Warm the oil in a skillet over medium heat. Cook the onion and pepper until soft, about 8 minutes.",
-    },
-    { text: "Stir in the garlic, cumin, and paprika and cook for 1 minute." },
-    {
-      text: "Add the tomatoes, salt, and pepper. Simmer until the sauce thickens slightly, about 10 minutes.",
+      text: "Boil the spaghetti in salted water until just shy of done, about 9 minutes. Save a cup of the pasta water.",
     },
     {
-      text: "Make four wells and crack an egg into each. Cover and cook until the whites set, 5 to 7 minutes.",
+      text: "Warm the oil in a wide skillet. Cook the garlic until fragrant, about 1 minute.",
     },
-    { text: "Scatter with herbs and serve with bread." },
+    {
+      text: "Add the tomatoes, salt, and pepper. Simmer until the sauce thickens a little, about 10 minutes.",
+    },
+    {
+      text: "Toss in the drained pasta with a splash of pasta water until it coats the noodles.",
+    },
+    { text: "Scatter with herbs and serve." },
   ],
 });
 
@@ -124,20 +123,19 @@ export const roastChicken = recipe({
   instructions: [],
 });
 
-export const recipes = [
-  shakshuka,
+export const RECIPES = [
+  tomatoPasta,
   cacioEPepe,
   misoSoup,
   friedRice,
   roastChicken,
-];
+] as const;
 
-/** the week on the plan card: day offset from Monday, meal, recipe. */
-export const week: { day: number; slot: string; recipe: SharedRecipe }[] = [
-  { day: 1, slot: "Dinner", recipe: shakshuka },
+export const WEEK = [
+  { day: 1, slot: "Dinner", recipe: tomatoPasta },
   { day: 3, slot: "Dinner", recipe: friedRice },
   { day: 6, slot: "Dinner", recipe: roastChicken },
-];
+] as const;
 
 export type ListItem = {
   id: string;
@@ -148,11 +146,6 @@ export type ListItem = {
   sources: string[];
 };
 
-/**
- * joins lines into a list the way the server does (server/shopping.ts): a line
- * joins an existing one with the same name when the amounts can honestly be
- * added, and stays separate otherwise.
- */
 export const mergeInto = (
   list: ListItem[],
   lines: { name: string; amount: string; unit: string }[],
@@ -162,20 +155,28 @@ export const mergeInto = (
   for (const line of lines) {
     const key = itemKey(line.name);
     let merged = false;
+
     for (const item of next) {
       if (itemKey(item.name) !== key) continue;
+
       const sum = combineQuantities(
         { amount: item.amount, unit: item.unit },
         { amount: line.amount, unit: line.unit }
       );
+
       if (!sum) continue;
+
       item.amount = sum.amount;
       item.unit = sum.unit;
+
       if (!item.sources.includes(source)) item.sources.push(source);
+
       merged = true;
       break;
     }
+
     if (merged) continue;
+
     next.push({
       id: `item-${next.length}-${key}`,
       name: line.name,
@@ -188,15 +189,15 @@ export const mergeInto = (
   return next;
 };
 
-/** the shopping list for the week on the plan card. */
 export const weekList = () => {
   let list: ListItem[] = [];
-  for (const planned of new Set(week.map((entry) => entry.recipe)))
+  for (const planned of new Set(WEEK.map((entry) => entry.recipe)))
     list = mergeInto(list, planned.ingredients, planned.title);
+
   return list;
 };
 
-export const stores: { id: string; name: string; layout: StoreSection[] }[] = [
+export const STORES = [
   {
     id: "market",
     name: "Greenway Market",
@@ -224,15 +225,9 @@ export const stores: { id: string; name: string; layout: StoreSection[] }[] = [
       { aisle: "Produce", label: "at the till" },
     ],
   },
-];
+] as const;
 
-/** what's in the house, with days until each use-by date (null: it keeps). */
-export const pantry: {
-  name: string;
-  amount: string;
-  unit: string;
-  days: number | null;
-}[] = [
+export const PANTRY = [
   { name: "eggs", amount: "6", unit: "", days: 9 },
   { name: "soft tofu", amount: "8", unit: "oz", days: 2 },
   { name: "scallions", amount: "1", unit: "bunch", days: 1 },
@@ -244,4 +239,4 @@ export const pantry: {
   { name: "spaghetti", amount: "500", unit: "g", days: null },
   { name: "garlic", amount: "1", unit: "head", days: null },
   { name: "yellow onions", amount: "3", unit: "", days: null },
-];
+] as const;

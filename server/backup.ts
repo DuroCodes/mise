@@ -24,7 +24,6 @@ const maxUnpacked = 1024 * 1024 * 1024;
 
 const stamp = (value: Date) => value.toISOString();
 
-/** everything except accounts, as portable JSON that `restoreBackup` reads. */
 export const exportData = () => {
   const people = db.select().from(user).all();
   const emailOf = new Map(people.map((person) => [person.id, person.email]));

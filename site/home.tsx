@@ -1,7 +1,25 @@
-import { UtensilsCrossedIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import {
+  ArchiveIcon,
+  BellIcon,
+  FolderIcon,
+  KeyRoundIcon,
+  Link2Icon,
+  ScanBarcodeIcon,
+  SparklesIcon,
+  StarIcon,
+  TimerIcon,
+  UtensilsCrossedIcon,
+  WifiOffIcon,
+  type LucideIcon,
+} from "lucide-react";
+import { motion } from "motion/react";
+import { useEffect, useState, type ReactNode, type SVGProps } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UnderlineNav } from "@/components/underline-nav";
+import { easeOut } from "@/lib/motion";
+import { tabs } from "@/lib/tabs";
+import { cn } from "cn";
 import { compose, rawBase, repo } from "./build-info";
 import { Command } from "./command";
 import { mergeInto, weekList } from "./demo-data";
@@ -10,79 +28,179 @@ import { PlanDemo } from "./demos/plan";
 import { CookDemo, RecipeDemo } from "./demos/recipe";
 import { ShoppingDemo } from "./demos/shopping";
 
+function BrandIcon({
+  className,
+  path,
+  ...props
+}: {
+  className?: string;
+  path: string;
+} & SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+      {...props}
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
+const githubPath =
+  "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12";
+
+const dockerPath =
+  "M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z";
+
 const nav = [
   { href: "#recipes", label: "Recipes" },
   { href: "#plan", label: "Plan" },
   { href: "#shopping", label: "Shopping" },
   { href: "#pantry", label: "Pantry" },
-  { href: "#admin", label: "Admin" },
+  { href: "#install", label: "Install" },
 ] as const;
 
 const curlCompose = `mkdir mise
 cd mise
 curl -fsSL -o compose.yml ${rawBase}/main/compose.yml`;
 
-function Section({
-  id,
-  title,
-  children,
-}: {
-  id: string;
-  title: string;
-  children: ReactNode;
-}) {
+const extras: { label: string; blurb: string; icon: LucideIcon }[] = [
+  {
+    label: "Timers",
+    blurb: "Tap a time in a step. It keeps going in the background.",
+    icon: TimerIcon,
+  },
+  {
+    label: "Scan & shop",
+    blurb: "Point at a barcode while you walk the aisles.",
+    icon: ScanBarcodeIcon,
+  },
+  {
+    label: "Collections",
+    blurb: "Group recipes however you like: weeknights, baking, guests.",
+    icon: FolderIcon,
+  },
+  {
+    label: "Ratings",
+    blurb: "Score recipes after you cook them.",
+    icon: StarIcon,
+  },
+  {
+    label: "Share links",
+    blurb: "Send a recipe to someone without an account.",
+    icon: Link2Icon,
+  },
+  {
+    label: "Works offline",
+    blurb: "Cook and check things off without a signal.",
+    icon: WifiOffIcon,
+  },
+  {
+    label: "Notifications",
+    blurb: "Get a nudge when a timer finishes.",
+    icon: BellIcon,
+  },
+  {
+    label: "Backups",
+    blurb: "Export everything. Bring it back later.",
+    icon: ArchiveIcon,
+  },
+  {
+    label: "Optional AI",
+    blurb: "Import messy links and plan meals, if you want it.",
+    icon: SparklesIcon,
+  },
+  {
+    label: "You own the data",
+    blurb: "One container on a machine you control.",
+    icon: KeyRoundIcon,
+  },
+];
+
+const features = [
+  {
+    id: "recipes",
+    title: "Recipes",
+    blurb: "Import from a link, TikTok, Instagram, or an export.",
+    icon: tabs[0].icon,
+    demo: "recipe" as const,
+  },
+  {
+    id: "cook",
+    title: "Cook mode",
+    blurb: "One step at a time. Tap a time to start a timer.",
+    icon: TimerIcon,
+    demo: "cook" as const,
+  },
+  {
+    id: "plan",
+    title: "Plan",
+    blurb: "Plan the week, then send it to shopping.",
+    icon: tabs[1].icon,
+    demo: "plan" as const,
+  },
+  {
+    id: "shopping",
+    title: "Shopping",
+    blurb: "One list, ordered by aisle.",
+    icon: tabs[2].icon,
+    demo: "shopping" as const,
+  },
+  {
+    id: "pantry",
+    title: "Pantry",
+    blurb: "See what you can cook with what's on hand.",
+    icon: tabs[3].icon,
+    demo: "pantry" as const,
+  },
+] as const;
+
+const sectionIds = [
+  ...features.map((feature) => feature.id),
+  "install",
+] as const;
+
+function useActiveSection(ids: readonly string[]) {
+  const [active, setActive] = useState(ids[0] ?? "recipes");
+
+  useEffect(() => {
+    const nodes = ids
+      .map((id) => document.getElementById(id))
+      .filter((node): node is HTMLElement => Boolean(node));
+    if (!nodes.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const id = visible[0]?.target.id;
+        if (id) setActive(id);
+      },
+      { rootMargin: "-20% 0px -55% 0px", threshold: [0.15, 0.4, 0.7] }
+    );
+
+    for (const node of nodes) observer.observe(node);
+    return () => observer.disconnect();
+  }, [ids]);
+
+  return active;
+}
+
+function DemoShell({ children }: { children: ReactNode }) {
   return (
-    <section id={id} className="border-t pt-14 sm:pt-20" aria-labelledby={`${id}-title`}>
-      <h2
-        id={`${id}-title`}
-        className="max-w-[22ch] text-2xl font-medium tracking-tight text-balance sm:text-3xl"
-      >
-        {title}
-      </h2>
+    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
       {children}
-    </section>
-  );
-}
-
-function Detail({ title, body }: { title: string; body: string }) {
-  return (
-    <div>
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
     </div>
-  );
-}
-
-function DemoFrame({
-  children,
-  caption,
-  className,
-}: {
-  children: ReactNode;
-  caption?: string;
-  className?: string;
-}) {
-  return (
-    <figure className="min-w-0">
-      <div
-        className={
-          className ??
-          "overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
-        }
-      >
-        {children}
-      </div>
-      {caption && (
-        <figcaption className="mt-3 text-sm leading-6 text-muted-foreground">
-          {caption}
-        </figcaption>
-      )}
-    </figure>
   );
 }
 
 function Home() {
   const [list, setList] = useState(weekList);
+  const active = useActiveSection(sectionIds);
 
   return (
     <>
@@ -94,7 +212,7 @@ function Home() {
       </a>
 
       <header className="sticky top-0 z-40 border-b bg-background pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-12 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+        <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:h-14 sm:px-6">
           <div className="flex min-w-0 items-center gap-5">
             <a
               href="#top"
@@ -103,379 +221,210 @@ function Home() {
               <UtensilsCrossedIcon className="size-5 text-brand" />
               Mise
             </a>
-            <nav
-              className="hidden items-center gap-4 text-sm text-muted-foreground md:flex"
+            <UnderlineNav
               aria-label="On this page"
+              className="hidden text-muted-foreground md:flex"
             >
-              {nav.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-md outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
+              {nav.map((item) => {
+                const id = item.href.slice(1);
+                const current =
+                  id === "install"
+                    ? active === "install"
+                    : active === id ||
+                      (id === "recipes" &&
+                        (active === "recipes" || active === "cook"));
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    data-active={current ? "true" : undefined}
+                    className={cn(
+                      "rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring",
+                      current ? "text-foreground" : "hover:text-foreground"
+                    )}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
+            </UnderlineNav>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1">
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm" className="max-sm:hidden">
-              <a href={repo}>GitHub</a>
+            <Button asChild variant="ghost" size="icon" aria-label="GitHub">
+              <a href={repo} target="_blank" rel="noreferrer">
+                <BrandIcon path={githubPath} />
+              </a>
             </Button>
             <Button asChild size="sm">
-              <a href="#install">Install</a>
+              <a href="#install">
+                <BrandIcon path={dockerPath} data-icon="inline-start" />
+                Install
+              </a>
             </Button>
           </div>
         </div>
       </header>
 
       <main id="main">
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <section
-            id="top"
-            className="grid items-start gap-10 pt-12 sm:pt-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14 lg:pt-20"
-          >
-            <div className="lg:sticky lg:top-28">
-              <h1 className="text-4xl font-medium tracking-tight text-balance sm:text-5xl">
-                The recipe box you host yourself.
-              </h1>
-              <p className="mt-5 max-w-[34rem] text-lg leading-8 text-muted-foreground">
-                Mise keeps a household&apos;s recipes, meal plan, shopping list
-                and pantry in one place. It runs in a single Docker container on
-                a machine you own, and the code is open source.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                  <a href="#install">Install with Docker</a>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <a href={repo}>Source on GitHub</a>
-                </Button>
-              </div>
-              <p className="mt-5 max-w-[34rem] text-sm leading-6 text-muted-foreground">
-                Nothing to sign up for here. The first visit to your own copy
-                creates the admin account.
-              </p>
-            </div>
-
-            <DemoFrame
-              caption="This is the app's recipe page, running in your browser. Change the servings, switch units, or start a timer from one of the steps."
-              className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 max-sm:-mx-4 max-sm:rounded-none max-sm:ring-0"
+        <div className="mx-auto w-full max-w-5xl space-y-14 px-4 pt-10 pb-16 sm:space-y-16 sm:px-6 sm:pt-12 sm:pb-20">
+          <section id="top">
+            <motion.h1
+              className="text-4xl font-medium tracking-tight text-balance sm:text-5xl"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: easeOut }}
             >
-              <div
-                className="flex h-11 items-center gap-4 border-b px-4 text-sm sm:px-5"
-                aria-hidden="true"
-              >
-                <span className="flex items-center gap-1.5 font-medium">
-                  <UtensilsCrossedIcon className="size-4 text-brand" />
-                  Mise
-                </span>
-                <span className="relative text-foreground">
-                  Recipes
-                  <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-brand" />
-                </span>
-                <span className="text-muted-foreground">Plan</span>
-                <span className="text-muted-foreground">Shopping</span>
-                <span className="text-muted-foreground max-sm:hidden">
-                  Pantry
-                </span>
-                <span className="text-muted-foreground max-sm:hidden">
-                  Collections
-                </span>
-              </div>
-              <div className="p-4 sm:p-6">
-                <RecipeDemo />
-              </div>
-            </DemoFrame>
+              The recipe box you host{" "}
+              <span className="text-brand">yourself</span>
+            </motion.h1>
+            <p className="mt-3 max-w-128 text-lg leading-7 text-muted-foreground">
+              Recipes, a meal plan, shopping list, and pantry in one Docker
+              container on a machine you own.
+            </p>
+            <div className="mt-6">
+              <Button asChild size="lg">
+                <a href="#install">
+                  <BrandIcon path={dockerPath} data-icon="inline-start" />
+                  Install with Docker
+                </a>
+              </Button>
+            </div>
           </section>
 
-          <Section id="recipes" title="Save a recipe from wherever you found it.">
-            <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
-              <div>
-                <p className="max-w-[34rem] leading-7 text-muted-foreground">
-                  Paste a link from a recipe site, TikTok or Instagram and Mise
-                  pulls out the ingredients and steps. Moving from Paprika or
-                  Mealie? Upload the export and the whole library comes with
-                  you.
-                </p>
-                <p className="mt-4 max-w-[34rem] text-sm leading-6 text-muted-foreground">
-                  Video imports read the caption and any text on screen. Add a
-                  speech-to-text key for the ones where the recipe is only
-                  spoken. On Android, you can share a link to Mise from any app.
-                </p>
-              </div>
-              <DemoFrame caption="Cook mode shows one step at a time and keeps the screen awake. Use the buttons or the arrow keys.">
-                <CookDemo />
-              </DemoFrame>
-            </div>
-            <div className="mt-10 grid gap-6 border-t pt-8 sm:grid-cols-2 lg:grid-cols-4">
-              <Detail
-                title="Scale and convert"
-                body="Change the servings and every amount follows. Switch between metric and US units, oven temperatures included."
-              />
-              <Detail
-                title="Timers in the steps"
-                body="A duration such as “simmer 10 minutes” becomes a button. It counts down and chimes when the time is up."
-              />
-              <Detail
-                title="Search and sort"
-                body="Search titles, ingredients and steps. Filter by tag or favorites. Sort by quickest, top rated or recently cooked."
-              />
-              <Detail
-                title="Collections"
-                body="Private groups of recipes, such as Thanksgiving or weeknight dinners."
-              />
-              <Detail
-                title="Ratings and a cooking log"
-                body="Everyone rates recipes and logs when they cooked them, with notes."
-              />
-              <Detail
-                title="Share links"
-                body="A read-only link to one recipe, for someone without an account. Turn it off whenever you like."
-              />
-              <Detail
-                title="Nutrition estimate"
-                body="Per serving, worked out from a built-in food table. Nothing is sent anywhere."
-              />
-              <Detail
-                title="Print layout"
-                body="A clean page for the recipe you want on paper."
-              />
-            </div>
-          </Section>
-
-          <Section id="plan" title="Plan the week once.">
-            <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
-              <div>
-                <p className="max-w-[34rem] leading-7 text-muted-foreground">
-                  Drag recipes onto days, or tap Add on a phone. One button turns
-                  the whole week into a shopping list.
-                </p>
-                <p className="mt-4 max-w-[34rem] text-sm leading-6 text-muted-foreground">
-                  With notifications on, a note arrives at 6pm about tomorrow&apos;s
-                  meals.
-                </p>
-              </div>
-              <div className="min-w-0 overflow-hidden rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
-                <PlanDemo />
-              </div>
-            </div>
-          </Section>
-
-          <Section
-            id="shopping"
-            title="One list, in the order you walk the store."
-          >
-            <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
-              <div>
-                <p className="max-w-[34rem] leading-7 text-muted-foreground">
-                  Add a recipe or a whole week. Matching ingredients are added
-                  together, with units converted when they are compatible, so
-                  three recipes that need olive oil give you one line.
-                </p>
-                <p className="mt-4 max-w-[34rem] leading-7 text-muted-foreground">
-                  Save the stores you shop at with their sections in walking
-                  order. Pick a store and the list sorts itself into that route.
-                </p>
-                <div className="mt-8 max-w-[34rem] space-y-5 border-t pt-6">
-                  <Detail
-                    title="Scan and shop"
-                    body="Scan barcodes with the phone camera to check items off. Product names come from Open Food Facts."
-                  />
-                  <Detail
-                    title="No signal needed"
-                    body="The list works offline and syncs when you are back online."
-                  />
-                  <Detail
-                    title="Done shopping"
-                    body="Tell Mise how much of each item goes into the pantry, and it moves it there."
-                  />
-                </div>
-              </div>
-              <DemoFrame
-                caption="The list for the week on the Plan card. Tick a few things off, or pick another store."
-                className="mx-auto max-w-md overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <section
+                key={feature.id}
+                id={feature.id}
+                className="space-y-5 border-t pt-10 sm:pt-12"
               >
-                <ShoppingDemo items={list} />
-              </DemoFrame>
-            </div>
-          </Section>
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Icon className="size-4 text-brand" aria-hidden="true" />
+                    {feature.title}
+                  </p>
+                  <h2 className="mt-1 max-w-[36ch] text-2xl font-medium tracking-tight text-balance sm:text-3xl">
+                    {feature.blurb}
+                  </h2>
+                </div>
+                <DemoShell>
+                  {feature.demo === "recipe" && (
+                    <div className="p-4 sm:p-5">
+                      <RecipeDemo />
+                    </div>
+                  )}
+                  {feature.demo === "cook" && <CookDemo />}
+                  {feature.demo === "plan" && (
+                    <div className="p-3 sm:p-4">
+                      <PlanDemo />
+                    </div>
+                  )}
+                  {feature.demo === "shopping" && <ShoppingDemo items={list} />}
+                  {feature.demo === "pantry" && (
+                    <PantryDemo
+                      onAdd={(recipe, missing) =>
+                        setList((current) =>
+                          mergeInto(
+                            current,
+                            recipe.ingredients.filter((item) =>
+                              missing.includes(item.name)
+                            ),
+                            recipe.title
+                          )
+                        )
+                      }
+                    />
+                  )}
+                </DemoShell>
+              </section>
+            );
+          })}
 
-          <Section id="pantry" title="Cook from what you already have.">
-            <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
-              <div>
-                <p className="max-w-[34rem] leading-7 text-muted-foreground">
-                  Keep track of what is in the house, with use-by dates. “What
-                  can I make” ranks your recipes by how much of each you already
-                  have, and puts whatever is missing on the shopping list.
-                </p>
-                <p className="mt-4 max-w-[34rem] text-sm leading-6 text-muted-foreground">
-                  A heads-up arrives at 9am when something needs using soon.
-                </p>
-              </div>
-              <div className="min-w-0 overflow-hidden rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
-                <PantryDemo
-                  onAdd={(recipe, missing) =>
-                    setList((current) =>
-                      mergeInto(
-                        current,
-                        recipe.ingredients.filter((item) =>
-                          missing.includes(item.name)
-                        ),
-                        recipe.title
-                      )
-                    )
-                  }
-                />
-              </div>
-            </div>
-          </Section>
-
-          <Section id="admin" title="It all stays on your machine.">
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Detail
-                title="One folder"
-                body="The database (SQLite) and uploaded images live in a single data folder. Mount it wherever you keep things you care about."
-              />
-              <Detail
-                title="Backup and restore"
-                body="Admins download a zip of everything: recipes, images, logs, plans, lists and a copy of the database. Restore it from the same page."
-              />
-              <Detail
-                title="Accounts you control"
-                body="The first visit creates the admin account. After that sign-up is closed, and admins add everyone else."
-              />
-              <Detail
-                title="Installs like an app"
-                body="Add it to a phone's home screen. Recipes you have opened stay readable offline."
-              />
-              <Detail
-                title="Notifications"
-                body="Timers that ring with the phone locked, plus the pantry and meal plan reminders. Off until you turn them on, per device."
-              />
-              <Detail
-                title="AI is optional"
-                body="Off unless you set an API key. It works with Anthropic, OpenAI, OpenRouter, or a local model through Ollama, and turns pasted text, a photo of a recipe card or a receipt into something Mise can use."
-              />
-            </div>
-            <div className="mt-10 flex flex-col gap-4 border-t pt-8 sm:flex-row sm:items-center sm:justify-between">
-              <p className="max-w-[30rem] leading-7 text-muted-foreground">
-                Four themes come with it, and this page is wearing one of them.
-                Pick another from the palette in the header.
-              </p>
-              <ThemeToggle />
-            </div>
-          </Section>
+          <section className="border-t pt-10 sm:pt-12">
+            <h2 className="text-2xl font-medium tracking-tight sm:text-3xl">
+              And more
+            </h2>
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {extras.map(({ label, blurb, icon: Icon }) => (
+                <li
+                  key={label}
+                  className="rounded-xl bg-card px-3.5 py-3 ring-1 ring-foreground/10"
+                >
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <Icon className="size-4 shrink-0 text-brand" aria-hidden />
+                    {label}
+                  </p>
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                    {blurb}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <section
             id="install"
-            className="border-t pt-14 pb-16 sm:pt-20 sm:pb-24"
+            className="border-t pt-10 sm:pt-12"
             aria-labelledby="install-title"
           >
             <h2
               id="install-title"
-              className="text-3xl font-medium tracking-tight sm:text-4xl"
+              className="text-2xl font-medium tracking-tight sm:text-3xl"
             >
-              Install Mise
+              Install
             </h2>
-            <p className="mt-2 text-muted-foreground">
-              About 2 minutes. Serves the whole household.
+            <p className="mt-1 text-muted-foreground">
+              One compose file on a machine you own.
             </p>
-
-            <div className="mt-8 grid gap-10 border-t pt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-14">
-              <div>
-                <h3 className="font-medium">You need</h3>
-                <ul className="mt-3 space-y-2.5 leading-7 text-muted-foreground">
-                  {[
-                    "A machine that stays on. A home server, a NAS or a Raspberry Pi will do.",
-                    "Docker, with Compose.",
-                    "An HTTPS address, if phones are going to install it or get notifications (optional).",
-                  ].map((item) => (
-                    <li key={item} className="flex gap-2.5">
-                      <span
-                        className="mt-[0.7rem] size-1.5 shrink-0 rounded-full bg-foreground/70"
-                        aria-hidden="true"
-                      />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="min-w-0">
-                <h3 className="font-medium">Steps</h3>
-                <ol className="mt-3 space-y-6">
-                  <li className="flex gap-3">
-                    <span className="shrink-0 text-muted-foreground tabular-nums">
-                      1
-                    </span>
-                    <div className="min-w-0 flex-1 space-y-3">
-                      <p className="leading-7 text-muted-foreground">
-                        Make a folder and fetch the compose file.
-                      </p>
-                      <Command code={curlCompose} />
-                      <details className="text-sm text-muted-foreground">
-                        <summary className="w-fit cursor-pointer rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring">
-                          See what is in compose.yml
-                        </summary>
-                        <div className="mt-3">
-                          <Command code={compose} />
-                        </div>
-                      </details>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 text-muted-foreground tabular-nums">
-                      2
-                    </span>
-                    <div className="min-w-0 flex-1 space-y-3">
-                      <p className="leading-7 text-muted-foreground">Start it.</p>
-                      <Command code="docker compose up -d" />
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 text-muted-foreground tabular-nums">
-                      3
-                    </span>
-                    <div className="min-w-0 flex-1 space-y-3">
-                      <p className="max-w-[38rem] leading-7 text-muted-foreground">
-                        Open{" "}
-                        <code className="font-mono text-[0.9em] text-foreground">
-                          localhost:3000
-                        </code>{" "}
-                        and create the admin account. Three example recipes are
-                        waiting, including the shakshuka from the top of this
-                        page.
-                      </p>
-                    </div>
-                  </li>
-                </ol>
-
-                <p className="mt-8 max-w-[38rem] border-t pt-6 text-sm leading-6 text-muted-foreground">
-                  Serving it from a domain? Set{" "}
-                  <code className="font-mono text-[0.95em] text-foreground">
-                    BETTER_AUTH_URL
-                  </code>{" "}
-                  to the public address in compose.yml. The{" "}
-                  <a
-                    className="rounded-sm text-foreground underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
-                    href={`${repo}#settings`}
-                  >
-                    settings reference
-                  </a>{" "}
-                  covers ports, the data folder, AI providers and the rest.
+            <ol className="mt-6 max-w-2xl space-y-4">
+              <li className="space-y-2">
+                <p className="text-sm font-medium">1. Get the compose file</p>
+                <Command code={curlCompose} />
+                <details className="text-sm text-muted-foreground">
+                  <summary className="w-fit cursor-pointer rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring">
+                    compose.yml
+                  </summary>
+                  <div className="mt-2">
+                    <Command
+                      code={compose}
+                      title="compose.yml"
+                      language="yaml"
+                    />
+                  </div>
+                </details>
+              </li>
+              <li className="space-y-2">
+                <p className="text-sm font-medium">2. Start it</p>
+                <Command code="docker compose up -d" />
+              </li>
+              <li>
+                <p className="text-sm font-medium">3. Open localhost:3000</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create the admin account. That&apos;s it.
                 </p>
-              </div>
-            </div>
+              </li>
+            </ol>
+            <p className="mt-6 max-w-2xl text-sm text-muted-foreground">
+              On a domain, set{" "}
+              <code className="font-mono text-foreground">BETTER_AUTH_URL</code>{" "}
+              in compose.yml.{" "}
+              <a
+                className="rounded-sm text-foreground underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                href={`${repo}#settings`}
+              >
+                Settings reference
+              </a>
+            </p>
           </section>
         </div>
       </main>
 
       <footer className="border-t">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>
-            Mise is open source, and inspired by{" "}
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-6 text-sm text-muted-foreground sm:px-6">
+          <p className="min-w-0 truncate">
+            Open source, inspired by{" "}
             <a
               className="rounded-sm text-foreground underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
               href="https://mealie.io"
@@ -484,7 +433,10 @@ function Home() {
             </a>
             .
           </p>
-          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Project">
+          <nav
+            className="flex shrink-0 gap-x-4 sm:gap-x-5"
+            aria-label="Project"
+          >
             <a
               className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
               href={repo}
@@ -495,13 +447,7 @@ function Home() {
               className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
               href={`${repo}/issues`}
             >
-              Report a problem
-            </a>
-            <a
-              className="rounded-sm underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-ring"
-              href={`${repo}/issues/new?template=theme-request.yml`}
-            >
-              Request a theme
+              Issues
             </a>
           </nav>
         </div>

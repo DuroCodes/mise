@@ -403,7 +403,6 @@ const urlOf = (value: unknown) => {
   return null;
 };
 
-/** converts one schema.org Recipe object into mise's recipe shape. */
 export const recipeFromJsonLd = (
   recipe: Record<string, unknown>,
   fallbackTitle = ""

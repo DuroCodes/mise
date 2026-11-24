@@ -33,7 +33,6 @@ export const sourceHost = (url: string) => {
   }
 };
 
-/** the first http(s) link in whatever was shared (apps put it in url, text, or title). */
 export const sharedLink = (params: URLSearchParams) => {
   for (const field of ["url", "text", "title"]) {
     const value = params.get(field) ?? "";
@@ -49,7 +48,6 @@ export const sharedLink = (params: URLSearchParams) => {
   return null;
 };
 
-/** a same-site path to return to after signing in, or "/". */
 export const safeNext = (raw: string | null) =>
   raw &&
   raw.startsWith("/") &&
@@ -61,7 +59,6 @@ export const safeNext = (raw: string | null) =>
 export const isMeasure = (value: string | null): value is Measure =>
   value === "original" || value === "metric" || value === "imperial";
 
-/** today's date in the viewer's time zone, as YYYY-MM-DD. */
 export const localDay = (date = new Date()) => {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -78,7 +75,6 @@ export const addDays = (key: string, days: number) => {
   return localDay(date);
 };
 
-/** Monday of the week that contains the given day. */
 export const weekStart = (key: string) => {
   const date = dayFromKey(key);
   const offset = (date.getDay() + 6) % 7;

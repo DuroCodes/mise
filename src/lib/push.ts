@@ -1,5 +1,3 @@
-/** browser side of push notifications. */
-
 const flagKey = "mise-push";
 
 export type PushPrefs = { useSoon: boolean; tomorrow: boolean };
@@ -59,7 +57,6 @@ const post = (path: string, method: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-/** this device's saved settings, or null when notifications are off here. */
 export const loadPushPrefs = async () => {
   const subscription = await currentSubscription();
   if (!subscription) {
@@ -118,7 +115,6 @@ export const updatePushPrefs = async (prefs: Partial<PushPrefs>) => {
   return Boolean(response?.ok);
 };
 
-/** turns notifications off for this device (also used on sign-out). */
 export const disablePush = async () => {
   setFlag(false);
   const subscription = await currentSubscription().catch(() => null);

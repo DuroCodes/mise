@@ -1,4 +1,3 @@
-/** color themes; each id is also the class set on <html> (see index.css). */
 export const themeOptions = [
   { id: "system", label: "System", swatch: ["", ""] },
   { id: "light", label: "Light", swatch: ["#fbf9f4", "#b8762b"] },

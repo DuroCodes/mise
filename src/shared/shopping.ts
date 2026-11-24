@@ -20,7 +20,6 @@ const singularWord = (word: string) => {
   return word;
 };
 
-/** a normalized key used to decide whether two shopping items are the same thing. */
 export const itemKey = (name: string) => {
   const words = name
     .toLowerCase()

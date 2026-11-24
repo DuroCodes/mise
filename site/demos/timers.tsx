@@ -50,12 +50,7 @@ const chime = () => {
   }
 };
 
-/**
- * the app's kitchen timers, for the demos. same context, same chips, same
- * chime as src/components/timer-provider.tsx, minus the parts that need a
- * server (push notifications) and the repeat ring, which would be rude on a
- * page someone is only reading.
- */
+// no push notifications or repeat ring on a read-only page.
 function DemoTimers({ children }: { children: ReactNode }) {
   const [timers, setTimers] = useState<KitchenTimer[]>([]);
   const [now, setNow] = useState(() => Date.now());

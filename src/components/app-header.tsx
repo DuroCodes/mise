@@ -6,9 +6,9 @@ import {
   WifiOffIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useLayoutEffect, useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink } from "react-router";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UnderlineNav } from "@/components/underline-nav";
 import { Button } from "@/components/ui/button";
 import type { Account } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
@@ -31,46 +31,9 @@ const signOut = async () => {
   await authClient.signOut();
 };
 
-/** underline that only slides sideways inside the sticky header. */
 function HeaderNav({ admin }: { admin: boolean }) {
-  const { pathname } = useLocation();
-  const navRef = useRef<HTMLElement>(null);
-  const [bar, setBar] = useState({ left: 0, width: 0, ready: false });
-
-  const measure = () => {
-    const nav = navRef.current;
-    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!nav || !active) {
-      setBar((current) =>
-        current.ready ? { ...current, ready: false, width: 0 } : current
-      );
-      return;
-    }
-    setBar({
-      left: active.offsetLeft,
-      width: active.offsetWidth,
-      ready: true,
-    });
-  };
-
-  useLayoutEffect(() => {
-    measure();
-  }, [pathname, admin]);
-
-  useLayoutEffect(() => {
-    const nav = navRef.current;
-    if (!nav || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [admin]);
-
   return (
-    <nav
-      ref={navRef}
-      className="relative flex items-center gap-4 text-sm"
-      aria-label="Main"
-    >
+    <UnderlineNav aria-label="Main">
       {links.map((link) => (
         <NavLink
           key={link.to}
@@ -86,16 +49,7 @@ function HeaderNav({ admin }: { admin: boolean }) {
           Admin
         </NavLink>
       )}
-      {bar.ready && (
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-1.5 h-0.5 rounded-full bg-brand"
-          initial={false}
-          animate={{ left: bar.left, width: bar.width }}
-          transition={slide}
-        />
-      )}
-    </nav>
+    </UnderlineNav>
   );
 }
 
@@ -181,7 +135,6 @@ function AppHeader({
   );
 }
 
-/** tab bar for phones; the header carries these links on wider screens. */
 function BottomNav() {
   return (
     <nav

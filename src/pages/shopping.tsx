@@ -3,14 +3,12 @@ import {
   CloudOffIcon,
   CopyIcon,
   PackageOpenIcon,
-  PencilIcon,
   PlusIcon,
   ScanLineIcon,
   Share2Icon,
   ShoppingBasketIcon,
   StoreIcon,
   TrashIcon,
-  XIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type SubmitEvent } from "react";
@@ -19,6 +17,7 @@ import { toast } from "sonner";
 import { cn } from "cn";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { DoneShopping } from "@/components/done-shopping";
+import { ShoppingRow } from "@/components/shopping-row";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -123,7 +122,7 @@ const label = (item: ShoppingItem) =>
 const groupItems = (
   items: ShoppingItem[],
   grouping: Grouping,
-  layout: StoreSection[]
+  layout: readonly StoreSection[]
 ) => {
   if (grouping === "aisle") {
     const byAisle = new Map<string, ShoppingItem[]>();
@@ -267,104 +266,6 @@ function EditItem({
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Row({
-  item,
-  showSources,
-  onToggle,
-  onEdit,
-  onRemove,
-}: {
-  item: ShoppingItem;
-  showSources: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-  onRemove: () => void;
-}) {
-  const optional = isOptional(item.note);
-  const note = cleanNote(item.note);
-  const details = [note, showSources ? item.sources.join(", ") : ""]
-    .filter(Boolean)
-    .join(" · ");
-  const local = item.id.startsWith("local-");
-  const measure = quantity(item);
-
-  return (
-    <motion.li
-      layout="position"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      transition={{ duration: 0.2, ease: easeOut }}
-      className="flex items-center"
-    >
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={item.checked}
-        onClick={onToggle}
-        className="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 pr-1 pl-3 text-left outline-none focus-visible:bg-muted/60 sm:pl-4"
-      >
-        <span
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
-            item.checked
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-input"
-          )}
-          aria-hidden="true"
-        >
-          {item.checked && <CheckIcon className="size-3.5" strokeWidth={3} />}
-        </span>
-        <span
-          className={cn(
-            "flex min-w-0 flex-1 flex-col gap-0.5 text-[0.95rem] leading-6 sm:flex-row sm:items-baseline sm:gap-x-3",
-            item.checked && "text-muted-foreground line-through"
-          )}
-        >
-          <span className="min-w-0 truncate sm:flex-1">
-            {measure && (
-              <span className="font-medium tabular-nums">{measure} </span>
-            )}
-            <span>{item.name}</span>
-            {optional && (
-              <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[0.7rem] leading-5 font-medium text-muted-foreground no-underline">
-                optional
-              </span>
-            )}
-          </span>
-          {details && (
-            <span className="truncate text-xs text-muted-foreground no-underline sm:max-w-[42%] sm:shrink-0 sm:text-right">
-              {details}
-            </span>
-          )}
-        </span>
-      </button>
-      {!local && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="shrink-0 text-muted-foreground"
-          aria-label={`Edit ${item.name}`}
-          onClick={onEdit}
-        >
-          <PencilIcon />
-        </Button>
-      )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="mr-1.5 shrink-0 text-muted-foreground sm:mr-2"
-        aria-label={`Remove ${item.name}`}
-        onClick={onRemove}
-      >
-        <XIcon />
-      </Button>
-    </motion.li>
   );
 }
 
@@ -834,13 +735,13 @@ function ShoppingPage() {
           <h2 className="px-1 text-sm font-medium text-muted-foreground">
             {group.name}{" "}
             <span className="font-normal tabular-nums">
-              {group.items.length}
+              ({group.items.length})
             </span>
           </h2>
           <ul className="divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
             <AnimatePresence initial={false}>
               {group.items.map((item) => (
-                <Row
+                <ShoppingRow
                   key={item.id}
                   item={item}
                   showSources={grouping === "aisle" || item.sources.length > 1}
@@ -859,7 +760,7 @@ function ShoppingPage() {
           <div className="flex items-center justify-between gap-2">
             <h2 className="px-1 text-sm font-medium text-muted-foreground">
               In the basket{" "}
-              <span className="font-normal tabular-nums">{done.length}</span>
+              <span className="font-normal tabular-nums">({done.length})</span>
             </h2>
             <Button
               type="button"
@@ -874,7 +775,7 @@ function ShoppingPage() {
           <ul className="divide-y overflow-hidden rounded-xl bg-card/60 ring-1 ring-foreground/10">
             <AnimatePresence initial={false}>
               {done.map((item) => (
-                <Row
+                <ShoppingRow
                   key={item.id}
                   item={item}
                   showSources={false}

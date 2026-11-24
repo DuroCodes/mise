@@ -384,7 +384,7 @@ function PantryList({
             <h2 className="px-1 text-sm font-medium text-muted-foreground">
               {group.aisle}{" "}
               <span className="font-normal tabular-nums">
-                {group.items.length}
+                ({group.items.length})
               </span>
             </h2>
             <ul className="divide-y overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
@@ -399,17 +399,19 @@ function PantryList({
                     className="flex items-center gap-1 py-1.5 pr-1.5 pl-4"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-[0.95rem] leading-6">
-                        {measure && (
-                          <span className="font-medium tabular-nums">
-                            {measure}{" "}
-                          </span>
-                        )}
-                        <span>{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <p className="min-w-0 flex-1 truncate text-[0.95rem] leading-6">
+                          {measure && (
+                            <span className="font-medium tabular-nums">
+                              {measure}{" "}
+                            </span>
+                          )}
+                          <span>{item.name}</span>
+                        </p>
                         {expiry && (
                           <span
                             className={cn(
-                              "ml-1.5 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium",
+                              "shrink-0 rounded-full px-1.5 text-[0.7rem] leading-5 font-medium whitespace-nowrap",
                               expiry.tone === "bad" &&
                                 "bg-destructive/15 text-destructive",
                               expiry.tone === "soon" &&
@@ -421,7 +423,7 @@ function PantryList({
                             {expiry.text}
                           </span>
                         )}
-                      </p>
+                      </div>
                       {item.note && (
                         <p className="truncate text-xs text-muted-foreground">
                           {item.note}

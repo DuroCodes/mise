@@ -127,7 +127,6 @@ const emptyStats = () => ({
   cookCount: 0,
 });
 
-/** rating and cooking-log summaries for one recipe, or for all of them. */
 export const recipeStats = (viewerId: string, recipeId?: string) => {
   const stats = new Map<string, RecipeStats>();
   const entry = (id: string) => {
@@ -243,7 +242,6 @@ export const getRecipe = (id: string, viewerId: string, asAdmin = false) => {
   );
 };
 
-/** true when the viewer may see the recipe (admins see everything). */
 export const viewable = (id: string, viewerId: string, asAdmin = false) => {
   const row = db
     .select({ ownerId: recipes.ownerId, visibility: recipes.visibility })

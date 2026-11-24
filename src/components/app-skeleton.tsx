@@ -5,11 +5,6 @@ import {
   Skeleton,
 } from "@/components/ui/skeleton";
 
-/**
- * the whole app in gray, shown while the session loads. It matches the real
- * header and page width so nothing jumps when the app appears, and guesses
- * the page's shape from the address.
- */
 function AppSkeleton({ path }: { path: string }) {
   const recipe = /^\/recipes\/(?!new)[^/]+\/?$/.test(path);
   const cards = path === "/" || path.startsWith("/collections");

@@ -61,7 +61,6 @@ const multiline = (value: unknown) =>
 
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
-/** reads "15 minutes", "1 hr 10 min", "1:30", or ISO 8601 "PT15M". */
 export const minutesFromText = (value: unknown) => {
   const iso = minutesOf(value);
   if (iso !== null) return iso;
@@ -261,7 +260,6 @@ const rowsOf = (database: Row, name: string) =>
       )
     : [];
 
-/** Mealie's full-site backup stores its tables in database.json. */
 const fromMealieDatabase = (database: Row) => {
   const recipeRows = rowsOf(database, "recipes");
   const units = new Map(
@@ -491,11 +489,6 @@ const isZip = (bytes: Uint8Array) =>
 const isGzip = (bytes: Uint8Array) =>
   bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
 
-/**
- * turns an uploaded file into recipes. Understands Paprika exports
- * (.paprikarecipes / .paprikarecipe), Mealie recipe exports and backups (.zip
- * or .json), schema.org JSON-LD (.json), and saved recipe pages (.html).
- */
 export const readImportFile = (name: string, bytes: Uint8Array) => {
   const result: ImportResult = { recipes: [], skipped: [] };
   const lower = name.toLowerCase();

@@ -129,7 +129,6 @@ export const removePantryItem = (userId: string, id: string) => {
   return true;
 };
 
-/** moves the checked items on the shopping list into the pantry. */
 export const moveCheckedToPantry = (userId: string) => {
   const checked = db
     .select()
@@ -156,10 +155,6 @@ export const moveCheckedToPantry = (userId: string) => {
   return checked.length;
 };
 
-/**
- * finishes a shopping trip: adds the amounts you chose to keep to the pantry
- * and clears every checked item from the list.
- */
 export const finishShopping = (
   userId: string,
   keep: { id: string; amount: string; unit: string }[]
@@ -212,7 +207,6 @@ export const pantrySuggestions = (userId: string, today: string) => {
     }));
 };
 
-/** the ingredients of a recipe that the pantry doesn't cover. */
 export const missingFor = (
   userId: string,
   recipe: { ingredients: { name: string; note: string }[] }

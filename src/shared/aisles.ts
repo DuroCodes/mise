@@ -1,6 +1,5 @@
 import { tokens } from "./nutrition";
 
-/** store sections, in the order most people walk a grocery store. */
 export const aisles = [
   "Produce",
   "Bakery",

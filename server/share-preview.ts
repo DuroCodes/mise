@@ -54,7 +54,6 @@ const timingBits = (recipe: SharedRecipe) =>
     recipe.servings !== null ? `serves ${recipe.servings}` : null,
   ].filter((bit): bit is string => Boolean(bit));
 
-/** one short line for Discord's compact summary card (like spongebin). */
 export const ogDescription = (recipe: SharedRecipe) => {
   const bits = [
     recipe.ownerName ? `by ${recipe.ownerName}` : null,
@@ -81,7 +80,6 @@ const ldIngredient = (item: SharedRecipe["ingredients"][number]) => {
   return note ? `${line} (${note})` : line;
 };
 
-/** schema.org Recipe for importers (and search) that read JSON-LD. */
 export const recipeJsonLd = (
   recipe: SharedRecipe,
   pageUrl: string,

@@ -1,7 +1,7 @@
 import { CalendarDaysIcon } from "lucide-react";
 import { cn } from "cn";
 import { addDays, dayFromKey, localDay, weekStart } from "@/lib/view";
-import { week } from "../demo-data";
+import { WEEK } from "../demo-data";
 
 const short = (key: string) =>
   dayFromKey(key).toLocaleDateString(undefined, {
@@ -9,10 +9,6 @@ const short = (key: string) =>
     day: "numeric",
   });
 
-/**
- * this week on the meal plan. a picture of the page rather than a working
- * one: the real planner (src/pages/plan.tsx) is drag and drop.
- */
 function PlanDemo() {
   const today = localDay();
   const monday = weekStart(today);
@@ -28,7 +24,7 @@ function PlanDemo() {
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {days.map((day, index) => {
-          const entries = week.filter((entry) => entry.day === index);
+          const entries = WEEK.filter((entry) => entry.day === index);
           const date = dayFromKey(day);
           return (
             <section

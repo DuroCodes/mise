@@ -24,7 +24,6 @@ import { shrinkPhoto } from "@/lib/images";
 
 type Row = PhotoItem & { keep: boolean };
 
-/** snap a receipt or the fridge; AI lists the food, you check it, it goes in the pantry. */
 function PantryPhoto({ onAdded }: { onAdded: (items: PantryItem[]) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
